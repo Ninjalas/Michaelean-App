@@ -13,7 +13,7 @@ Future<void> openStudentHome(WidgetTester tester, {bool fail = false}) async {
     homeService: MockHomeService(delay: Duration.zero, fail: fail),
   ));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Preview as Student'));
+  await tester.tap(find.text('Sign in with Microsoft (preview)'));
   await tester.pumpAndSettle();
 }
 

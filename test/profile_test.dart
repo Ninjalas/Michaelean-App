@@ -15,7 +15,9 @@ Future<void> openProfile(WidgetTester tester, {String role = 'Student'}) async {
     homeService: MockHomeService(delay: Duration.zero),
   ));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Preview as $role'));
+  await tester.tap(find.text(role));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Sign in with Microsoft (preview)'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Profile'));
   await tester.pumpAndSettle();
@@ -89,6 +91,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
-    expect(find.text('Preview as Student'), findsOneWidget);
+    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
   });
 }

@@ -4,9 +4,10 @@ import '../../models/user_profile.dart';
 import '../../services/session.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/segmented_pills.dart';
 
-/// Development-only role picker. Stands in for Microsoft 365 sign-in
-/// during the frontend phase. It is not authentication.
+/// Sign-in preview (spec §1.1, §4). Shows where Microsoft 365 sign-in will
+/// go and lets you pick a mock student or teacher. It is not authentication.
 class PreviewScreen extends StatefulWidget {
   final UserService userService;
 
@@ -17,11 +18,12 @@ class PreviewScreen extends StatefulWidget {
 }
 
 class _PreviewScreenState extends State<PreviewScreen> {
+  UserRole _role = UserRole.student;
   bool _loading = false;
 
-  Future<void> _preview(UserRole role) async {
+  Future<void> _signIn() async {
     setState(() => _loading = true);
-    final user = await widget.userService.loadPreviewUser(role);
+    final user = await widget.userService.loadPreviewUser(_role);
     if (!mounted) return;
     SessionScope.of(context).startPreview(user);
   }
@@ -34,44 +36,39 @@ class _PreviewScreenState extends State<PreviewScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              Image.asset('assets/images/SMCL_Emblem.png', height: 120,
-                  semanticLabel: "Saint Michael's College of Laguna emblem"),
+              Hero(
+                tag: 'smcl-emblem', // glides in from the opening intro
+                child: Image.asset('assets/images/SMCL_Emblem.png', height: 128,
+                    semanticLabel: "Saint Michael's College of Laguna emblem"),
+              ),
               const SizedBox(height: AppSpacing.lg),
-              Text('Michaelean', style: text.headlineMedium),
+              Text('Michaelean', textAlign: TextAlign.center, style: text.displaySmall),
               const SizedBox(height: AppSpacing.xs),
               Text("Saint Michael's College of Laguna",
-                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                  textAlign: TextAlign.center,
+                  style: text.bodyLarge?.copyWith(color: AppColors.muted)),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: AppColors.fill,
-                  borderRadius: BorderRadius.circular(AppRadius.small),
-                ),
-                child: Text('Development preview — not a sign-in. Uses mock data.',
-                    textAlign: TextAlign.center,
-                    style: text.labelMedium?.copyWith(color: AppColors.muted)),
+              Text('Preview as', style: text.labelMedium?.copyWith(color: AppColors.muted)),
+              const SizedBox(height: AppSpacing.sm),
+              SegmentedPills<UserRole>(
+                segments: const [(UserRole.student, 'Student'), (UserRole.teacher, 'Teacher')],
+                selected: _role,
+                onChanged: (r) => setState(() => _role = r),
               ),
               const SizedBox(height: AppSpacing.lg),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _loading ? null : () => _preview(UserRole.student),
-                  child: const Text('Preview as Student'),
-                ),
+              FilledButton(
+                onPressed: _loading ? null : _signIn,
+                child: const Text('Sign in with Microsoft (preview)'),
               ),
               const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: _loading ? null : () => _preview(UserRole.teacher),
-                  child: const Text('Preview as Teacher'),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.section),
+              Text('Preview only. This does not sign you in, and it uses sample data, '
+                  'not official school records.',
+                  textAlign: TextAlign.center,
+                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+              const SizedBox(height: AppSpacing.lg),
             ],
           ),
         ),

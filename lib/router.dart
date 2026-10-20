@@ -6,6 +6,7 @@ import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/home_screen.dart';
 import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
+import 'screens/shared/opening_screen.dart';
 import 'screens/shared/profile_screen.dart';
 import 'screens/shared/settings_sheet.dart';
 import 'screens/shared/post_detail_screen.dart';
@@ -15,22 +16,24 @@ import 'services/session.dart';
 import 'services/user_service.dart';
 import 'widgets/app_sheet.dart';
 
-/// All app routes. With no previewed user, everything redirects to /preview;
-/// once a role is picked, the app opens on Home (spec §1).
+/// All app routes. The app opens on the opening intro, then the sign-in
+/// preview. With no previewed user, everything else redirects to /preview;
+/// once a role is picked, the app opens on Home (spec §1.1).
 GoRouter createRouter(
     Session session, UserService userService, HomeService homeService) {
   final rootKey = GlobalKey<NavigatorState>();
   return GoRouter(
     navigatorKey: rootKey,
-    initialLocation: '/home',
+    initialLocation: '/opening',
     refreshListenable: session,
     redirect: (context, state) {
-      final atPreview = state.matchedLocation == '/preview';
-      if (session.user == null) return atPreview ? null : '/preview';
-      if (atPreview) return '/home';
+      final beforeSignIn = const {'/opening', '/preview'}.contains(state.matchedLocation);
+      if (session.user == null) return beforeSignIn ? null : '/preview';
+      if (beforeSignIn) return '/home';
       return null;
     },
     routes: [
+      GoRoute(path: '/opening', builder: (context, state) => const OpeningScreen()),
       GoRoute(
         path: '/preview',
         builder: (context, state) => PreviewScreen(userService: userService),

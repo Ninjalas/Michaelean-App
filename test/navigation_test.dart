@@ -12,9 +12,11 @@ void main() {
   testWidgets('student preview opens Home with student tabs', (tester) async {
     await tester.pumpWidget(testApp());
     await tester.pumpAndSettle();
-    expect(find.text('Preview as Student'), findsOneWidget);
+    // The opening intro plays to the end and moves on to sign-in by itself.
+    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.textContaining('Preview only'), findsOneWidget); // never looks like real sign-in
 
-    await tester.tap(find.text('Preview as Student'));
+    await tester.tap(find.text('Sign in with Microsoft (preview)'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining(', Nicolas'), findsOneWidget); // landed on Home
@@ -27,7 +29,9 @@ void main() {
     await tester.pumpWidget(testApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Preview as Teacher'));
+    await tester.tap(find.text('Teacher'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign in with Microsoft (preview)'));
     await tester.pumpAndSettle();
     expect(find.textContaining(', Mark'), findsOneWidget); // teacher Home
     expect(find.text('Michaelean Life'), findsOneWidget);
@@ -43,6 +47,18 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
-    expect(find.text('Preview as Student'), findsOneWidget);
+    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.text('Skip'), findsNothing); // logging out doesn't replay the intro
+  });
+
+  testWidgets('Skip leaves the opening intro right away', (tester) async {
+    await tester.pumpWidget(testApp());
+    await tester.pump(const Duration(milliseconds: 300)); // intro still playing
+    expect(find.text('Sign in with Microsoft (preview)'), findsNothing);
+
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.text('Skip'), findsNothing);
   });
 }

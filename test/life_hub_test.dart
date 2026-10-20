@@ -13,7 +13,9 @@ Future<void> openHub(WidgetTester tester, String role, String tab) async {
     homeService: MockHomeService(delay: Duration.zero),
   ));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Preview as $role'));
+  await tester.tap(find.text(role));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Sign in with Microsoft (preview)'));
   await tester.pumpAndSettle();
   await tester.tap(find.text(tab));
   await tester.pumpAndSettle();
