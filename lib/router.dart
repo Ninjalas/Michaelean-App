@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-import 'models/user_profile.dart';
 import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/home_screen.dart';
+import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
 import 'screens/shared/placeholder_screen.dart';
 import 'screens/shared/post_detail_screen.dart';
@@ -72,12 +72,15 @@ GoRouter createRouter(
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/life',
-              builder: (context, state) => PlaceholderScreen(
-                title: session.user?.role == UserRole.teacher
-                    ? 'Michaelean Life'
-                    : 'Student Life',
-                comingIn: 'Phase 3',
-              ),
+              builder: (context, state) => const LifeHubScreen(),
+              routes: [
+                GoRoute(
+                  path: 'soon',
+                  builder: (context, state) => ComingSoonScreen(
+                    title: state.uri.queryParameters['what'] ?? 'Coming soon',
+                  ),
+                ),
+              ],
             ),
           ]),
           StatefulShellBranch(routes: [

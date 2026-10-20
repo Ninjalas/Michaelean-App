@@ -35,8 +35,10 @@ void main() {
 
     await tester.tap(find.text('Michaelean Life'));
     await tester.pumpAndSettle();
-    expect(find.text('Coming in Phase 3'), findsOneWidget);
+    expect(find.text('Teaching & Campus'), findsOneWidget);
 
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Switch preview role'));
     await tester.pumpAndSettle();
     expect(find.text('Preview as Student'), findsOneWidget);

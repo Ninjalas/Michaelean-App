@@ -32,7 +32,11 @@ class FloatingNavBar extends StatelessWidget {
       minimum: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Center(
         heightFactor: 1,
-        child: DecoratedBox(
+        child: Container(
+          // Equal-width tabs, capped so the pill floats on wide screens and
+          // still fits long labels ("Michaelean Life") on narrow phones.
+          constraints: const BoxConstraints(maxWidth: 360),
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.pill),
             boxShadow: AppColors.floatShadow,
@@ -46,13 +50,14 @@ class FloatingNavBar extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.xs + 2),
                 color: AppColors.white.withValues(alpha: 0.82),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     for (var i = 0; i < items.length; i++)
-                      _NavButton(
-                        item: items[i],
-                        selected: i == selectedIndex,
-                        onTap: () => onSelected(i),
+                      Expanded(
+                        child: _NavButton(
+                          item: items[i],
+                          selected: i == selectedIndex,
+                          onTap: () => onSelected(i),
+                        ),
                       ),
                   ],
                 ),
@@ -86,8 +91,8 @@ class _NavButton extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
-          constraints: const BoxConstraints(minWidth: 96, minHeight: 52),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          constraints: const BoxConstraints(minHeight: 52),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
           decoration: BoxDecoration(
             color: selected ? AppColors.fill : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -100,6 +105,8 @@ class _NavButton extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
