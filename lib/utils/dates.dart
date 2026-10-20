@@ -8,9 +8,10 @@ const _months = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-/// "Tuesday, 20 October"
-String formatLongDate(DateTime d) =>
-    '${_weekdays[d.weekday - 1]}, ${d.day} ${_months[d.month - 1]}';
+/// "20 October" — shown with [weekdayName] in muted text: "20 October / Tuesday"
+String formatDayMonth(DateTime d) => '${d.day} ${_months[d.month - 1]}';
+
+String weekdayName(DateTime d) => _weekdays[d.weekday - 1];
 
 /// "20 October 2026"
 String formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';

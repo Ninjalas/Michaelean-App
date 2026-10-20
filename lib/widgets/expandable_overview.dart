@@ -38,7 +38,7 @@ class _ExpandableOverviewState extends State<ExpandableOverview> {
     final text = Theme.of(context).textTheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.fill, // soft gray tile on the white page
         borderRadius: BorderRadius.circular(AppRadius.large),
       ),
       clipBehavior: Clip.antiAlias,
@@ -121,7 +121,7 @@ class _ExpandableOverviewState extends State<ExpandableOverview> {
                 child: LinearProgressIndicator(
                   value: m.progress!.clamp(0, 1),
                   minHeight: 4,
-                  backgroundColor: AppColors.fill,
+                  backgroundColor: AppColors.white, // track on the gray tile
                   color: AppColors.navy,
                 ),
               ),

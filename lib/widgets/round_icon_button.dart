@@ -23,7 +23,7 @@ class RoundIconButton extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.white,
         shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 4))],
+        boxShadow: AppColors.floatShadow,
       ),
       child: Stack(
         children: [

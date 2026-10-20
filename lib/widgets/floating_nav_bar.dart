@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -30,25 +32,32 @@ class FloatingNavBar extends StatelessWidget {
       minimum: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Center(
         heightFactor: 1,
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.xs + 2),
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.94),
             borderRadius: BorderRadius.circular(AppRadius.pill),
-            boxShadow: const [
-              BoxShadow(color: Color(0x1A000000), blurRadius: 24, offset: Offset(0, 8)),
-            ],
+            boxShadow: AppColors.floatShadow,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i = 0; i < items.length; i++)
-                _NavButton(
-                  item: items[i],
-                  selected: i == selectedIndex,
-                  onTap: () => onSelected(i),
+          // Frosted glass: content scrolling underneath shows through, blurred.
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.xs + 2),
+                color: AppColors.white.withValues(alpha: 0.82),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      _NavButton(
+                        item: items[i],
+                        selected: i == selectedIndex,
+                        onTap: () => onSelected(i),
+                      ),
+                  ],
                 ),
-            ],
+              ),
+            ),
           ),
         ),
       ),

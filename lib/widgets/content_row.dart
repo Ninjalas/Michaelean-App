@@ -7,11 +7,19 @@ import 'user_avatar.dart';
 /// muted meta line (spec §2.1 "Rows, not cards"). Reused for news, posts,
 /// and later for events and event history.
 class ContentRow extends StatelessWidget {
+  static const thumbSize = 76.0;
+
+  /// Divider indent that lines a hairline up with the text column of rows
+  /// that have a thumbnail (Luma-style).
+  static const textIndent = thumbSize + AppSpacing.md;
+
   final String title;
   final String? source;
   final String? sourceImage;
   final String? meta;
+  final IconData? metaIcon; // small gray icon before the meta line
   final String? imageAsset;
+  final IconData? placeholderIcon; // gray tile when there's no image, keeps rows aligned
   final Widget? pill;
   final VoidCallback? onTap;
 
@@ -21,7 +29,9 @@ class ContentRow extends StatelessWidget {
     this.source,
     this.sourceImage,
     this.meta,
+    this.metaIcon,
     this.imageAsset,
+    this.placeholderIcon,
     this.pill,
     this.onTap,
   });
@@ -32,14 +42,22 @@ class ContentRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (imageAsset != null) ...[
+            if (imageAsset != null || placeholderIcon != null) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.small),
-                child: Image.asset(imageAsset!, width: 72, height: 72, fit: BoxFit.cover),
+                child: imageAsset != null
+                    ? Image.asset(imageAsset!,
+                        width: thumbSize, height: thumbSize, fit: BoxFit.cover)
+                    : Container(
+                        width: thumbSize,
+                        height: thumbSize,
+                        color: AppColors.fill,
+                        child: Icon(placeholderIcon, color: AppColors.muted, size: 28),
+                      ),
               ),
               const SizedBox(width: AppSpacing.md),
             ],
@@ -76,9 +94,19 @@ class ContentRow extends StatelessWidget {
                       maxLines: 2, overflow: TextOverflow.ellipsis, style: text.titleMedium),
                   if (meta != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(meta!,
-                          style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                      padding: const EdgeInsets.only(top: AppSpacing.xs),
+                      child: Row(
+                        children: [
+                          if (metaIcon != null) ...[
+                            Icon(metaIcon, size: 16, color: AppColors.muted),
+                            const SizedBox(width: 6),
+                          ],
+                          Flexible(
+                            child: Text(meta!,
+                                style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ),

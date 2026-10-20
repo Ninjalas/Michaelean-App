@@ -92,11 +92,11 @@ School colors, taken from the SMCL emblem (red, navy, white), in deeper, calmer 
 | `navy` | `#242A5E` | Primary buttons, active tab, selected states, links, identity tags. |
 | `red` | `#B3242E` | Attention only: `URGENT`, notification dot, Needs correction. One per screen region at most. |
 | `white` | `#FFFFFF` | Surfaces, sheets, pills. |
-| `paper` | `#F7F6F3` | Screen background. |
+| `paper` | `#FFFFFF` | Screen background: pure white, like Luma. |
 | `ink` | `#16171D` | Primary text. |
 | `muted` | `#6E7079` | Secondary text, meta, date suffix ("/ Sunday"). |
-| `hairline` | `#E7E5E0` | Dividers. |
-| `fill` | `#F1F0EC` | Input and tonal button backgrounds. |
+| `hairline` | `#ECECEE` | Dividers, indented to the text column in thumbnail lists. |
+| `fill` | `#F3F3F4` | Soft gray tiles (overview, placeholder thumbnails), inputs, active nav pill. |
 
 Status tints (soft background + darker text): green for Cleared/Attended, amber for In review/On hold/Full, navy for Invited/Registered, red for Needs correction/Cancelled, gray for Not started/Not applicable. Check WCAG AA contrast when building the theme.
 

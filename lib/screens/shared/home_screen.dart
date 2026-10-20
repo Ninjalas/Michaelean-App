@@ -100,23 +100,29 @@ class _HomeScreenState extends State<HomeScreen> {
       automaticallyImplyLeading: false,
       toolbarHeight: 72,
       titleSpacing: AppSpacing.screen,
+      // Solid white, no border (Luma-like). A blurred header painted the feed
+      // over itself on Flutter web, so blur is kept to the floating nav bar.
       backgroundColor: AppColors.paper,
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
-      shape: _collapsed
-          ? const Border(bottom: BorderSide(color: AppColors.hairline))
-          : null,
       title: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         child: _collapsed
             ? Row(
                 key: const ValueKey('compact'),
                 children: [
-                  UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 34),
+                  UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 38),
                   const SizedBox(width: AppSpacing.sm),
                   Flexible(
-                    child: Text('${greetingFor(DateTime.now())}, ${user.firstName}',
-                        overflow: TextOverflow.ellipsis, style: text.titleMedium),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${greetingFor(DateTime.now())}, ${user.firstName}',
+                            overflow: TextOverflow.ellipsis, style: text.titleMedium),
+                        _twoToneDate(DateTime.now(), text.bodyMedium!),
+                      ],
+                    ),
                   ),
                 ],
               )
@@ -155,11 +161,20 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text('${greetingFor(now)}, ${user.firstName}', style: text.headlineMedium),
           const SizedBox(height: 2),
-          Text(formatLongDate(now), style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+          _twoToneDate(now, text.bodyLarge!),
         ],
       ),
     );
   }
+
+  /// "21 October / Wednesday": date in ink, weekday muted.
+  Widget _twoToneDate(DateTime d, TextStyle style) => Text.rich(
+        TextSpan(style: style, children: [
+          TextSpan(text: formatDayMonth(d)),
+          TextSpan(
+              text: ' / ${weekdayName(d)}', style: const TextStyle(color: AppColors.muted)),
+        ]),
+      );
 
   List<Widget> _content(HomeFeed feed) {
     final now = DateTime.now();
@@ -225,6 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
               source: p.source,
               title: p.title,
               meta: formatTimeAgo(p.publishedAt, now),
+              metaIcon: Icons.schedule_rounded,
               onTap: () => _openPost(p),
             ),
         ]),
@@ -238,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
               source: p.source,
               title: p.title,
               meta: formatTimeAgo(p.publishedAt, now),
+              metaIcon: Icons.schedule_rounded,
               onTap: () => _openPost(p),
             ),
         ]),
@@ -246,13 +263,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (feed.featuredNews != null) ...[
         const SectionHeader('School News'),
         _featured(feed.featuredNews!, now),
-        ..._divided([
+        ..._divided(indent: ContentRow.textIndent, [
           for (final p in feed.moreNews)
             ContentRow(
               source: p.source,
               title: p.title,
               meta: formatTimeAgo(p.publishedAt, now),
+              metaIcon: Icons.schedule_rounded,
               imageAsset: p.imageAsset,
+              placeholderIcon: Icons.article_outlined,
               onTap: () => _openPost(p),
             ),
         ]),
@@ -260,14 +279,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (feed.forYou.isNotEmpty) ...[
         const SectionHeader('For You'),
-        ..._divided([
+        ..._divided(indent: ContentRow.textIndent, [
           for (final p in feed.forYou)
             ContentRow(
               source: p.source,
               sourceImage: p.sourceImage,
               title: p.title,
               meta: formatTimeAgo(p.publishedAt, now),
+              metaIcon: Icons.schedule_rounded,
               imageAsset: p.imageAsset,
+              placeholderIcon: Icons.campaign_outlined,
               pill: p.urgent ? const StatusPill('URGENT', tone: PillTone.red) : null,
               onTap: () => _openPost(p),
             ),
@@ -338,9 +359,9 @@ class _HomeScreenState extends State<HomeScreen> {
         TaskStatus.inReview => const StatusPill('In review', tone: PillTone.amber),
       };
 
-  List<Widget> _divided(List<Widget> rows) => [
+  List<Widget> _divided(List<Widget> rows, {double indent = 0}) => [
         for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) const Divider(height: 1),
+          if (i > 0) Divider(height: 1, indent: indent),
           rows[i],
         ],
       ];
