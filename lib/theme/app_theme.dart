@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 /// Design tokens for Michaelean (see docs/spec.md §2.1).
@@ -13,7 +14,16 @@ class AppColors {
   static const hairline = Color(0xFFECECEE); // dividers
   static const fill = Color(0xFFF3F3F4); // soft gray tiles, inputs, active nav pill
 
-  /// Large, very soft shadow for floating pieces only (header pill, nav bar).
+  // Status tints (spec §2.2): soft background + darker text, all WCAG AA.
+  static const navyTint = Color(0xFFE6E8F3);
+  static const greenTint = Color(0xFFE3F1E6);
+  static const green = Color(0xFF256B36);
+  static const amberTint = Color(0xFFF7EBD6);
+  static const amber = Color(0xFF7A5210);
+  static const redTint = Color(0xFFF6E1E2);
+
+  /// Large, very soft shadow for floating pieces only (header pill, nav bar,
+  /// back button, Up next card). Sheets get their depth from the dimmed page.
   static const floatShadow = [
     BoxShadow(color: Color(0x14000000), blurRadius: 32, offset: Offset(0, 8)),
   ];
@@ -26,7 +36,15 @@ class AppSpacing {
   static const md = 12.0;
   static const lg = 16.0;
   static const screen = 20.0; // left/right screen margin
-  static const section = 36.0; // gap between sections
+  static const section = 32.0; // gap between sections (spec: 24–32)
+}
+
+/// Motion (spec §2.5): 200–300 ms, ease-out.
+class AppMotion {
+  static const fast = Duration(milliseconds: 200); // small state changes
+  static const normal = Duration(milliseconds: 250); // expand/collapse, sheets
+  static const slow = Duration(milliseconds: 300); // page-level changes
+  static const curve = Curves.easeOut;
 }
 
 class AppRadius {
@@ -36,6 +54,9 @@ class AppRadius {
 }
 
 class AppTheme {
+  /// Inter Display for large titles only (spec §2.3), with tight spacing.
+  static const _display = TextStyle(fontFamily: 'InterDisplay', fontWeight: FontWeight.w600);
+
   static ThemeData light() {
     final base = ThemeData(
       useMaterial3: true,
@@ -50,14 +71,26 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.paper,
       dividerColor: AppColors.hairline,
+      // Smooth, never abrupt page changes (spec §2.5). iOS keeps its native
+      // slide so the swipe-back gesture still works in the installed PWA.
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+      }),
     );
 
     return base.copyWith(
       textTheme: base.textTheme
           .copyWith(
+            // Hero titles: profile name, School News headline
+            displaySmall: _display.copyWith(fontSize: 34, height: 1.1, letterSpacing: -0.8),
             // Screen titles, e.g. "Student Life"
-            headlineMedium: const TextStyle(
-                fontSize: 28, fontWeight: FontWeight.w500, letterSpacing: -0.4),
+            headlineMedium: _display.copyWith(fontSize: 28, height: 1.15, letterSpacing: -0.6),
+            // Detail-page titles, e.g. an event name; the Up next class
+            headlineSmall: _display.copyWith(fontSize: 24, height: 1.2, letterSpacing: -0.5),
             // Section titles, e.g. "Pending Tasks"
             titleLarge: const TextStyle(
                 fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.3),

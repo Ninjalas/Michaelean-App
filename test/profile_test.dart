@@ -35,9 +35,10 @@ void main() {
     ]) {
       expect(find.text(tag), findsOneWidget);
     }
-    await tester.scrollUntilVisible(find.text('Participated · Volunteer'), 200);
-    expect(find.text('Participated · Volunteer'), findsOneWidget); // role from record
-    expect(find.text('Attended · Participant'), findsWidgets);
+    await tester.scrollUntilVisible(find.textContaining('· Volunteer'), 200);
+    expect(find.textContaining('· Volunteer'), findsOneWidget); // role from record
+    expect(find.text('Participated'), findsOneWidget); // status pill
+    expect(find.textContaining('· Participant'), findsWidgets);
   });
 
   testWidgets('coin flips to QR and back; QR holds only the mock token', (tester) async {

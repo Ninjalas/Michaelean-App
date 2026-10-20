@@ -36,9 +36,53 @@ class ContentRow extends StatelessWidget {
     this.onTap,
   });
 
+  bool get hasThumb => imageAsset != null || placeholderIcon != null;
+
+  /// Rounded square thumbnail; a status pill overlaps its bottom edge (Luma).
+  Widget _thumbnail() {
+    return SizedBox(
+      width: thumbSize,
+      height: thumbSize + (pill != null ? AppSpacing.sm : 0), // room for the overhang
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.small),
+            child: imageAsset != null
+                ? Image.asset(imageAsset!, width: thumbSize, height: thumbSize, fit: BoxFit.cover)
+                : Container(
+                    width: thumbSize,
+                    height: thumbSize,
+                    color: AppColors.fill,
+                    child: Icon(placeholderIcon, color: AppColors.muted, size: 28),
+                  ),
+          ),
+          if (pill != null)
+            Positioned(
+              bottom: 0,
+              child: ConstrainedBox(
+                // May overhang the thumbnail a little so labels like "Participated" stay whole.
+                constraints: const BoxConstraints(maxWidth: thumbSize + 2 * AppSpacing.md),
+                child: DecoratedBox(
+                  // White ring separates the pill from the photo behind it.
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Padding(padding: const EdgeInsets.all(2), child: pill),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final inlinePill = hasThumb ? null : pill; // with a thumbnail, the pill sits on it
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -46,26 +90,15 @@ class ContentRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (imageAsset != null || placeholderIcon != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.small),
-                child: imageAsset != null
-                    ? Image.asset(imageAsset!,
-                        width: thumbSize, height: thumbSize, fit: BoxFit.cover)
-                    : Container(
-                        width: thumbSize,
-                        height: thumbSize,
-                        color: AppColors.fill,
-                        child: Icon(placeholderIcon, color: AppColors.muted, size: 28),
-                      ),
-              ),
+            if (hasThumb) ...[
+              _thumbnail(),
               const SizedBox(width: AppSpacing.md),
             ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (source != null || pill != null)
+                  if (source != null || inlinePill != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                       child: Row(
@@ -83,9 +116,9 @@ class ContentRow extends StatelessWidget {
                                 style: text.bodyMedium?.copyWith(color: AppColors.muted),
                               ),
                             ),
-                          if (pill != null) ...[
+                          if (inlinePill != null) ...[
                             if (source != null) const SizedBox(width: AppSpacing.sm),
-                            Flexible(child: pill!), // long labels shrink instead of overflowing
+                            Flexible(child: inlinePill), // long labels shrink instead of overflowing
                           ],
                         ],
                       ),

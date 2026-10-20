@@ -12,6 +12,7 @@ import '../../widgets/expandable_overview.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/two_tone_date.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Home for both roles (spec §6 Student Home, §8 Teacher Home). The layout
@@ -120,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text('${greetingFor(DateTime.now())}, ${user.firstName}',
                             overflow: TextOverflow.ellipsis, style: text.titleMedium),
-                        _twoToneDate(DateTime.now(), text.bodyMedium!),
+                        TwoToneDate(DateTime.now(), style: text.bodyMedium),
                       ],
                     ),
                   ),
@@ -161,21 +162,13 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text('${greetingFor(now)}, ${user.firstName}', style: text.headlineMedium),
           const SizedBox(height: 2),
-          _twoToneDate(now, text.bodyLarge!),
+          TwoToneDate(now, style: text.bodyLarge),
         ],
       ),
     );
   }
 
   /// "21 October / Wednesday": date in ink, weekday muted.
-  Widget _twoToneDate(DateTime d, TextStyle style) => Text.rich(
-        TextSpan(style: style, children: [
-          TextSpan(text: formatDayMonth(d)),
-          TextSpan(
-              text: ' / ${weekdayName(d)}', style: const TextStyle(color: AppColors.muted)),
-        ]),
-      );
-
   List<Widget> _content(HomeFeed feed) {
     final now = DateTime.now();
     final a = feed.attendance;

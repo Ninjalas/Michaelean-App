@@ -15,10 +15,10 @@ class StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final (bg, fg) = switch (tone) {
       PillTone.neutral => (AppColors.fill, AppColors.muted),
-      PillTone.navy => (const Color(0xFFE6E8F3), AppColors.navy),
-      PillTone.green => (const Color(0xFFE3F1E6), const Color(0xFF256B36)),
-      PillTone.amber => (const Color(0xFFF7EBD6), const Color(0xFF7A5210)),
-      PillTone.red => (const Color(0xFFF6E1E2), AppColors.red),
+      PillTone.navy => (AppColors.navyTint, AppColors.navy),
+      PillTone.green => (AppColors.greenTint, AppColors.green),
+      PillTone.amber => (AppColors.amberTint, AppColors.amber),
+      PillTone.red => (AppColors.redTint, AppColors.red),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),

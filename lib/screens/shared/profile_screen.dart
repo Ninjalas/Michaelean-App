@@ -110,14 +110,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (i > 0) const Divider(height: 1, indent: ContentRow.textIndent),
                     ContentRow(
                       title: items[i].eventName,
-                      meta: formatDate(items[i].date),
+                      meta: '${formatDate(items[i].date)} · ${_roleLabel(items[i].role)}',
                       metaIcon: Icons.calendar_today_outlined,
                       imageAsset: items[i].imageAsset,
                       placeholderIcon: Icons.event_outlined,
-                      pill: StatusPill(
-                        '${_statusLabel(items[i].status)} · ${_roleLabel(items[i].role)}',
-                        tone: PillTone.green,
-                      ),
+                      pill: StatusPill(_statusLabel(items[i].status), tone: PillTone.green),
                       onTap: () => _openSoon(items[i].eventName),
                     ),
                   ],
