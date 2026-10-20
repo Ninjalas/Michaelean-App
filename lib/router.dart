@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'models/user_profile.dart';
 import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
+import 'screens/shared/home_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
 import 'screens/shared/placeholder_screen.dart';
 import 'screens/shared/post_detail_screen.dart';
 import 'screens/shared/preview_screen.dart';
-import 'screens/student/student_home_screen.dart';
 import 'services/home_service.dart';
 import 'services/session.dart';
 import 'services/user_service.dart';
@@ -42,9 +42,7 @@ GoRouter createRouter(
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home',
-              builder: (context, state) => session.user?.role == UserRole.teacher
-                  ? const PlaceholderScreen(title: 'Home', comingIn: 'Phase 2b')
-                  : StudentHomeScreen(homeService: homeService),
+              builder: (context, state) => HomeScreen(homeService: homeService),
               routes: [
                 GoRoute(
                   path: 'post/:id',

@@ -25,6 +25,24 @@ String formatTimeAgo(DateTime time, DateTime now) {
   return formatDate(time);
 }
 
+/// "9:00 AM"
+String formatTime(DateTime t) {
+  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  final m = t.minute.toString().padLeft(2, '0');
+  return '$h:$m ${t.hour < 12 ? 'AM' : 'PM'}';
+}
+
+/// "Today", "Tomorrow", or "Thursday" (within a week), else a date.
+String formatDayLabel(DateTime d, DateTime now) {
+  final days = DateTime(d.year, d.month, d.day)
+      .difference(DateTime(now.year, now.month, now.day))
+      .inDays;
+  if (days == 0) return 'Today';
+  if (days == 1) return 'Tomorrow';
+  if (days > 1 && days < 7) return _weekdays[d.weekday - 1];
+  return formatDate(d);
+}
+
 String greetingFor(DateTime now) {
   if (now.hour < 12) return 'Good morning';
   if (now.hour < 18) return 'Good afternoon';

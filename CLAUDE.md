@@ -45,9 +45,9 @@ lib/
   theme/          app theme and design tokens
   widgets/        reusable shared widgets (tags, buttons, sheets, rows)
   screens/
-    shared/       screens both roles use (Profile, Events, Settings pop-up)
-    student/      Student Home, Student Life
-    teacher/      Teacher Home, Michaelean Life
+    shared/       screens both roles use (Home, Profile, Events, Settings pop-up)
+    student/      Student Life
+    teacher/      Michaelean Life
   models/         plain data classes
   mock/           clearly labeled sample data
   services/       interfaces that return mock data now, real data later
@@ -60,7 +60,7 @@ docs/
   spec.md         product spec
 ```
 
-Status (2026-10-20): Phase 1 foundation done. Web-only Flutter project, theme, floating bottom nav, student/teacher preview, mock users. Tab contents are placeholders.
+Status (2026-10-20): Phases 1–2 done. Foundation, plus one shared `HomeScreen` for both roles (student and teacher sections come from `HomeService`). Student Life / Michaelean Life and Profile are placeholders.
 
 ## Commands (run in `C:\Users\moril\projects\michaelean_app`)
 

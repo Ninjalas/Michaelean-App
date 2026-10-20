@@ -1,4 +1,11 @@
-enum PostKind { announcement, schoolNews, departmentNews, organizationNews, eventUpdate }
+enum PostKind {
+  announcement,
+  schoolNews,
+  departmentNews,
+  organizationNews,
+  eventUpdate,
+  scheduleChange,
+}
 
 class Post {
   final String id;
@@ -76,9 +83,49 @@ class AppNotification {
   });
 }
 
-/// Everything Student Home shows, already split into sections.
+class ClassSession {
+  final String id;
+  final String subject; // e.g. "CS 301 · Data Structures"
+  final String section;
+  final DateTime start;
+  final DateTime end;
+  final String room;
+
+  /// Attendance was taken but the teacher hasn't finalized it yet. Only this
+  /// creates an attendance task; a scheduled class alone does not (spec §8).
+  final bool awaitingFinalization;
+
+  const ClassSession({
+    required this.id,
+    required this.subject,
+    required this.section,
+    required this.start,
+    required this.end,
+    required this.room,
+    this.awaitingFinalization = false,
+  });
+}
+
+/// Teacher Home's "Today's Overview" (spec §8).
+class TodayOverview {
+  final int classesToday;
+  final int sessionsToFinalize;
+  final int upcomingEvents;
+
+  const TodayOverview({
+    required this.classesToday,
+    required this.sessionsToFinalize,
+    required this.upcomingEvents,
+  });
+}
+
+/// Everything Home shows, already split into sections. Students get
+/// [attendance]; teachers get [today], [nextClass], and [changes].
 class HomeFeed {
-  final AttendanceSummary attendance;
+  final AttendanceSummary? attendance;
+  final TodayOverview? today;
+  final ClassSession? nextClass;
+  final List<Post> changes; // schedule and classroom changes
   final List<PendingTask> tasks;
   final List<Post> announcements;
   final Post? featuredNews;
@@ -87,7 +134,10 @@ class HomeFeed {
   final List<AppNotification> notifications;
 
   const HomeFeed({
-    required this.attendance,
+    this.attendance,
+    this.today,
+    this.nextClass,
+    this.changes = const [],
     required this.tasks,
     required this.announcements,
     required this.featuredNews,
@@ -97,5 +147,9 @@ class HomeFeed {
   });
 
   bool get isEmpty =>
-      tasks.isEmpty && announcements.isEmpty && featuredNews == null && forYou.isEmpty;
+      tasks.isEmpty &&
+      changes.isEmpty &&
+      announcements.isEmpty &&
+      featuredNews == null &&
+      forYou.isEmpty;
 }

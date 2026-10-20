@@ -8,23 +8,24 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/expandable_overview.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
-import 'attendance_overview.dart';
 
-/// Student Home: a personalized, scrolling campus feed (spec §6).
-class StudentHomeScreen extends StatefulWidget {
+/// Home for both roles (spec §6 Student Home, §8 Teacher Home). The layout
+/// is shared; the feed decides which role-specific sections appear.
+class HomeScreen extends StatefulWidget {
   final HomeService homeService;
 
-  const StudentHomeScreen({super.key, required this.homeService});
+  const HomeScreen({super.key, required this.homeService});
 
   @override
-  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _StudentHomeScreenState extends State<StudentHomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   final _scroll = ScrollController();
   Future<HomeFeed>? _feed;
   bool _collapsed = false;
@@ -45,7 +46,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Future<HomeFeed> _load() =>
-      widget.homeService.loadStudentHome(SessionScope.of(context).user!);
+      widget.homeService.loadHome(SessionScope.of(context).user!);
 
   @override
   void dispose() {
@@ -60,7 +61,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = SessionScope.of(context).user!;
+    final user = SessionScope.of(context).user;
+    // Preview just ended; the router is about to leave this screen.
+    if (user == null) return const SizedBox.shrink();
     return FutureBuilder<HomeFeed>(
       future: _feed,
       builder: (context, snap) {
@@ -160,8 +163,46 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   List<Widget> _content(HomeFeed feed) {
     final now = DateTime.now();
+    final a = feed.attendance;
+    final t = feed.today;
     return [
-      AttendanceOverview(summary: feed.attendance, onOpenMetric: _openSoon),
+      if (a != null)
+        ExpandableOverview(
+          title: 'Attendance Overview',
+          summary: '${a.classPercent}% class · ${a.eventPercent}% events · '
+              '${a.requirementsCleared}/${a.requirementsTotal} cleared',
+          onOpenMetric: _openSoon,
+          metrics: [
+            OverviewMetric('Class Attendance', '${a.classPercent}%',
+                progress: a.classPercent / 100),
+            OverviewMetric('Event Attendance', '${a.eventPercent}%',
+                progress: a.eventPercent / 100),
+            OverviewMetric('Events Completed', '${a.eventsCompleted}'),
+            OverviewMetric(
+              'Event Requirements',
+              '${a.requirementsCleared}/${a.requirementsTotal} cleared',
+              progress: a.requirementsTotal == 0
+                  ? 0
+                  : a.requirementsCleared / a.requirementsTotal,
+            ),
+          ],
+        ),
+
+      if (t != null) ...[
+        ExpandableOverview(
+          title: "Today's Overview",
+          summary: '${t.classesToday} classes · ${t.sessionsToFinalize} to finalize · '
+              '${t.upcomingEvents} events',
+          onOpenMetric: _openSoon,
+          metrics: [
+            OverviewMetric('Classes Today', '${t.classesToday}'),
+            OverviewMetric('Attendance to Finalize', '${t.sessionsToFinalize}'),
+            OverviewMetric('Upcoming Events', '${t.upcomingEvents}'),
+          ],
+        ),
+        const SectionHeader('Next Class'),
+        _nextClass(feed.nextClass, now),
+      ],
 
       if (feed.tasks.isNotEmpty) ...[
         const SectionHeader('Pending Tasks'),
@@ -172,6 +213,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               meta: t.detail,
               pill: _taskPill(t.status),
               onTap: () => _openSoon(t.title),
+            ),
+        ]),
+      ],
+
+      if (feed.changes.isNotEmpty) ...[
+        const SectionHeader('Schedule & Room Changes'),
+        ..._divided([
+          for (final p in feed.changes)
+            ContentRow(
+              source: p.source,
+              title: p.title,
+              meta: formatTimeAgo(p.publishedAt, now),
+              onTap: () => _openPost(p),
             ),
         ]),
       ],
@@ -245,6 +299,33 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 style: text.bodyMedium?.copyWith(color: AppColors.muted)),
             const SizedBox(height: AppSpacing.xs),
             Text(p.title, style: text.titleLarge),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _nextClass(ClassSession? c, DateTime now) {
+    final text = Theme.of(context).textTheme;
+    if (c == null) {
+      return Text('No upcoming classes scheduled.',
+          style: text.bodyLarge?.copyWith(color: AppColors.muted));
+    }
+    final day = c.start.isAfter(now) ? formatDayLabel(c.start, now) : 'Now';
+    return InkWell(
+      onTap: () => _openSoon(c.subject),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            StatusPill(day, tone: day == 'Now' ? PillTone.green : PillTone.navy),
+            const SizedBox(height: AppSpacing.sm),
+            Text(c.subject, style: text.titleLarge),
+            const SizedBox(height: AppSpacing.xs),
+            Text('${c.section} · ${formatTime(c.start)} – ${formatTime(c.end)}',
+                style: text.bodyLarge),
+            Text(c.room, style: text.bodyMedium?.copyWith(color: AppColors.muted)),
           ],
         ),
       ),

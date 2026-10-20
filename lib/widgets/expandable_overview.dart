@@ -1,26 +1,40 @@
 import 'package:flutter/material.dart';
 
-import '../../models/feed.dart';
-import '../../theme/app_theme.dart';
+import '../theme/app_theme.dart';
 
-/// Expandable Attendance Overview in the Student Home header (spec §6).
-/// Collapsed: one summary line. Expanded: four labeled metrics.
-class AttendanceOverview extends StatefulWidget {
-  final AttendanceSummary summary;
-  final ValueChanged<String> onOpenMetric; // metric name → its detail page
+class OverviewMetric {
+  final String label;
+  final String value;
+  final double? progress; // 0–1 shows a thin bar; null shows none
 
-  const AttendanceOverview({super.key, required this.summary, required this.onOpenMetric});
-
-  @override
-  State<AttendanceOverview> createState() => _AttendanceOverviewState();
+  const OverviewMetric(this.label, this.value, {this.progress});
 }
 
-class _AttendanceOverviewState extends State<AttendanceOverview> {
+/// Expandable overview in the Home header: Attendance Overview for students,
+/// Today's Overview for teachers (spec §6, §8). Collapsed: one summary line.
+class ExpandableOverview extends StatefulWidget {
+  final String title;
+  final String summary;
+  final List<OverviewMetric> metrics;
+  final ValueChanged<String> onOpenMetric; // metric label → its detail page
+
+  const ExpandableOverview({
+    super.key,
+    required this.title,
+    required this.summary,
+    required this.metrics,
+    required this.onOpenMetric,
+  });
+
+  @override
+  State<ExpandableOverview> createState() => _ExpandableOverviewState();
+}
+
+class _ExpandableOverviewState extends State<ExpandableOverview> {
   bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    final s = widget.summary;
     final text = Theme.of(context).textTheme;
     return Container(
       decoration: BoxDecoration(
@@ -49,14 +63,10 @@ class _AttendanceOverviewState extends State<AttendanceOverview> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Attendance Overview',
+                            Text(widget.title,
                                 style: text.labelMedium?.copyWith(color: AppColors.muted)),
                             const SizedBox(height: 2),
-                            Text(
-                              '${s.classPercent}% class · ${s.eventPercent}% events · '
-                              '${s.requirementsCleared}/${s.requirementsTotal} cleared',
-                              style: text.titleMedium,
-                            ),
+                            Text(widget.summary, style: text.titleMedium),
                           ],
                         ),
                       ),
@@ -73,14 +83,7 @@ class _AttendanceOverviewState extends State<AttendanceOverview> {
             ),
             if (_expanded) ...[
               const Divider(height: 1),
-              _metric('Class Attendance', '${s.classPercent}%', s.classPercent / 100),
-              _metric('Event Attendance', '${s.eventPercent}%', s.eventPercent / 100),
-              _metric('Events Completed', '${s.eventsCompleted}', null),
-              _metric(
-                'Event Requirements',
-                '${s.requirementsCleared}/${s.requirementsTotal} cleared',
-                s.requirementsTotal == 0 ? 0 : s.requirementsCleared / s.requirementsTotal,
-              ),
+              for (final m in widget.metrics) _metric(m),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.md),
@@ -94,10 +97,10 @@ class _AttendanceOverviewState extends State<AttendanceOverview> {
     );
   }
 
-  Widget _metric(String label, String value, double? progress) {
+  Widget _metric(OverviewMetric m) {
     final text = Theme.of(context).textTheme;
     return InkWell(
-      onTap: () => widget.onOpenMetric(label),
+      onTap: () => widget.onOpenMetric(m.label),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         child: Column(
@@ -105,18 +108,18 @@ class _AttendanceOverviewState extends State<AttendanceOverview> {
           children: [
             Row(
               children: [
-                Expanded(child: Text(label, style: text.bodyLarge)),
-                Text(value, style: text.titleMedium),
+                Expanded(child: Text(m.label, style: text.bodyLarge)),
+                Text(m.value, style: text.titleMedium),
                 const SizedBox(width: AppSpacing.xs),
                 const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.muted),
               ],
             ),
-            if (progress != null) ...[
+            if (m.progress != null) ...[
               const SizedBox(height: AppSpacing.sm),
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 child: LinearProgressIndicator(
-                  value: progress.clamp(0, 1),
+                  value: m.progress!.clamp(0, 1),
                   minHeight: 4,
                   backgroundColor: AppColors.fill,
                   color: AppColors.navy,

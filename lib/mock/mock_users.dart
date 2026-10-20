@@ -31,6 +31,7 @@ const mockTeacher = UserProfile(
   designation: 'Faculty · Department of Computer Studies',
   maskedId: '••••-1093',
   qrToken: 'MOCK-2M8XW4',
+  photoAsset: 'assets/images/profiles/Sir_Georgio.png',
   tags: [
     IdentityTag("Saint Michael's College of Laguna", TagKind.institution),
     IdentityTag('SBMIT', TagKind.school),

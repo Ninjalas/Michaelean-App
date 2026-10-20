@@ -29,7 +29,7 @@ void main() {
 
     await tester.tap(find.text('Preview as Teacher'));
     await tester.pumpAndSettle();
-    expect(find.text('Coming in Phase 2b'), findsOneWidget); // teacher Home
+    expect(find.textContaining(', Mark'), findsOneWidget); // teacher Home
     expect(find.text('Michaelean Life'), findsOneWidget);
     expect(find.text('Student Life'), findsNothing);
 

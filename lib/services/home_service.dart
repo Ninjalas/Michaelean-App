@@ -4,9 +4,16 @@ import '../models/user_profile.dart';
 
 /// Where Home content comes from. Screens use this, not mock data directly.
 abstract class HomeService {
-  Future<HomeFeed> loadStudentHome(UserProfile user);
+  Future<HomeFeed> loadHome(UserProfile user);
   Future<Post?> findPost(String id);
   Future<List<AppNotification>> loadNotifications(UserProfile user);
+}
+
+/// The class happening now or next; null when nothing is scheduled ahead.
+ClassSession? nextClass(List<ClassSession> classes, DateTime now) {
+  final ahead = classes.where((c) => c.end.isAfter(now)).toList()
+    ..sort((a, b) => a.start.compareTo(b.start));
+  return ahead.isEmpty ? null : ahead.first;
 }
 
 class MockHomeService implements HomeService {
@@ -21,7 +28,7 @@ class MockHomeService implements HomeService {
   }) : clock = clock ?? DateTime.now;
 
   @override
-  Future<HomeFeed> loadStudentHome(UserProfile user) async {
+  Future<HomeFeed> loadHome(UserProfile user) async {
     await Future.delayed(delay);
     if (fail) throw Exception('Mock load failure');
 
@@ -31,8 +38,9 @@ class MockHomeService implements HomeService {
         .where((p) => p.audience == null || myTags.contains(p.audience))
         .toList()
       ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    List<Post> ofKind(PostKind k) => visible.where((p) => p.kind == k).toList();
 
-    final news = visible.where((p) => p.kind == PostKind.schoolNews).toList();
+    final news = ofKind(PostKind.schoolNews);
     final personal = visible.where((p) => const {
           PostKind.departmentNews,
           PostKind.organizationNews,
@@ -44,14 +52,43 @@ class MockHomeService implements HomeService {
       ...personal.where((p) => !p.urgent),
     ];
 
+    if (user.role == UserRole.student) {
+      return HomeFeed(
+        attendance: mockAttendance,
+        tasks: mockTasks,
+        announcements: ofKind(PostKind.announcement),
+        featuredNews: news.isEmpty ? null : news.first,
+        moreNews: news.skip(1).toList(),
+        forYou: forYou,
+        notifications: mockNotifications(now),
+      );
+    }
+
+    final classes = mockTeacherClasses(now);
+    final unfinalized = classes.where((c) => c.awaitingFinalization).toList();
     return HomeFeed(
-      attendance: mockAttendance,
-      tasks: mockTasks,
-      announcements: visible.where((p) => p.kind == PostKind.announcement).toList(),
+      today: TodayOverview(
+        classesToday: classes.where((c) => _sameDay(c.start, now)).length,
+        sessionsToFinalize: unfinalized.length,
+        upcomingEvents: mockUpcomingEventCount,
+      ),
+      nextClass: nextClass(classes, now),
+      changes: ofKind(PostKind.scheduleChange),
+      tasks: [
+        for (final c in unfinalized)
+          PendingTask(
+            id: 'finalize-${c.id}',
+            title: 'Finalize attendance',
+            detail: '${c.subject} · ${c.section}',
+            status: TaskStatus.actionRequired,
+          ),
+        ...mockTeacherTasks,
+      ],
+      announcements: ofKind(PostKind.announcement),
       featuredNews: news.isEmpty ? null : news.first,
       moreNews: news.skip(1).toList(),
       forYou: forYou,
-      notifications: mockNotifications(now),
+      notifications: mockTeacherNotifications(now),
     );
   }
 
@@ -59,7 +96,9 @@ class MockHomeService implements HomeService {
   Future<List<AppNotification>> loadNotifications(UserProfile user) async {
     await Future.delayed(delay);
     if (fail) throw Exception('Mock load failure');
-    return mockNotifications(clock());
+    return user.role == UserRole.student
+        ? mockNotifications(clock())
+        : mockTeacherNotifications(clock());
   }
 
   @override
@@ -71,3 +110,6 @@ class MockHomeService implements HomeService {
     return null;
   }
 }
+
+bool _sameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;

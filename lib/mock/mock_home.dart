@@ -116,6 +116,27 @@ List<Post> mockPosts(DateTime now) => [
         publishedAt: now.subtract(const Duration(days: 2, hours: 4)),
         audience: _css,
       ),
+      Post(
+        id: 'e2',
+        kind: PostKind.eventUpdate,
+        title: 'Department assembly moved to Friday afternoon',
+        body: 'Sample update. The Department of Computer Studies assembly is '
+            'now on Friday at 2:00 PM in Saint Mary\'s Conference Center.',
+        source: _dcs,
+        publishedAt: now.subtract(const Duration(hours: 9)),
+        audience: _dcs,
+      ),
+      // Schedule and classroom changes (teacher Home)
+      Post(
+        id: 'c1',
+        kind: PostKind.scheduleChange,
+        title: 'CS 302 moves to Milagros Limaco 207 on Thursday',
+        body: 'Sample change. Thursday\'s CS 302 session will be held in '
+            'Milagros Limaco 207 instead of the usual room.',
+        source: _dcs,
+        publishedAt: now.subtract(const Duration(hours: 7)),
+        audience: _dcs,
+      ),
       // Not for Nicolas — other affiliations. Must be filtered out.
       Post(
         id: 'x1',
@@ -160,6 +181,79 @@ const mockAttendance = AttendanceSummary(
   requirementsCleared: 3,
   requirementsTotal: 6,
 );
+
+/// Mark Villanueva's classes: three today, one tomorrow, at fixed hours.
+List<ClassSession> mockTeacherClasses(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  DateTime at(int dayOffset, int hour, int minute) =>
+      today.add(Duration(days: dayOffset, hours: hour, minutes: minute));
+  return [
+    ClassSession(
+      id: 'k1',
+      subject: 'CS 301 · Data Structures',
+      section: 'BSCS 2A',
+      start: at(0, 7, 30),
+      end: at(0, 9, 0),
+      room: 'Pura Limaco Hall I · 204',
+      awaitingFinalization: true, // scanned this morning, not finalized yet
+    ),
+    ClassSession(
+      id: 'k2',
+      subject: 'CS 302 · Algorithms',
+      section: 'BSCS 3A',
+      start: at(0, 10, 30),
+      end: at(0, 12, 0),
+      room: 'Segunda Limaco Hall · 301',
+    ),
+    ClassSession(
+      id: 'k3',
+      subject: 'CS 310 · Web Development',
+      section: 'BSCS 3B',
+      start: at(0, 13, 0),
+      end: at(0, 14, 30),
+      room: 'Saint Theodore Hall · Lab 2',
+    ),
+    ClassSession(
+      id: 'k4',
+      subject: 'CS 301 · Data Structures',
+      section: 'BSCS 2A',
+      start: at(1, 9, 0),
+      end: at(1, 10, 30),
+      room: 'Pura Limaco Hall I · 204',
+    ),
+  ];
+}
+
+const mockTeacherTasks = [
+  PendingTask(
+    id: 't3',
+    title: 'Review schedule change',
+    detail: 'CS 302 on Thursday: confirm the new room.',
+    status: TaskStatus.actionRequired,
+  ),
+];
+
+const mockUpcomingEventCount = 2;
+
+List<AppNotification> mockTeacherNotifications(DateTime now) => [
+      AppNotification(
+        id: 'm5',
+        title: 'Schedule change: CS 302 moves to Milagros Limaco 207 on Thursday',
+        time: now.subtract(const Duration(hours: 7)),
+        postId: 'c1',
+      ),
+      AppNotification(
+        id: 'm6',
+        title: 'Department assembly moved to Friday afternoon',
+        time: now.subtract(const Duration(hours: 9)),
+        postId: 'e2',
+      ),
+      AppNotification(
+        id: 'm7',
+        title: 'CS 301 attendance is waiting to be finalized',
+        time: now.subtract(const Duration(hours: 11)),
+      ),
+    ];
 
 List<AppNotification> mockNotifications(DateTime now) => [
       AppNotification(
