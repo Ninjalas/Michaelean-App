@@ -46,8 +46,8 @@ class MockHomeService implements HomeService {
           PostKind.organizationNews,
           PostKind.eventUpdate,
         }.contains(p.kind));
-    // Urgent first, then the rest; each part stays newest first.
-    final forYou = [
+    // Urgent first (pinned), then the rest; each part stays newest first.
+    final campusFeed = [
       ...personal.where((p) => p.urgent),
       ...personal.where((p) => !p.urgent),
     ];
@@ -55,11 +55,12 @@ class MockHomeService implements HomeService {
     if (user.role == UserRole.student) {
       return HomeFeed(
         attendance: mockAttendance,
+        nextClass: nextClass(mockStudentClasses(now), now),
         tasks: mockTasks,
         announcements: ofKind(PostKind.announcement),
         featuredNews: news.isEmpty ? null : news.first,
         moreNews: news.skip(1).toList(),
-        forYou: forYou,
+        campusFeed: campusFeed,
         notifications: mockNotifications(now),
       );
     }
@@ -73,6 +74,8 @@ class MockHomeService implements HomeService {
         upcomingEvents: mockUpcomingEventCount,
       ),
       nextClass: nextClass(classes, now),
+      todayClasses: classes.where((c) => _sameDay(c.start, now)).toList()
+        ..sort((a, b) => a.start.compareTo(b.start)),
       changes: ofKind(PostKind.scheduleChange),
       tasks: [
         for (final c in unfinalized)
@@ -87,7 +90,7 @@ class MockHomeService implements HomeService {
       announcements: ofKind(PostKind.announcement),
       featuredNews: news.isEmpty ? null : news.first,
       moreNews: news.skip(1).toList(),
-      forYou: forYou,
+      campusFeed: campusFeed,
       notifications: mockTeacherNotifications(now),
     );
   }

@@ -8,8 +8,11 @@ class NavItem {
   final String label;
   final IconData icon;
   final IconData selectedIcon;
+  final VoidCallback? onLongPress; // e.g. the quick QR on the middle tab
+  final String? longPressHint; // read by screen readers, e.g. "show your QR"
 
-  const NavItem(this.label, this.icon, this.selectedIcon);
+  const NavItem(this.label, this.icon, this.selectedIcon,
+      {this.onLongPress, this.longPressHint});
 }
 
 /// The floating, rounded bottom navigation bar (spec §2.1).
@@ -84,9 +87,13 @@ class _NavButton extends StatelessWidget {
       button: true,
       selected: selected,
       label: item.label,
+      onTap: onTap,
+      onLongPress: item.onLongPress,
+      onLongPressHint: item.longPressHint,
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
+        onLongPress: item.onLongPress,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),

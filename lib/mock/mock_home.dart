@@ -38,6 +38,15 @@ List<Post> mockPosts(DateTime now) => [
         source: 'Office of Student Affairs',
         publishedAt: now.subtract(const Duration(days: 2)),
       ),
+      Post(
+        id: 'a4',
+        kind: PostKind.announcement,
+        title: 'Enrollment for next semester opens soon',
+        body: 'Sample announcement. Watch for the enrollment schedule for your '
+            'school and year level.',
+        source: "Registrar's Office",
+        publishedAt: now.subtract(const Duration(days: 3, hours: 2)),
+      ),
 
       // School news — everyone
       Post(
@@ -68,6 +77,15 @@ List<Post> mockPosts(DateTime now) => [
             'weekdays during exam weeks.',
         source: 'SMCL News',
         publishedAt: now.subtract(const Duration(days: 4)),
+      ),
+      Post(
+        id: 'n4',
+        kind: PostKind.schoolNews,
+        title: 'Students join a campus tree-planting drive',
+        body: 'Sample story. Volunteers from every school planted seedlings '
+            'around the campus grounds.',
+        source: 'SMCL News',
+        publishedAt: now.subtract(const Duration(days: 5)),
       ),
 
       // For You — matched by audience
@@ -182,6 +200,52 @@ const mockAttendance = AttendanceSummary(
   requirementsTotal: 6,
 );
 
+/// Nicolas Santos's classes: three today, one tomorrow, at fixed hours.
+/// Teacher names are invented sample data.
+List<ClassSession> mockStudentClasses(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  DateTime at(int dayOffset, int hour, int minute) =>
+      today.add(Duration(days: dayOffset, hours: hour, minutes: minute));
+  return [
+    ClassSession(
+      id: 's1',
+      subject: 'CS 305 · Software Engineering',
+      section: 'BSCS 3A',
+      start: at(0, 7, 30),
+      end: at(0, 9, 0),
+      room: 'Saint Theodore Hall · Lab 1',
+      teacher: 'Ana Reyes',
+    ),
+    ClassSession(
+      id: 's2',
+      subject: 'CS 302 · Algorithms',
+      section: 'BSCS 3A',
+      start: at(0, 10, 30),
+      end: at(0, 12, 0),
+      room: 'Segunda Limaco Hall · 301',
+      teacher: 'Mark Villanueva',
+    ),
+    ClassSession(
+      id: 's3',
+      subject: 'GE 104 · Ethics',
+      section: 'BSCS 3A',
+      start: at(0, 13, 0),
+      end: at(0, 14, 30),
+      room: 'Pura Limaco Hall I · 110',
+      teacher: 'Jose Cruz',
+    ),
+    ClassSession(
+      id: 's4',
+      subject: 'CS 305 · Software Engineering',
+      section: 'BSCS 3A',
+      start: at(1, 7, 30),
+      end: at(1, 9, 0),
+      room: 'Saint Theodore Hall · Lab 1',
+      teacher: 'Ana Reyes',
+    ),
+  ];
+}
+
 /// Mark Villanueva's classes: three today, one tomorrow, at fixed hours.
 List<ClassSession> mockTeacherClasses(DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
@@ -195,7 +259,8 @@ List<ClassSession> mockTeacherClasses(DateTime now) {
       start: at(0, 7, 30),
       end: at(0, 9, 0),
       room: 'Pura Limaco Hall I · 204',
-      awaitingFinalization: true, // scanned this morning, not finalized yet
+      // Scanned during class but not finalized yet; only once the class is over.
+      awaitingFinalization: now.isAfter(at(0, 9, 0)),
     ),
     ClassSession(
       id: 'k2',
@@ -238,18 +303,21 @@ const mockUpcomingEventCount = 2;
 List<AppNotification> mockTeacherNotifications(DateTime now) => [
       AppNotification(
         id: 'm5',
+        kind: NotificationKind.schedule,
         title: 'Schedule change: CS 302 moves to Milagros Limaco 207 on Thursday',
         time: now.subtract(const Duration(hours: 7)),
         postId: 'c1',
       ),
       AppNotification(
         id: 'm6',
+        kind: NotificationKind.schedule,
         title: 'Department assembly moved to Friday afternoon',
         time: now.subtract(const Duration(hours: 9)),
         postId: 'e2',
       ),
       AppNotification(
         id: 'm7',
+        kind: NotificationKind.attendance,
         title: 'CS 301 attendance is waiting to be finalized',
         time: now.subtract(const Duration(hours: 11)),
       ),
@@ -258,23 +326,27 @@ List<AppNotification> mockTeacherNotifications(DateTime now) => [
 List<AppNotification> mockNotifications(DateTime now) => [
       AppNotification(
         id: 'm1',
+        kind: NotificationKind.organization,
         title: "Computer Science Society: Venue change for Friday's meeting",
         time: now.subtract(const Duration(hours: 1)),
         postId: 'o1',
       ),
       AppNotification(
         id: 'm2',
+        kind: NotificationKind.announcement,
         title: 'New announcement: Midterm examination schedule posted',
         time: now.subtract(const Duration(hours: 2)),
         postId: 'a1',
       ),
       AppNotification(
         id: 'm3',
+        kind: NotificationKind.clearance,
         title: 'Library clearance needs correction',
         time: now.subtract(const Duration(hours: 6)),
       ),
       AppNotification(
         id: 'm4',
+        kind: NotificationKind.organization,
         title: 'Recap posted: hands-on Git and collaboration seminar',
         time: now.subtract(const Duration(days: 1)),
         postId: 'o2',

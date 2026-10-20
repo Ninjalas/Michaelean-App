@@ -8,11 +8,12 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/content_row.dart';
-import '../../widgets/expandable_overview.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/stats_row.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/two_tone_date.dart';
+import '../../widgets/up_next_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Home for both roles (spec §6 Student Home, §8 Teacher Home). The layout
@@ -85,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 else if (feed.isEmpty)
                   _empty()
                 else
-                  ..._content(feed),
+                  ..._content(user, feed),
               ]),
             ),
           ],
@@ -107,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
       title: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
+        duration: AppMotion.fast,
         child: _collapsed
             ? Row(
                 key: const ValueKey('compact'),
@@ -168,49 +169,43 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// "21 October / Wednesday": date in ink, weekday muted.
-  List<Widget> _content(HomeFeed feed) {
+  List<Widget> _content(UserProfile user, HomeFeed feed) {
     final now = DateTime.now();
     final a = feed.attendance;
     final t = feed.today;
+    final isTeacher = user.role == UserRole.teacher;
     return [
       if (a != null)
-        ExpandableOverview(
-          title: 'Attendance Overview',
-          summary: '${a.classPercent}% class · ${a.eventPercent}% events · '
-              '${a.requirementsCleared}/${a.requirementsTotal} cleared',
-          onOpenMetric: _openSoon,
-          metrics: [
-            OverviewMetric('Class Attendance', '${a.classPercent}%',
-                progress: a.classPercent / 100),
-            OverviewMetric('Event Attendance', '${a.eventPercent}%',
-                progress: a.eventPercent / 100),
-            OverviewMetric('Events Completed', '${a.eventsCompleted}'),
-            OverviewMetric(
-              'Event Requirements',
-              '${a.requirementsCleared}/${a.requirementsTotal} cleared',
-              progress: a.requirementsTotal == 0
-                  ? 0
-                  : a.requirementsCleared / a.requirementsTotal,
-            ),
-          ],
-        ),
-
-      if (t != null) ...[
-        ExpandableOverview(
-          title: "Today's Overview",
-          summary: '${t.classesToday} classes · ${t.sessionsToFinalize} to finalize · '
-              '${t.upcomingEvents} events',
-          onOpenMetric: _openSoon,
-          metrics: [
-            OverviewMetric('Classes Today', '${t.classesToday}'),
-            OverviewMetric('Attendance to Finalize', '${t.sessionsToFinalize}'),
-            OverviewMetric('Upcoming Events', '${t.upcomingEvents}'),
-          ],
-        ),
-        const SectionHeader('Next Class'),
-        _nextClass(feed.nextClass, now),
-      ],
+        StatsRow(items: [
+          StatItem('${a.classPercent}%', 'Class attendance',
+              onTap: () => _openSoon('Class attendance')),
+          StatItem('${a.eventPercent}%', 'Event attendance',
+              onTap: () => _openSoon('Event attendance')),
+          // Event history lives on Profile.
+          StatItem('${a.eventsCompleted}', 'Events completed', onTap: () => context.go('/profile')),
+          StatItem('${a.requirementsCleared}/${a.requirementsTotal}', 'Cleared',
+              onTap: () => _openSoon('Clearance')),
+        ]),
+      if (t != null)
+        StatsRow(items: [
+          StatItem('${t.classesToday}', 'Classes today', onTap: () => _openSoon('Classes')),
+          StatItem('${t.sessionsToFinalize}', 'To finalize',
+              onTap: () => _openSoon('Attendance to finalize')),
+          StatItem('${t.upcomingEvents}', 'Upcoming events',
+              onTap: () => _openSoon('Upcoming events')),
+        ]),
+      const SizedBox(height: AppSpacing.lg),
+      UpNextCard(
+        session: feed.nextClass,
+        now: now,
+        onTap: feed.nextClass == null ? null : () => _openSoon(feed.nextClass!.subject),
+        // Permission, not the Teacher label, decides who sees this (spec §12).
+        onStartAttendance: isTeacher &&
+                feed.nextClass != null &&
+                user.can(Permission.manageAssignedClasses)
+            ? () => _openSoon('Start attendance')
+            : null,
+      ),
 
       if (feed.tasks.isNotEmpty) ...[
         const SectionHeader('Pending Tasks'),
@@ -223,6 +218,25 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () => _openSoon(t.title),
             ),
         ]),
+      ],
+
+      if (isTeacher) ...[
+        const SectionHeader("Today's Classes"),
+        if (feed.todayClasses.isEmpty)
+          Text('No classes today.', style: Theme.of(context).textTheme.bodyLarge
+              ?.copyWith(color: AppColors.muted))
+        else
+          ..._divided([
+            for (final c in feed.todayClasses)
+              ContentRow(
+                source: c.section,
+                title: c.subject,
+                meta: '${formatTime(c.start)} – ${formatTime(c.end)} · ${c.room}',
+                metaIcon: Icons.schedule_rounded,
+                pill: _classPill(c, now),
+                onTap: () => _openSoon(c.subject),
+              ),
+          ]),
       ],
 
       if (feed.changes.isNotEmpty) ...[
@@ -270,10 +284,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ]),
       ],
 
-      if (feed.forYou.isNotEmpty) ...[
-        const SectionHeader('For You'),
+      if (feed.campusFeed.isNotEmpty) ...[
+        const SectionHeader('Campus Feed'),
         ..._divided(indent: ContentRow.textIndent, [
-          for (final p in feed.forYou)
+          for (final p in feed.campusFeed)
             ContentRow(
               source: p.source,
               sourceImage: p.sourceImage,
@@ -312,38 +326,21 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('${p.source} · ${formatTimeAgo(p.publishedAt, now)}',
                 style: text.bodyMedium?.copyWith(color: AppColors.muted)),
             const SizedBox(height: AppSpacing.xs),
-            Text(p.title, style: text.titleLarge),
+            Text(p.title, style: text.headlineSmall),
           ],
         ),
       ),
     );
   }
 
-  Widget _nextClass(ClassSession? c, DateTime now) {
-    final text = Theme.of(context).textTheme;
-    if (c == null) {
-      return Text('No upcoming classes scheduled.',
-          style: text.bodyLarge?.copyWith(color: AppColors.muted));
+  /// Only states a teacher can act on or that are plain facts of the clock.
+  StatusPill? _classPill(ClassSession c, DateTime now) {
+    if (c.awaitingFinalization) return const StatusPill('To finalize', tone: PillTone.amber);
+    if (!c.start.isAfter(now) && c.end.isAfter(now)) {
+      return const StatusPill('Now', tone: PillTone.green);
     }
-    final day = c.start.isAfter(now) ? formatDayLabel(c.start, now) : 'Now';
-    return InkWell(
-      onTap: () => _openSoon(c.subject),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            StatusPill(day, tone: day == 'Now' ? PillTone.green : PillTone.navy),
-            const SizedBox(height: AppSpacing.sm),
-            Text(c.subject, style: text.titleLarge),
-            const SizedBox(height: AppSpacing.xs),
-            Text('${c.section} · ${formatTime(c.start)} – ${formatTime(c.end)}',
-                style: text.bodyLarge),
-            Text(c.room, style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-          ],
-        ),
-      ),
-    );
+    if (!c.end.isAfter(now)) return const StatusPill('Ended');
+    return null;
   }
 
   StatusPill _taskPill(TaskStatus s) => switch (s) {

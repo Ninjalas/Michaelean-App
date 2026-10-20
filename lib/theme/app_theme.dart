@@ -14,6 +14,8 @@ class AppColors {
   static const hairline = Color(0xFFECECEE); // dividers
   static const fill = Color(0xFFF3F3F4); // soft gray tiles, inputs, active nav pill
 
+  static const onNavyMuted = Color(0xB8FFFFFF); // secondary text on navy (white at 72%)
+
   // Status tints (spec §2.2): soft background + darker text, all WCAG AA.
   static const navyTint = Color(0xFFE6E8F3);
   static const greenTint = Color(0xFFE3F1E6);

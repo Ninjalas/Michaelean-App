@@ -69,16 +69,21 @@ class AttendanceSummary {
   });
 }
 
+/// What a notification is about; picks its icon in the notifications sheet.
+enum NotificationKind { announcement, organization, schedule, clearance, attendance, news }
+
 class AppNotification {
   final String id;
   final String title;
   final DateTime time;
+  final NotificationKind kind;
   final String? postId; // opens this post; null → its feature isn't built yet
 
   const AppNotification({
     required this.id,
     required this.title,
     required this.time,
+    this.kind = NotificationKind.announcement,
     this.postId,
   });
 }
@@ -90,6 +95,7 @@ class ClassSession {
   final DateTime start;
   final DateTime end;
   final String room;
+  final String? teacher; // shown to students; null on a teacher's own classes
 
   /// Attendance was taken but the teacher hasn't finalized it yet. Only this
   /// creates an attendance task; a scheduled class alone does not (spec §8).
@@ -102,11 +108,12 @@ class ClassSession {
     required this.start,
     required this.end,
     required this.room,
+    this.teacher,
     this.awaitingFinalization = false,
   });
 }
 
-/// Teacher Home's "Today's Overview" (spec §8).
+/// Teacher Home's stats row (spec §8).
 class TodayOverview {
   final int classesToday;
   final int sessionsToFinalize;
@@ -120,29 +127,32 @@ class TodayOverview {
 }
 
 /// Everything Home shows, already split into sections. Students get
-/// [attendance]; teachers get [today], [nextClass], and [changes].
+/// [attendance]; teachers get [today], [todayClasses], and [changes].
+/// Both get [nextClass] for the Up next card.
 class HomeFeed {
   final AttendanceSummary? attendance;
   final TodayOverview? today;
-  final ClassSession? nextClass;
+  final ClassSession? nextClass; // null → no class ahead
+  final List<ClassSession> todayClasses;
   final List<Post> changes; // schedule and classroom changes
   final List<PendingTask> tasks;
   final List<Post> announcements;
   final Post? featuredNews;
   final List<Post> moreNews;
-  final List<Post> forYou;
+  final List<Post> campusFeed; // department, organization, and event updates
   final List<AppNotification> notifications;
 
   const HomeFeed({
     this.attendance,
     this.today,
     this.nextClass,
+    this.todayClasses = const [],
     this.changes = const [],
     required this.tasks,
     required this.announcements,
     required this.featuredNews,
     required this.moreNews,
-    required this.forYou,
+    required this.campusFeed,
     required this.notifications,
   });
 
@@ -151,5 +161,5 @@ class HomeFeed {
       changes.isEmpty &&
       announcements.isEmpty &&
       featuredNews == null &&
-      forYou.isEmpty;
+      campusFeed.isEmpty;
 }

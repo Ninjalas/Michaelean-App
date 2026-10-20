@@ -30,8 +30,8 @@ class ComingSoonScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.section),
             Text(title, style: text.headlineMedium),
             const SizedBox(height: AppSpacing.sm),
-            Text("This part of the prototype hasn't been built yet. It's planned for "
-                'Phase 5.',
+            Text("This part of the prototype hasn't been built yet. See the phase plan "
+                'in README.md.',
                 style: text.bodyLarge?.copyWith(color: AppColors.muted)),
           ],
         ),

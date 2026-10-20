@@ -8,6 +8,7 @@ import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
 import 'screens/shared/opening_screen.dart';
 import 'screens/shared/profile_screen.dart';
+import 'screens/shared/qr_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
 import 'screens/shared/post_detail_screen.dart';
 import 'screens/shared/preview_screen.dart';
@@ -40,6 +41,12 @@ GoRouter createRouter(
       GoRoute(
         path: '/preview',
         builder: (context, state) => PreviewScreen(userService: userService),
+      ),
+      // Quick QR (long-press the middle tab). A router page, so Back closes it.
+      GoRoute(
+        path: '/qr',
+        pageBuilder: (context, state) =>
+            AppSheetPage(key: state.pageKey, title: 'Your QR code', child: const QrSheet()),
       ),
       // indexedStack keeps each tab alive, so its scroll position and
       // inner pages are preserved when switching tabs.

@@ -8,17 +8,27 @@ void main() {
 
   test('Nicolas sees his department and society posts, not others', () async {
     final feed = await service.loadHome(mockStudent);
-    final ids = feed.forYou.map((p) => p.id).toList();
+    final ids = feed.campusFeed.map((p) => p.id).toList();
 
     expect(ids, containsAll(['o1', 'o2', 'd1', 'e1']));
     expect(ids, isNot(contains('x1'))); // School of Nursing
     expect(ids, isNot(contains('x2'))); // Dance Company (not a member)
   });
 
-  test('urgent posts come first in For You', () async {
+  test('urgent posts are pinned first in the campus feed', () async {
     final feed = await service.loadHome(mockStudent);
-    expect(feed.forYou.first.urgent, isTrue);
-    expect(feed.forYou.skip(1).every((p) => !p.urgent), isTrue);
+    expect(feed.campusFeed.first.urgent, isTrue);
+    expect(feed.campusFeed.skip(1).every((p) => !p.urgent), isTrue);
+  });
+
+  test('student Up next is their own next class, with its teacher', () async {
+    // 10:00: the 7:30 class is over, CS 302 at 10:30 is next.
+    final atTen = MockHomeService(
+        delay: Duration.zero, clock: () => DateTime(2026, 10, 20, 10, 0));
+    final feed = await atTen.loadHome(mockStudent);
+    expect(feed.nextClass!.id, 's2');
+    expect(feed.nextClass!.teacher, 'Mark Villanueva');
+    expect(feed.todayClasses, isEmpty); // Today's classes is a teacher section
   });
 
   group('teacher', () {
@@ -31,7 +41,12 @@ void main() {
       expect(feed.attendance, isNull);
       expect(feed.today!.classesToday, 3);
       expect(feed.changes.map((p) => p.id), ['c1']);
-      expect(feed.forYou.map((p) => p.id), isNot(contains('o1'))); // CSS-only post
+      expect(feed.campusFeed.map((p) => p.id), isNot(contains('o1'))); // CSS-only post
+    });
+
+    test("today's classes: only today, in time order", () async {
+      final feed = await teacherService.loadHome(mockTeacher);
+      expect(feed.todayClasses.map((c) => c.id), ['k1', 'k2', 'k3']); // not tomorrow's k4
     });
 
     test('attendance task exists only for an unfinalized session', () async {
@@ -61,7 +76,7 @@ void main() {
       ...feed.announcements,
       if (feed.featuredNews != null) feed.featuredNews!,
       ...feed.moreNews,
-      ...feed.forYou,
+      ...feed.campusFeed,
     ].map((p) => p.id).toList();
     expect(all.toSet().length, all.length);
   });

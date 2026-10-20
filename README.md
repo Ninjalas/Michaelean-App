@@ -4,7 +4,7 @@ A campus-life app for students and teachers of **Saint Michael's College of Lagu
 
 Built with **Flutter/Dart**. The goal is a free-hosted, installable **PWA** (Progressive Web App) that students and teachers add to the home screen on Android and iPhone.
 
-> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–2 of 11 are done.**
+> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–3 of 11 are done.**
 
 ---
 
@@ -70,13 +70,14 @@ The flow when you open the app:
 3. **The app**, with a floating bottom bar of three tabs:
    - Students: **Home | Student Life | Profile**
    - Teachers: **Home | Michaelean Life | Profile**
+4. **Quick QR.** Long-press the middle tab (Student Life / Michaelean Life) to open your QR sheet. The first time, a tip above the nav bar says so.
 
 What's behind each tab right now:
 
 | Screen | State |
 |---|---|
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
-| Home (both roles) | Old design. Works with mock data (overview, next class, pending tasks, announcements, schedule changes, bell → notifications sheet → post detail). To be rebuilt in Phase 3. |
+| Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
 | Student Life / Michaelean Life | Old design: a list of features that open "Coming soon" pages. To be rebuilt in Phase 4. |
 | Profile + Settings sheet | Old design: photo that flips to a QR "coin", tags, masked ID, event history, settings sheet with Log Out. To be rebuilt in Phase 5. |
 | Class, Events, Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 6–9. |
@@ -143,8 +144,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 |---|---|---|---|
 | 1 | Theme and shared pieces | §2 | ✅ **Done** |
 | 2 | Opening intro and sign-in preview | §1.1, §4 | ✅ **Done** (intro is a stand-in for a real video, see below) |
-| 3 | Home, both roles, incl. notifications sheet, long-press QR, one-time hint | §6, §8, §1.3 | ⏳ **Next** |
-| 4 | Hubs: Student Life and Michaelean Life live previews | §7, §9 | To do |
+| 3 | Home, both roles, incl. notifications sheet, long-press QR, one-time hint | §6, §8, §1.3 | ✅ **Done** |
+| 4 | Hubs: Student Life and Michaelean Life live previews | §7, §9 | ⏳ **Next** |
 | 5 | Profile and Settings | §10, §11 | To do |
 | 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | To do |
 | 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | To do |
@@ -173,20 +174,22 @@ Each phase is one piece of work, reviewed by the group before the next one start
 - **Opening intro** (`opening_screen.dart`): animated SMCL emblem with a **Skip** button. Plays on every app open, including reloads. Stands in for a real SMCL opening video.
 - **Sign-in preview** (`preview_screen.dart`): emblem, **Student | Teacher** pill switch (`SegmentedPills`), `Sign in with Microsoft (preview)` button, and a visible note that it is a preview with sample data, not a real sign-in.
 
-#### Phase 3: Home, both roles ⏳ Next
+#### Phase 3: Home, both roles ✅ Done
 
-**Spec:** §6 (Student Home), §8 (Teacher Home), §1.3 (Quick QR). **Goal:** "what's next for me today", then what's happening on campus. One shared Home screen that adapts to the role. The old Home (`screens/shared/home_screen.dart`) works but follows the old design.
+**Spec:** §6 (Student Home), §8 (Teacher Home), §1.3 (Quick QR). **Goal:** "what's next for me today", then what's happening on campus. One shared Home screen (`screens/shared/home_screen.dart`) that adapts to the role.
 
-- **Header:** emblem + `Michaelean` wordmark, greeting, two-tone date, bell in a white pill. Collapses on scroll; greeting and bell stay.
-- **Stats row**, always visible (replaces the old expandable overview, `widgets/expandable_overview.dart`). Students: class attendance %, event attendance %, events completed, requirements (`3/6 cleared`). Teachers: classes today, sessions awaiting finalization, upcoming events. Each stat taps through to its detail.
-- **Up next:** solid **navy** card with the next class (subject, time, room, teacher). Teachers get a **Start attendance** button. If no class is left today, show the next one, or an empty state.
-- **Pending tasks:** actionable items only (students: clearance corrections, event requirements; teachers: sessions to finalize, schedule changes to review).
-- **Teachers:** today's classes.
-- **Announcements**, **School News** (one big photo story + 2–3 rows), and a **campus feed** with `URGENT` organization posts pinned at the top. No content repeated across sections.
-- **Notifications sheet:** tall bottom sheet grouped **Today / Earlier**; tapping an item opens the related screen without changing any record.
-- **Quick QR:** long-press the middle tab → the user's QR sheet (random mock token). Plus a one-time hint: `Tip: hold Student Life to show your QR` (or `Michaelean Life` for teachers).
+- **Header:** emblem + `Michaelean` wordmark and the bell in a white pill. On scroll it collapses to your photo, greeting, and date; the bell stays.
+- **Stats row** (`widgets/stats_row.dart`), always visible. Students: class attendance %, event attendance %, events completed, requirements cleared (`3/6`). Teachers: classes today, to finalize, upcoming events. "Events completed" opens the Profile's event history; the others open "Coming soon" pages until Phases 6, 7, and 9.
+- **Up next** (`widgets/up_next_card.dart`): solid **navy** card with the next class (subject, time, room, and the teacher for students or the section for teachers). Teachers with the `manageAssignedClasses` permission get **Start attendance** (a "Coming soon" page until Phase 6). With no class ahead: a calm "No upcoming classes" state.
+- **Pending tasks:** actionable items only. A teacher's "Finalize attendance" appears only after a scanned class has ended and isn't finalized.
+- **Teachers:** **Today's Classes** (with `To finalize`, `Now`, or `Ended` pills) and **Schedule & Room Changes**.
+- **Announcements** (4), **School News** (one big photo story + 3 rows), and the **Campus Feed** (department, organization, and event updates; `URGENT` posts pinned first). No post appears in two sections.
+- **Notifications sheet:** grouped **Today / Earlier**, an icon per kind, time on the right. Tapping opens the related post (or a "Coming soon" page); it changes no record.
+- **Quick QR** (`screens/shared/qr_sheet.dart`, route `/qr`): long-press the middle tab. Shows a large QR of the account's random mock token, the user's name, `Show this code to your teacher.` (students) or `Your Michaelean identity code.` (teachers), and a note that it verifies nothing. Back closes it.
+- **One-time tip** above the nav bar: `Tip: hold Student Life to show your QR` (or `Michaelean Life`). Shown once per device, remembered with `shared_preferences` (`services/hint_store.dart`); hides after 8 seconds or with its X.
+- No `See all ›` links on Home: each section already shows everything there is, and the spec forbids buttons that do nothing.
 
-#### Phase 4: Hubs (Student Life and Michaelean Life)
+#### Phase 4: Hubs (Student Life and Michaelean Life) ⏳ Next
 
 **Spec:** §7, §9. **Goal:** each role's feature hub, for browsing. Replace the feature list in `screens/shared/life_hub_screen.dart` with **live previews**, each a real peek at its content with `See all ›`.
 
@@ -266,6 +269,15 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Rebuild Phase 3: Home, both roles.**
+  - Home rebuilt to spec §6/§8: always-visible stats row, navy Up next card, today's classes for teachers, campus feed with urgent posts pinned, more mock announcements and news so sections feel full.
+  - New shared widgets `StatsRow` and `UpNextCard`; removed the old `ExpandableOverview`.
+  - Notifications sheet grouped Today / Earlier with icons; fixed "59m ago" showing instead of "1h ago".
+  - Quick QR: long-press the middle tab opens a QR sheet (`/qr`); one-time tip saved on the device with the new `shared_preferences` package.
+  - Mock data: Nicolas now has his own class schedule (with invented teacher names); notifications have kinds; the teacher's "awaiting finalization" class only counts after it has ended.
+  - The nav bar tabs now expose tap and long-press to screen readers.
+  - "Coming soon" pages no longer claim every feature is "planned for Phase 5".
+  - Tests: stats row, Up next for both roles, Start attendance permission, Today / Earlier grouping, long-press QR and Back, tip shown once and above the nav bar, student next class, teacher's today's classes.
 - **Intro plays on every app open, including reloads** (`2efd845`). A browser reload kept the last address (e.g. `/#/home`) and skipped the intro. The router now always starts at `/opening` (`overridePlatformDefaultLocation: true` in `lib/router.dart`). Logging out still goes straight to sign-in.
 - **Rebuild Phase 2: opening intro and sign-in preview** (`5d99a80`).
   - New `lib/screens/shared/opening_screen.dart`: animated SMCL emblem intro with Skip. It replaced a first attempt that played `assets/videos/app_opening.mp4`, because that video turned out to be a recording of Luma's app (its logo and slogan), which the spec forbids. The `video_player` package was removed again.
@@ -303,6 +315,7 @@ lib/
   mock/              CLEARLY LABELED sample data (mock_users.dart, mock_home.dart)
   services/          interfaces that return mock data now, real data later
                      (UserService, HomeService) + Session (who is being previewed)
+                     + HintStore (remembers one-time tips on the device)
   utils/dates.dart   date formatting helpers
 test/                widget and unit tests
 assets/
@@ -329,7 +342,7 @@ The previewed user lives in `Session` (`lib/services/session.dart`). Any screen 
 
 - **State:** Flutter built-ins only (`setState`, `ChangeNotifier`). No state-management package unless the group agrees first.
 - **Navigation:** `go_router`, so the Android/browser **Back** gesture closes pop-ups and goes back instead of leaving the app. Pop-up sheets are router pages (`AppSheetPage`) for the same reason.
-- **Packages:** `go_router`, `qr_flutter`. Add a package only with a clear reason.
+- **Packages:** `go_router` (navigation), `qr_flutter` (QR codes), `shared_preferences` (remembers one-time tips on the device). Add a package only with a clear reason.
 - **Light mode only** for now; the theme keeps dark mode possible later.
 
 ---
@@ -369,7 +382,8 @@ The look follows **Luma** (an events app for iPhone) closely in layout and feel,
 | `FloatingNavBar` | The floating pill bottom navigation |
 | `RoundIconButton` | Floating white circle button (bell, back), optional red dot |
 | `UserAvatar` | Round photo or initials |
-| `ExpandableOverview` | Old Home overview box; expected to be replaced in Phase 3 |
+| `StatsRow` | Compact row of tappable stats with navy numbers (Home) |
+| `UpNextCard` | Solid navy "Up next" class card, optional Start attendance button, empty state |
 | `ProfileCoin` | Photo that flips to a QR; leaves Profile in Phase 5 |
 
 ---
@@ -396,11 +410,11 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-22 tests currently pass. They cover:
+29 tests currently pass. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; Skip leaves the intro; a reload at a saved address still plays the intro first.
-- **Home:** notifications sheet opens and closes (X and system Back), a notification opens its post, the overview expands, a load failure shows Retry (never fake content).
-- **Home data:** the student sees their department/society posts only, urgent posts first, teacher sections, the attendance task appears only for an unfinalized session, next-class logic, no post in two sections.
+- **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
+- **Home data:** the student sees their department/society posts only, urgent posts first, the student's own next class with its teacher, the teacher's classes for today only, teacher sections, the attendance task appears only for an unfinalized session, next-class logic, no post in two sections.
 - **Hubs:** Student Life lists its features; Michaelean Life disables features the teacher isn't authorized for.
 - **Profile:** identity, masked ID, tags, event history; the QR holds only the mock token; settings opens and closes; Log Out ends the preview.
 
@@ -429,7 +443,9 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 - **`assets/videos/app_opening.mp4` is a recording of Luma's app** (its logo and slogan). It is **not used** and not declared in `pubspec.yaml`. The animated emblem intro stands in until there is a real SMCL opening video. To use a real video later: replace the file, add the video back to `pubspec.yaml`, run `flutter pub add video_player`, and switch `opening_screen.dart` to play it. Browsers block autoplay with sound, so play it muted.
 - **Profile photos in `assets/images/profiles/` are of real people.** Use them only with their consent, and only as clearly labeled sample data. Event posters in `assets/images/events/` are placeholders too. The spec wants stock or real SMCL photos listed in one place in mock data so they are easy to swap.
 - **PWA settings are still Flutter defaults.** `web/manifest.json` has name `michaelean_app`, Flutter's blue color, and Flutter's icons. Set the name, colors, and icons (from the SMCL emblem) when the group picks the hosting (open decision 7).
-- **Home, hubs, and Profile still use the old design** until Phases 3–5. Some old pieces contradict the new spec on purpose until then (e.g. the expandable overview, the QR coin on Profile).
+- **Hubs and Profile still use the old design** until Phases 4–5. Some old pieces contradict the new spec on purpose until then (e.g. the QR coin on Profile).
+- **Long-press needs a real hold.** Hold the mouse button (or your finger) on Student Life / Michaelean Life for about half a second. Automated widget tests cover it.
+- **On narrow phones the quick-QR tip wraps to two lines.** It's readable; shorten the wording if the group prefers one line.
 - **Git warnings "LF will be replaced by CRLF"** on Windows are harmless.
 - **`docs/CLAUDE.original.md` and `docs/plans/`** are historical. `docs/spec.md` is the source of truth.
 
@@ -438,7 +454,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 3 is next by the t). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 4 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.
