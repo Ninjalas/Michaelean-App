@@ -6,7 +6,8 @@ import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/home_screen.dart';
 import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
-import 'screens/shared/placeholder_screen.dart';
+import 'screens/shared/profile_screen.dart';
+import 'screens/shared/settings_sheet.dart';
 import 'screens/shared/post_detail_screen.dart';
 import 'screens/shared/preview_screen.dart';
 import 'services/home_service.dart';
@@ -86,8 +87,24 @@ GoRouter createRouter(
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/profile',
-              builder: (context, state) =>
-                  const PlaceholderScreen(title: 'Profile', comingIn: 'Phase 4'),
+              builder: (context, state) => ProfileScreen(userService: userService),
+              routes: [
+                GoRoute(
+                  path: 'settings',
+                  parentNavigatorKey: rootKey,
+                  pageBuilder: (context, state) => AppSheetPage(
+                    key: state.pageKey,
+                    title: 'Settings',
+                    child: const SettingsSheet(),
+                  ),
+                ),
+                GoRoute(
+                  path: 'soon',
+                  builder: (context, state) => ComingSoonScreen(
+                    title: state.uri.queryParameters['what'] ?? 'Coming soon',
+                  ),
+                ),
+              ],
             ),
           ]),
         ],

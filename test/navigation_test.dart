@@ -39,7 +39,9 @@ void main() {
 
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Switch preview role'));
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
     expect(find.text('Preview as Student'), findsOneWidget);
   });

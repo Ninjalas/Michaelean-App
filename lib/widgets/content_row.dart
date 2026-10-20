@@ -84,8 +84,8 @@ class ContentRow extends StatelessWidget {
                               ),
                             ),
                           if (pill != null) ...[
-                            const SizedBox(width: AppSpacing.sm),
-                            pill!,
+                            if (source != null) const SizedBox(width: AppSpacing.sm),
+                            Flexible(child: pill!), // long labels shrink instead of overflowing
                           ],
                         ],
                       ),
