@@ -7,26 +7,27 @@ import '../models/user_profile.dart';
 const mockStudent = UserProfile(
   id: 'mock-student-1',
   role: UserRole.student,
-  firstName: 'Andrea',
-  lastName: 'Reyes',
+  firstName: 'Nicolas',
+  lastName: 'Santos',
   designation: 'BS Computer Science · 3rd Year',
   maskedId: '••••-••-4821',
   qrToken: 'MOCK-7F3K9Q',
+  photoAsset: 'assets/images/profiles/nicolas.jpg',
   tags: [
     IdentityTag("Saint Michael's College of Laguna", TagKind.institution),
     IdentityTag('SBMIT', TagKind.school),
     IdentityTag('Department of Computer Studies', TagKind.department),
-    IdentityTag('Dance Company', TagKind.organization),
-    IdentityTag('Dance Company Officer', TagKind.officer),
+    // Confirmed member (mock assumption). Society membership is not assumed
+    // automatic — see CLAUDE.md open decision 2.
+    IdentityTag('Computer Science Society', TagKind.organization),
   ],
-  permissions: {Permission.manageOrganizationContent},
 );
 
 const mockTeacher = UserProfile(
   id: 'mock-teacher-1',
   role: UserRole.teacher,
   firstName: 'Mark',
-  lastName: 'Santos',
+  lastName: 'Villanueva',
   designation: 'Faculty · Department of Computer Studies',
   maskedId: '••••-1093',
   qrToken: 'MOCK-2M8XW4',

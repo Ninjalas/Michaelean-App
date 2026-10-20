@@ -28,6 +28,7 @@ class UserProfile {
   final String designation; // e.g. "BS Computer Science · 3rd Year"
   final String maskedId; // never store or show the full ID in the prototype
   final String qrToken; // random mock token, never personal data
+  final String? photoAsset; // null → show initials
   final List<IdentityTag> tags;
   final Set<Permission> permissions;
 
@@ -39,6 +40,7 @@ class UserProfile {
     required this.designation,
     required this.maskedId,
     required this.qrToken,
+    this.photoAsset,
     required this.tags,
     this.permissions = const {},
   });

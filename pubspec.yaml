@@ -23,6 +23,7 @@ flutter:
   # it holds the Luma reference screenshots, which must not ship.
   assets:
     - assets/images/SMCL_Emblem.png
+    - assets/images/profiles/nicolas.jpg
 
   fonts:
     - family: Inter
