@@ -51,6 +51,7 @@ lib/
   models/         plain data classes
   mock/           clearly labeled sample data
   services/       interfaces that return mock data now, real data later
+  utils/          small helpers (date formatting)
 assets/
   images/SMCL_Emblem.png      main logo (spec §2.1) — don't recolor or crop
   images/luma_screens/        design reference only — never ship in the app
