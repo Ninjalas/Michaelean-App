@@ -25,6 +25,9 @@ GoRouter createRouter(
   return GoRouter(
     navigatorKey: rootKey,
     initialLocation: '/opening',
+    // Play the intro on every app open, even when a browser reload still
+    // holds the last address (e.g. /#/home).
+    overridePlatformDefaultLocation: true,
     refreshListenable: session,
     redirect: (context, state) {
       final beforeSignIn = const {'/opening', '/preview'}.contains(state.matchedLocation);

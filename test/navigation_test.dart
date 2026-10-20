@@ -61,4 +61,17 @@ void main() {
     expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
     expect(find.text('Skip'), findsNothing);
   });
+
+  testWidgets('reopening at a saved address still plays the intro first', (tester) async {
+    // A browser reload keeps the last address, like /#/home.
+    tester.binding.platformDispatcher.defaultRouteNameTestValue = '/home';
+    addTearDown(tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
+
+    await tester.pumpWidget(testApp());
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Skip'), findsOneWidget); // intro is showing
+
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+  });
 }
