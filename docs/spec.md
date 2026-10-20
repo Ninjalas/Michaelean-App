@@ -6,133 +6,141 @@ Read the section for the feature you are working on before building it. Do not i
 
 Institution (used in mock data and identity tags): **Saint Michael's College of Laguna** (short form: SMCL).
 
+Revised 2026-10-21 after a full design review with the user. The rebuild follows §13.
+
 ## 1. Application Structure
 
-Michaelean has two role-specific experiences sharing one design system.
+Michaelean is one app with two role-specific experiences sharing one design system.
 
-Student bottom navigation:
+### 1.1 Start flow
 
-`Home | Student Life | Profile`
+1. **Opening video** (`assets/videos/app_opening.mp4`) is the first thing shown when the app opens. It has a Skip button.
+2. **Sign-in preview screen:** SMCL emblem, a `Sign in with Microsoft (preview)` button, and a choice of Student preview or Teacher preview. Clearly labeled as a preview, never real authentication (§4).
+3. **Home.**
 
-Teacher bottom navigation:
+### 1.2 Bottom navigation
 
-`Home | Michaelean Life | Profile`
+Student: `Home | Student Life | Profile`
 
-Requirements:
+Teacher: `Home | Michaelean Life | Profile`
 
-- Home is the initial destination after successful sign-in.
-- Student Life and Michaelean Life are feature hubs, not initial landing screens.
-- Keep navigation consistent across destinations.
-- Preserve navigation state where appropriate.
-- Reuse shared components instead of duplicating student and teacher implementations.
-- Adapt content and available actions to the user's role.
-- Support development previews for both roles without implementing production authentication.
-- Never treat a development role selector as a security mechanism.
+- Home is the initial destination after sign-in.
+- Student Life and Michaelean Life are feature hubs, not landing screens.
+- Bottom tabs keep their state.
+- Reuse shared components; adapt content and actions to the role. No duplicated student/teacher screens.
+- The development role switch lives in the Settings pop-up (§11) and on the sign-in preview screen. It is never a security mechanism.
+
+### 1.3 Quick QR (long-press)
+
+Long-pressing the second tab (Student Life / Michaelean Life) opens the user's QR sheet, for both roles.
+
+- The first time the app is used, show a one-time hint: `Tip: hold Student Life to show your QR` (or `Michaelean Life` for teachers).
+- Students can also open the same QR from `Show QR` in Class (§7.1). There is no QR on Profile.
+- The QR sheet shows a scan-friendly code and `Show this code to your teacher.` (students) or a neutral identity line (teachers).
+- QR content is a random mock token per mock account (for example `MOCK-7F3K9Q`), never a real name, student/staff ID, or email. One token per account, used everywhere.
+- Showing the QR never verifies identity or attendance.
 
 ## 2. Design System
 
-Create a polished, modern mobile interface with an editorial, campus-oriented visual identity.
+The goal: a **premium** mobile app in the spirit of Luma, with Michaelean's own SMCL identity.
 
-Priorities:
+Premium comes from four things, in this order:
 
-- Clear typography and visual hierarchy.
-- Consistent spacing, padding, corner radii, and iconography.
-- Restrained accent colors.
-- Clean cards, lists, and information layouts.
-- Appropriate touch targets and accessibility.
-- Responsive behavior across mobile screen sizes.
-- Proper safe-area and keyboard handling.
-- Smooth, purposeful animations.
-- Consistent pop-ups, modal behavior, and transitions.
-- Appropriate loading, empty, unavailable, and error states.
+1. **Real imagery.** Every event, news item, and organization has a real photo or logo. Photos carry most of the color.
+2. **Typography.** Large, confident titles, clear hierarchy, generous spacing.
+3. **Motion.** Smooth, purposeful transitions (§2.5).
+4. **Depth.** Layers that feel physical: soft, large-blur shadows, elements floating above the page, sheets rising over dimmed content. Glass/blur is **not** required.
 
-Avoid unnecessary decoration, redundant sections, excessive dashboard cards, and nonfunctional controls.
+Screens must feel **full, not thin**. Not crowded, but rich:
 
-Do not arbitrarily redesign previously approved concepts. Preserve the intended functionality and visual direction while improving implementation quality.
+- **Rich rows:** each item shows a photo or thumbnail, the source's avatar and name, time, place, tags, and a status pill when relevant, not only a title.
+- **More sections** where they add real content (for example School News and the campus feed on Home).
+- **4–5 items per section** before `See all ›`, not 2–3.
+
+Also required: consistent spacing and radii, touch targets ≥ 48 × 48 px, safe-area and keyboard handling, responsive layouts across phone sizes, and loading, empty, unavailable, and error states.
+
+Avoid: card grids, rows of metric chips as decoration, gradient headers, floating action buttons, corporate admin layouts, nonfunctional controls.
+
+**Light mode only** for now. Dark mode comes later; the theme file keeps it possible.
 
 ### 2.1 Visual Direction
 
-Status: **proposed**. Refine during Phase 1 when the theme is built, then treat it as approved.
+**Reference:** Luma iOS screenshots in `assets/images/luma_screens/` (from Mobbin). Follow Luma closely in layout and feel, but never copy its wordmark, icons, or branding. Michaelean uses the SMCL emblem and school colors.
 
-**Reference:** Luma iOS screenshots in `assets/images/luma_screens/` (from Mobbin). Study their principles only. Do not copy Luma's screens one-to-one, its wordmark, icons, or branding. Michaelean has its own identity built on the SMCL emblem and school colors.
+Not a reference: `luma_screens/image 3.png` (an earlier Michaelean concept with a gradient header and metric chips).
 
-Not a reference: `luma_screens/image 3.png` is an earlier Michaelean concept (blue gradient header, colored metric chips, floating + button, card-per-item feed). It is the generic dashboard style this direction moves away from.
+What Michaelean takes from Luma:
 
-#### What the reference does (observed)
+- **Rows, not cards.** Rounded square thumbnail on the left; source avatar + name; title; meta lines with icons (clock, pin). Hairlines between rows. A small status pill overlapping the thumbnail.
+- **Two-tone date headers:** `24 October` in ink, `/ Friday` in muted gray.
+- **Floating chrome.** Header with emblem + `Michaelean` wordmark on the left and the bell in a soft white pill on the right. Floating rounded pill bottom navigation, active tab in a filled pill. Floating circular back button.
+- **Detail pages.** Large rounded cover image, big title, date line, a row of tonal action buttons, then sections introduced by small muted labels over a hairline. On scroll, the title moves into a compact pill beside the back button. A light wash from the cover at the top of the page fades into white.
+- **Profiles.** Large photo, left-aligned name, inline stats, sections reusing the same rows. Settings as grouped, rounded inset lists.
+- **Pop-ups.** Rounded bottom sheets with a grab handle, round X, dimmed background, outside-tap and Back to close.
+- **Forms.** Borderless, light-gray, fully rounded inputs with muted labels above. One full-width pill button at the bottom; disabled state is plain gray.
+- **Segmented controls** as pills. **Filter pills** that change color when active.
+- **Empty states:** outline icon in gray, short title, one muted sentence.
 
-- **Near-monochrome UI.** White backgrounds, black/ink text, grays for meta. Color appears almost only in small status labels (Going, Invited, Waitlisted, Hosting) and prices. Content images supply most of the color.
-- **Typography carries hierarchy.** One clean sans family. Large medium-weight section titles ("Your Events ›", "Picked for You"), 2-line event titles, small muted meta lines. Date group headers are two-tone: `19 July` in ink, `/ Sunday` in muted gray.
-- **Rows, not cards.** Event list items are rows: rounded square thumbnail on the left; a tiny host avatar + host name line; title; then meta lines with a clock icon (time) and a pin icon (venue). Thin hairlines separate rows. A small status pill overlaps the bottom of the thumbnail.
-- **Floating, soft chrome.** The header is avatar + wordmark on the left and a single white pill holding `+` and the bell on the right, with a soft shadow. The bottom navigation is a floating, rounded, translucent pill detached from the screen edge; the active tab sits in its own filled pill. The back button is a floating circle.
-- **Scroll behavior.** Content scrolls under a blurred, translucent header. On detail pages the title moves into a compact pill next to the back button once scrolled.
-- **Event detail.** Large rounded square cover image, big title, date/time line, then a row of three equal tonal action buttons (primary action, Contact, More). Below: sections introduced by small muted labels over a hairline ("Location", "Hosts", "121 Going", "About Event"), a rounded map, host rows with avatars, an overlapping avatar stack with "+117" and a names line. The whole page takes on a tint from the cover image.
-- **Profiles.** Large circular avatar, left-aligned name, handle, one-line bio, "Joined" line with a small icon, inline stats ("2 Hosted 2 Attended"), then sections ("Hosting ›", "Past Events ›") reusing the same event rows. Settings use grouped, rounded inset lists with small icons and muted section labels.
-- **Pop-ups.** Rounded bottom sheets with a grab handle, a round X button, an icon in a soft circle, a title, one sentence, and one full-width pill button. Filters open a compact rounded menu with an icon per option; an active filter changes the filter button's color.
-- **Forms.** Borderless inputs filled in light gray with fully rounded corners; muted labels above. Option rows with icons and toggles. One full-width pill button at the bottom; the disabled state is plain gray.
-- **Empty states.** A simple outline icon in gray, a short title ("Nothing Here, Yet"), one muted sentence.
-- **Segmented controls** as pills (Upcoming | Past) at the top of list screens.
+### 2.2 Color
 
-#### How Michaelean applies it
-
-- **Keep the calm, monochrome base.** Paper/white backgrounds, ink text, gray meta. School color is used with intent, never as large decorative blocks or gradient headers.
-- **Header:** SMCL emblem + "Michaelean" wordmark on the left; greeting and date below; the notification bell in a soft white pill on the right. Collapses on scroll as §6 and §8 describe.
-- **Bottom navigation:** floating rounded pill, three tabs (§1), active tab in a soft filled pill. Our own icons.
-- **Feed and lists:** rows with thumbnails and two-tone date headers for events, news, classes, and event history. The one prominent School News item (§6) is the main exception and gets a large image.
-- **Status pills on thumbnails/rows:** Registered, Invited, Attended, Full, Cancelled, and the clearance statuses (§7.5), each a soft tint with darker text. Never show a status the mock data doesn't support (§3).
-- **Event detail:** large rounded cover image, title, date line, a row of tonal action buttons, then labeled sections (Venue, Host, Attendees, About). Instead of Luma's full-page image tint, use a light wash at the top of the page that fades into paper.
-- **Profile (§10):** same left-aligned identity layout, with the photo↔QR coin as the centerpiece and identity tags under the name in place of a handle.
-- **Pop-ups:** the notification pop-up, settings pop-up, and organization feature modals share one rounded sheet/modal style (dimmed background, X, Back, outside tap).
-
-#### Color
-
-School colors, taken from the SMCL emblem (red, navy, white), in deeper, calmer shades. Starting values, estimated by eye from the emblem:
+School colors from the SMCL emblem, in deeper, calmer shades. Navy is used **confidently**; red only for attention.
 
 | Token | Hex | Use |
 |---|---|---|
-| `navy` | `#242A5E` | Primary buttons, active tab, selected states, links, identity tags. |
+| `navy` | `#242A5E` | The one bold color: primary buttons, active tab, links, stat numbers, selected states, identity tags, and the solid navy **Up next** card (white text) on Home. |
 | `red` | `#B3242E` | Attention only: `URGENT`, notification dot, Needs correction. One per screen region at most. |
-| `white` | `#FFFFFF` | Surfaces, sheets, pills. |
-| `paper` | `#FFFFFF` | Screen background: pure white, like Luma. |
+| `white` | `#FFFFFF` | Screen background, surfaces, sheets, pills. |
 | `ink` | `#16171D` | Primary text. |
-| `muted` | `#6E7079` | Secondary text, meta, date suffix ("/ Sunday"). |
+| `muted` | `#6E7079` | Secondary text, meta, date suffix. |
 | `hairline` | `#ECECEE` | Dividers, indented to the text column in thumbnail lists. |
-| `fill` | `#F3F3F4` | Soft gray tiles (overview, placeholder thumbnails), inputs, active nav pill. |
+| `fill` | `#F3F3F4` | Soft gray tiles, inputs, active nav pill, placeholders. |
 
-Status tints (soft background + darker text): green for Cleared/Attended, amber for In review/On hold/Full, navy for Invited/Registered, red for Needs correction/Cancelled, gray for Not started/Not applicable. Check WCAG AA contrast when building the theme.
+Rule of thumb: **one navy hero per screen**; everything else stays white/gray and lets photos supply color.
 
-#### Typography
+Status tints (soft background + darker text): green for Cleared/Attended/Present, amber for In review/On hold/Full, navy for Invited/Registered, red for Needs correction/Cancelled/Absent, gray for Not started/Not applicable. Check WCAG AA contrast.
 
-Luma uses a single sans family. Michaelean uses:
+### 2.3 Typography
 
-- **Inter** (sans) for all UI text, with weight and size creating hierarchy, as in the reference.
-- **Fraunces** (serif), optional, only for the largest editorial titles (screen titles, the featured news headline) to give the campus identity a bit more character. If it feels off once built, drop it and use Inter everywhere. That is the simpler option.
+Luma uses Apple's SF Pro, which can't be bundled for Android. Michaelean uses its closest free equivalent:
 
-Both fonts are free (OFL) and bundled as asset files so they work offline.
+- **Inter Display** for large titles: screen titles, the Up next class, event names on detail pages, the School News hero headline, profile name. Tight letter spacing.
+- **Inter** for all other text (body, meta, buttons, labels).
 
-#### Shape, spacing, motion
+Both are free (OFL) and bundled as asset files so they work offline. Inter is already in `assets/fonts/`; Inter Display files are added in Phase 1. No serif.
+
+### 2.4 Shape, spacing, depth
 
 - 4-point spacing scale; 20 px screen margins; 24–32 px between sections.
-- Radius: 12 for thumbnails and small elements; 20 for cover images, sheets, and modals; full pill for buttons, inputs, tags, and the nav bar.
-- Soft, large-blur, low-opacity shadows, only on floating elements (header pill, nav bar, back button).
-- Touch targets ≥ 48 × 48 px.
-- Motion 200–300 ms ease-out: sheets slide up, list image expands into event detail, header collapses smoothly. The profile coin flip (§10.1) is the signature animation.
+- Radius: 12 for thumbnails and small elements; 20 for cover images, sheets, modals, and the Up next card; full pill for buttons, inputs, tags, and the nav bar.
+- Depth: soft, large-blur, low-opacity shadows on floating elements (header pill, nav bar, back button, Up next card, sheets). Layers should read clearly: page → floating chrome → sheets.
 
-#### Logo and brand assets
+### 2.5 Motion
 
-- **Main logo:** `assets/images/SMCL_Emblem.png` (the Saint Michael's College of Laguna shield: red, navy, white). Use it in the app header, on the splash/opening screen, and as the source for the PWA home-screen icon.
-- The emblem is detailed and includes text, so it becomes hard to read at very small sizes (favicon, small icons). A simplified small-size mark may be needed later; don't invent one without asking.
+200–300 ms, ease-out:
+
+- Sheets slide/spring up over a dimming background.
+- A list image expands into the event detail cover.
+- The Home header collapses smoothly on scroll.
+- Tab and page transitions are smooth, never abrupt.
+- The scan flash on the attendance camera (§9.1).
+
+### 2.6 Imagery
+
+- Real SMCL photos, posters, and logos come from the user.
+- Until then, use **stock photos** as clearly labeled placeholders, listed in one place (mock data) so they are easy to swap.
+- Declare every image file by file in `pubspec.yaml`.
+
+### 2.7 Logo and brand assets
+
+- **Main logo:** `assets/images/SMCL_Emblem.png`. Used in the header, on the sign-in preview screen, and as the source for the PWA home-screen icon.
+- The emblem is detailed and hard to read at very small sizes. A simplified small mark may be needed later; don't invent one without asking.
 - Don't recolor, stretch, crop, or add effects to the emblem.
-- `assets/videos/app_opening.mp4`: opening video; where it is used is not yet decided.
-
-Avoid: generic school dashboards, card grids, rows of metric chips, gradient headers, floating action buttons, corporate admin layouts.
 
 ## 3. Scope and Mock Data
 
 The current phase is a frontend prototype.
 
-Use clearly identified mock data to demonstrate the interface. Separate sample records from widgets and presentation logic.
-
-Where appropriate, define simple models and service interfaces that can later connect to real data.
+Use clearly identified mock data. Keep sample records separate from widgets and presentation logic. Define simple models and service interfaces that can later connect to real data.
 
 Do not:
 
@@ -150,7 +158,7 @@ A frontend interaction may demonstrate the intended workflow, but its prototype 
 
 The institution manages Microsoft 365 accounts for students and teachers.
 
-The intended production flow is:
+Intended production flow:
 
 1. Authenticate through the institution's Microsoft tenant.
 2. Verify the account belongs to the approved institution.
@@ -161,134 +169,85 @@ The intended production flow is:
 
 Microsoft authentication alone does not guarantee access to every academic attribute. Missing information must come from an authorized institutional data source.
 
-Do not implement this integration during the frontend phase.
-
-For previews, use clearly identified mock student and teacher profiles.
+Do not implement this integration during the frontend phase. The sign-in preview screen (§1.1) only demonstrates the flow and lets the user pick a mock student or teacher profile.
 
 ## 5. Institutional Hierarchy and Tags
-
-Michaelean's identity hierarchy is:
 
 Institution
   └── School/College
        └── Department/Program
 
-Organization memberships and assigned roles are additional identity tags associated with the person.
+Organization memberships and assigned roles are additional identity tags.
 
-The institution has three schools/colleges:
+Schools/colleges: **SON**, **SBMIT**, **SEAS**.
 
-- SON
-- SBMIT
-- SEAS
-
-Every student and teacher should receive the appropriate institution and school/college labels.
-
-Additional labels may include:
-
-- Department or program.
-- Confirmed organization membership.
-- Official organization officer role.
-- Other authorized institutional roles.
+Every student and teacher receives institution and school/college labels. Additional labels may include department or program, confirmed organization membership, official organization officer role, and other authorized institutional roles.
 
 Example:
 
 `[Saint Michael's College of Laguna] [SBMIT] [Department of Computer Studies] [Dance Company] [Dance Company Officer]`
 
-These are illustrative labels, not fixed mappings. Use verified mock records and do not assume all academic affiliations from the examples.
+These are illustrative labels, not fixed mappings.
 
 Rules:
 
 - All assigned tags are visible to students and teachers using Michaelean.
-- Tags must be readable, compact, and responsive.
-- Users cannot freely assign themselves academic, membership, or officer labels.
-- Membership labels reflect confirmed memberships.
-- Officer labels reflect authorized role assignments.
+- Tags are readable, compact, and responsive.
+- Users cannot assign themselves academic, membership, or officer labels.
+- Membership labels reflect confirmed memberships; officer labels reflect authorized role assignments.
 - A department is distinct from its student society.
-- Departmental society membership must not be assumed automatic; the membership policy remains undecided.
-- Displayed tags do not independently grant permissions.
+- Departmental society membership is not assumed automatic; the policy is undecided.
+- Tags do not grant permissions by themselves.
 
 ## 6. Student Home
 
-Purpose: a personalized, continuously scrolling campus feed.
+Purpose: "what's next for me today", then what's happening on campus. A continuously scrolling page.
 
-Header:
-- Michaelean branding.
-- Personalized greeting.
-- Current date.
-- Notification bell.
-- Expandable Attendance Overview.
+Order, top to bottom:
 
-On scroll, collapse the detailed header while keeping the greeting and notification bell accessible.
+1. **Header:** emblem + wordmark, a brief personalized greeting, current date, bell pill.
+2. **Stats row:** one compact row of four, always visible (not expandable): Class attendance %, Event attendance %, Events completed, Requirements progress (for example `3/6 cleared`). Each stat taps through to its detail (class attendance, event history, clearance).
+3. **Up next:** a solid navy card with the next class: subject, time, room, teacher. If no more classes today, show the next future class.
+4. **Pending tasks:** actionable items only, such as clearance corrections or outstanding event requirements.
+5. **Announcements:** compact layout.
+6. **School News:** one large hero story with a photo, then 2–3 smaller rows.
+7. **Campus feed:** a mixed, continuously scrolling stream of department, organization, and event updates (for example "Event moved to 3 PM"). Urgent organization posts get an `URGENT` label and are pinned to the top of the feed.
 
-Attendance Overview contains:
-- Class Attendance percentage.
-- Event Attendance percentage.
-- Events Completed count.
-- Event Requirements progress, such as 3/6 cleared.
+On scroll, the detailed header (date, stats) collapses; the greeting and bell stay accessible.
 
-Metrics link to relevant details when available.
+Rules:
 
-Pending Tasks shows actionable items requiring attention, such as clearance corrections or outstanding event requirements.
+- Personalize using the mock student's affiliations and confirmed memberships.
+- Don't duplicate content across sections.
+- No events discovery or "registered events" section on Home; that lives in Student Life.
 
-Announcements use a compact layout.
-
-School News displays one prominent official news item and smaller additional entries.
-
-The mixed feed may contain:
-- Institutional announcements.
-- School news.
-- Department news.
-- Organization news.
-- Event-related updates.
-
-Personalize content using the mock student's affiliations and confirmed memberships. Urgent organization news may receive an `URGENT` label and temporary prominence.
-
-Do not duplicate content across sections. Do not add a separate Upcoming Events section; event discovery belongs under Student Life.
-
-The notification bell opens a compact recent-notifications pop-up. Notifications navigate to relevant screens without automatically modifying records.
+**Notifications:** the bell opens a tall bottom sheet grouped by `Today / Earlier`. Each item has an icon or avatar, one line, and a time. Tapping navigates to the related screen without modifying any record. Back, X, and outside tap close it.
 
 ## 7. Student Life
 
-Purpose: a feature hub for accessing campus services.
+Purpose: the student's feature hub for browsing campus services.
 
-Title: `Student Life`
+Title: `Student Life`. Subtitle: `Your campus, beyond the classroom.`
 
-Subtitle: `Your campus, beyond the classroom.`
+Layout: **live previews**. Each feature shows a real peek at its content, with `See all ›`:
 
-Include an Explore section with a slightly prominent Events navigation card and a Your Student Life section containing:
+- **Class:** next class and today's schedule.
+- **Events:** a horizontal strip of upcoming events with photos.
+- **Organizations:** the student's organizations (logos).
+- **Clearance:** progress, or `Clearance Unavailable`.
 
-- Class
-- Organizations
-- Clearance
-
-Use a clean editorial layout and avoid duplicating the Home feed.
+The hub is for browsing; Home is for today and alerts. They don't repeat each other.
 
 ### 7.1 Class
 
-Display:
-- Upcoming classes in chronological order.
-- Subject.
-- Professor.
-- Start and end time.
-- Classroom.
-- Full schedule access.
-- Attendance summary and history.
-
-If no more classes remain today, display the next scheduled future class.
-
-Provide `Show QR for Attendance`, displaying a scan-friendly code and the instruction:
-
-`Show this code to your teacher.`
-
-The profile QR and Class QR should represent the same account identity concept. The QR can be shown at any time.
-
-Use a mock QR during frontend development. Never claim that displaying it verifies attendance.
+- `Show QR` button at the top (opens the shared QR sheet, §1.3).
+- **Day strip:** Mon–Sat pills, today selected. Below it, that day's classes as rows: subject, teacher, start–end time, room.
+- **Attendance:** overall %, a % per subject, and recent records (Present / Absent per session).
 
 ### 7.2 Attendance Rules
 
 The intended production workflow requires an authorized teacher to scan the student's QR against the official enrolled roster and an active session.
 
-Rules:
 - Valid enrolled students may be marked Present.
 - Unknown or unenrolled students must not be marked present.
 - Reject scans before the session starts or after it closes.
@@ -301,359 +260,182 @@ Rules:
 
 ### 7.3 Events
 
-Provide filters:
-- All
-- School-wide
-- Department
-- My Organizations
+- Segmented control: **Discover | My events**. My events shows registered events, then past ones.
+- On Discover: filter pills **All / School-wide / Department / My Orgs**, events grouped under two-tone date headers as photo rows.
+- Show only events the user is eligible for. Deduplicate events matching multiple filters.
 
-Show only events relevant to the user's eligibility. Deduplicate events matching multiple categories.
-
-Event details include:
-- Image.
-- Name.
-- Host or organizer.
-- Date and time.
-- Venue.
-- Description.
-- Registration deadline and capacity when applicable.
-- Registration or joining action when appropriate.
-- Relevant host and attendee information.
-
-The event experience supports social discovery. Users can identify hosts and view appropriate attendee identities and roles, subject to the eventual privacy rules.
+**Event detail** (Luma style): large cover photo, title, date and time, a row of action buttons (Register, Share, More), then labeled sections: **Venue** (with map), **Host**, **Attendees** (overlapping avatar stack, for example `+42`, with roles where allowed), **About**. Registration deadline and capacity when applicable.
 
 Rules:
-- Prevent duplicate registrations.
-- Do not confirm registration for full, closed, or ineligible events.
-- Registration is not attendance or completion.
-- Only official attendance confirmation contributes to event history and completion metrics.
-- Leaving an organization hides member-exclusive events from current discovery but preserves registration and historical records.
 
-Authorized teachers can invite eligible students. Teacher-issued invitations automatically register recipients without an accept/decline step. Cancellations notify affected students.
+- Prevent duplicate registrations.
+- Don't confirm registration for full, closed, or ineligible events.
+- Registration is not attendance or completion. Only official attendance confirmation counts toward history and metrics.
+- Leaving an organization hides member-exclusive events from discovery but preserves registrations and history.
+- Authorized teachers can invite eligible students. Teacher invitations register recipients automatically, without accept/decline. Cancellations notify affected students.
+- Attendee visibility follows the eventual privacy rules (open decision).
 
 ### 7.4 Organizations
 
-The directory contains:
-- The student's departmental society where applicable.
+**Directory**, three groups:
+
+- The student's departmental society, where applicable.
 - Approved school-wide clubs.
-- My Organizations, containing confirmed memberships.
+- My Organizations (confirmed memberships).
 
-Do not treat a department as its student society. Do not list other departments' societies as school-wide clubs.
+Each entry shows logo, name, and member count. Don't treat a department as its society, and don't list other departments' societies as school-wide clubs.
 
-Organization profiles contain five features:
-- About
-- Schedule
-- Events
-- News
-- Officers
+**Organization page:** cover photo, logo, name, tags, and membership status (Member / Join), then **tabs**: About, Schedule, Events, News, Officers.
 
-Feature details may open rounded modal pop-ups over the current screen, with a dimmed background, close button, outside-tap dismissal, Back support, and internal scrolling.
-
-Complex membership or editing flows may use dedicated screens.
-
-The Events feature opens the shared Events destination filtered to the organization, preserving back navigation.
-
-Only authorized officers can publish or manage organization content. Administrators manage memberships and officer assignments. When an officer role ends, management permissions are revoked but historical posts remain.
+- The Events tab lists the organization's events; tapping one opens the shared event detail, with Back preserved.
+- Only authorized officers can publish or manage organization content. Administrators manage memberships and officer assignments. When an officer role ends, management permissions are revoked but historical posts remain.
 
 ### 7.5 Clearance
 
-All clearance types are seasonal:
-- Semester
-- Graduation
-- Document request
-- Other configured categories
+Clearance types are seasonal: Semester, Graduation, Document request, other configured categories.
 
-Outside an active period, display:
+**During an active period:**
 
-`Clearance Unavailable`
+- Top: period name (for example `1st Semester Clearance`), deadline, and a big progress bar or ring (`3 / 6 cleared`).
+- One row per requirement: office icon, office name (Library, Accounting, …), status pill.
+- Tapping a row opens its detail: what to do, the reason if returned, and a resubmit path.
+- Bottom: **Past clearances**.
 
-Processing remains locked, but history is available.
+**Outside a period:** a calm `Clearance Unavailable` empty state. Processing is locked; history stays visible below.
 
-During an active period, show progress, applicable requirements, deadlines, and statuses:
+Statuses: Not started, Action required, In review, Needs correction, Cleared, On hold, Not applicable.
 
-- Not started
-- Action required
-- In review
-- Needs correction
-- Cleared
-- On hold
-- Not applicable
+Action required means the student has something to do for the first time. Needs correction means staff reviewed a submission and returned it with a reason. (Proposed definition — confirm.)
 
-Action required means the student has something to do for the first time (for example, submit a document). Needs correction means staff already reviewed a submission and returned it with a reason. (Proposed definition — confirm.)
+Not applicable differs from Not started. Overdue does not automatically mean rejected or cleared. Evidence is required only when specified.
 
-Not applicable differs from Not started. Overdue does not automatically mean rejected or cleared.
-
-Evidence is required only when specified. Provide rejection reasons and resubmission paths.
-
-Authorized staff scan the student's QR, review the relevant records or physical documents, and explicitly record an outcome.
-
-A QR scan or evidence upload never automatically approves clearance. Staff may process only requirements they are authorized to manage.
+Authorized staff scan the student's QR, review the records or documents, and explicitly record an outcome. A QR scan or evidence upload never approves clearance automatically. Staff process only requirements they are authorized to manage.
 
 ## 8. Teacher Home
 
-Purpose: a personalized dashboard for teaching responsibilities and campus updates.
+Same layout and components as Student Home (§6), with teacher content:
 
-Header:
-- Michaelean branding.
-- Personalized greeting.
-- Current date.
-- Notification bell.
-- Expandable Today's Overview.
+1. **Header:** emblem + wordmark, greeting, date, bell pill.
+2. **Stats row:** compact, always visible: Classes today, Sessions awaiting finalization, Upcoming events.
+3. **Up next:** solid navy card with the next class (subject, time, room) and a **Start attendance** button. If no more classes today, the next future class or an empty state.
+4. **Pending tasks:** finalize an attendance session, review a schedule change, other authorized teaching tasks. Only show pending attendance when a session genuinely needs teacher action; a scheduled class alone is not a task.
+5. **Today's classes.**
+6. **Announcements**, **School News**, event notices, and schedule or classroom changes, in the same feed style as students.
 
-Collapse the detailed overview on scroll while keeping the greeting and notification bell accessible.
-
-Today's Overview:
-- Classes today.
-- Attendance sessions awaiting finalization.
-- Upcoming events.
-
-Only show pending attendance when a session genuinely requires teacher action. A scheduled class alone does not create an attendance task.
-
-Next Class displays the next scheduled class, subject, time, and classroom. If there are no more classes today, show the next scheduled future class or an appropriate empty state.
-
-Pending Tasks may include:
-- Finalize an attendance session.
-- Review a schedule change.
-- Complete another authorized teaching task.
-
-Include relevant announcements, official school news, event notices, and schedule or classroom changes.
-
-Do not add a separate publishing button to Home. Management actions belong in Michaelean Life.
+Header collapses on scroll as on Student Home. No publishing button on Home; management lives in Michaelean Life.
 
 ## 9. Michaelean Life
 
-Purpose: the teacher's feature hub, with the section heading `Teaching & Campus`.
+Purpose: the teacher's feature hub. Section heading: `Teaching & Campus`.
 
-Include three principal features:
-1. Class Management.
-2. Events.
-3. Clearance.
+Layout: **live previews**, the same pattern as Student Life, with `See all ›`:
+
+- **Classes:** today's classes, each with a Start attendance button.
+- **Events you manage:** upcoming and drafts, as photo rows.
+- **Clearance:** the teacher's assigned office and its pending count, or `Clearance Unavailable`.
 
 ### 9.1 Class Management
 
-Provide access to:
-- Assigned classes.
-- Today's Classes and Schedule.
-- Class details.
-- Attendance scanning.
-- Student roster.
-- Attendance review and finalization.
-- Schedule and classroom-location editing.
-- Recent sessions.
+Access to: assigned classes, today's classes and schedule, class details, student roster, attendance scanning, review and finalization, schedule and room editing, recent sessions.
 
-Attendance flow:
+**Attendance scan flow:**
 
-1. Open a class.
-2. Start or access an appropriate attendance session.
-3. Scan or simulate scanning a student's QR.
-4. View Present and Unchecked counts.
-5. Review the roster.
-6. Finish Attendance.
-7. Review unchecked students and confirm finalization.
+1. Tap **Start attendance** (from Home, the hub, or a class).
+2. **Full-screen camera view** (mock), with a live counter at the bottom: `Present 18 · Unchecked 7`.
+3. Each scan briefly flashes the student's photo and name, then the camera is ready again.
+4. **Finish** opens the roster review: unchecked students listed.
+5. **Confirm finalization.**
 
-Mock scanning must not be represented as real verification or a saved official record.
+Mock scanning is clearly labeled and never represented as real verification or a saved official record. The scanner is only reached through Start attendance; it is not on the long-press shortcut.
 
-Schedule editing may include date or recurrence, start/end times, classroom, optional reason, and Save Changes.
-
-The scope of teacher editing permissions remains undecided. Do not assume all teachers can edit all classes. Distinguish individual-session changes from recurring schedule changes if both are supported.
+Schedule editing may include date or recurrence, start/end times, room, optional reason, and Save Changes. The scope of teacher editing permissions remains undecided; don't assume all teachers can edit all classes. Distinguish single-session from recurring changes if both are supported.
 
 ### 9.2 Events Management
 
-Provide:
-- Upcoming.
-- Past.
-- Drafts.
-- Create Event.
-- Manage Event.
-- Edit Event.
-- Invite Students.
-- View Registrations.
-- Cancel Event.
+Provide: Upcoming, Past, Drafts, Create Event, Manage Event, Edit Event, Invite Students, View Registrations, Cancel Event.
 
-Event forms may include name, image, description, date, start/end time, venue, audience, deadline, and optional capacity.
+**Create / Edit Event:** one scrolling page in Luma's form style:
 
-Support draft and publish states as distinct frontend interactions.
+- Cover photo picker at the top.
+- Name, date, start/end time, venue, audience, deadline, optional capacity, description, as soft gray rounded fields.
+- **Save draft** and **Publish** at the bottom.
 
-Invitations may target individuals, classes/sections, eligible departments, or other explicitly supported groups.
+Rules:
 
-Editing must update the same event, not create a duplicate. Important changes and cancellations should be clearly represented.
-
-Teachers can manage only events they are authorized to manage.
-
-Do not implement actual publishing, registration, or notifications during the frontend phase.
+- Draft and publish are distinct frontend states.
+- Invitations may target individuals, classes/sections, eligible departments, or other explicitly supported groups.
+- Editing updates the same event, never a duplicate. Important changes and cancellations are clearly represented.
+- Teachers manage only events they are authorized to manage.
+- No real publishing, registration, or notifications in the frontend phase.
 
 ### 9.3 Clearance Verification
 
-Provide:
-- Assigned office or clearance area.
-- Pending requirements.
-- Scan Student QR.
-- Relevant student identification details.
-- Individual requirement selection.
-- Outcome recording.
-- Reason or notes.
-- Confirmation.
+Provide: assigned office or clearance area, pending requirements, Scan Student QR, relevant student identification details, individual requirement selection, outcome recording (Cleared, Needs Correction, On Hold), reason or notes, confirmation.
 
-Valid outcomes include Cleared, Needs Correction, and On Hold.
-
-Outside an active clearance period, processing is unavailable. QR scanning and saving are mock interactions only.
-
-Only explicitly authorized staff can process requirements.
+Outside an active period, processing is unavailable. Scanning and saving are mock interactions only. Only explicitly authorized staff can process requirements.
 
 ## 10. Shared Profile
 
-Purpose: a social identity page inspired by Facebook profiles and Luma event identities, not a conventional settings menu.
+Purpose: a social identity page in Luma's profile layout, not a settings menu. Same structure for both roles. **No QR coin** (the QR lives on the long-press shortcut and in Class).
 
-Both students and teachers use the same general structure, with role-specific information.
+Top to bottom:
 
-Display:
-- Prominent profile photo.
-- Name.
-- Student or teacher designation.
-- Academic or faculty information.
-- Masked student or staff identifier.
+- Large profile photo, left-aligned name, Student or Teacher designation, academic or faculty information, masked ID (for example `2023-****-12`).
 - Official identity tags.
-- Edit Profile action.
+- Inline stats: students `12 Attended · 3 Orgs`; teachers `4 Classes · 6 Hosted`.
+- Edit Profile button and the settings icon.
+- Optional concise **About**.
+- Teachers only: **Classes I teach**.
+- **Event history** as photo rows: event name, date, image, attendance status, recorded role (Participant, Organizer, Host, Volunteer). Roles come from the event record; creating an event doesn't make someone its host; registration alone isn't attendance. Tapping opens the event detail.
 
-### 10.1 Photo-to-QR Coin Flip
-
-The photo and QR code occupy the same display area.
-
-- The front face displays the profile photo.
-- Tapping or swiping horizontally triggers a smooth 3D coin-like flip around the vertical axis.
-- The reverse face displays the QR code.
-- Tapping or swiping again returns to the photo.
-- Avoid accidental repeated flips.
-- Once flipped, the QR face remains stationary and readable.
-
-The interaction is identical for students and teachers.
-
-Use a mock QR for the frontend prototype. Do not expose unnecessary personal information through QR content.
-
-Mock QR content: a random mock token per mock account (for example `MOCK-7F3K9Q`), never a real name, student/staff ID, or email. The same token is used for the profile QR and the Class attendance QR.
-
-### 10.2 Profile Information
-
-Show the institutional hierarchy, department/program, confirmed organization memberships, and assigned roles.
-
-All assigned tags are visible to students and teachers using Michaelean.
-
-Users cannot freely edit academic identity, membership, officer roles, or official identifiers.
-
-Include an optional concise About section.
-
-### 10.3 Event History
-
-Display recorded event participation:
-- Event name.
-- Date.
-- Relevant image.
-- Attendance or participation status.
-- Recorded role, such as Participant, Organizer, Host, or Volunteer.
-
-Roles must come from the event record. Creating an event does not automatically make someone its host. Registration alone does not count as attendance.
-
-Tapping an event opens its details when available.
-
-### 10.4 Edit Profile
-
-Allow editing of appropriate personal and presentation details, such as the profile photo.
-
-Do not allow free editing of authoritative academic information, official identifiers, memberships, roles, or attendance history.
+**Edit Profile:** edit presentation details such as the photo and About. Academic information, identifiers, memberships, roles, and attendance history cannot be edited.
 
 ## 11. Settings Pop-Up
 
-The Profile screen contains a settings icon.
+The settings icon on Profile opens a sheet over the screen with a dimmed background, in Luma's grouped, rounded inset-list style:
 
-Tapping it opens a pop-up over the existing screen with a dimmed background.
+- Personal Information
+- Account & Security
+- Notifications
+- Help & Support
+- About Michaelean
+- Preview role switch (Student / Teacher), labeled as a preview tool
+- Log Out
 
-Include:
-- Personal Information.
-- Account & Security.
-- Notifications.
-- Help & Support.
-- About Michaelean.
-- Log Out.
-
-Support closing with the X button, tapping outside, or pressing Back where appropriate.
-
-Reuse shared settings components across student and teacher profiles.
-
-Actual account changes and logout are outside the current frontend-only scope. Use clear placeholders for destinations that have not been implemented.
+Close with X, outside tap, or Back. Real account changes and logout are out of scope; unbuilt destinations show clear placeholders.
 
 ## 12. Permissions and Privacy
 
-Identity and authorization are different.
+Identity and authorization are different. A teacher, student leader, or officer does not automatically receive every capability associated with that title.
 
-A teacher, student leader, or organization officer does not automatically receive all administrative capabilities associated with that title.
-
-Examples:
 - Only authorized teachers can manage applicable classes.
 - Only authorized event managers can publish or modify applicable events.
-- Only staff assigned to the relevant clearance area can process its requirements.
-- Only authorized organization officers can manage organization content.
+- Only staff assigned to a clearance area can process its requirements.
+- Only authorized officers can manage organization content.
 
-Represent permissions explicitly in mock data.
+Represent permissions explicitly in mock data. The eventual backend enforces permissions; frontend visibility is not security.
 
-The eventual backend must enforce permissions; frontend visibility alone is not security.
+Privacy:
 
-Privacy principles:
 - Assigned tags are visible to all Michaelean students and teachers.
-- Mask student IDs by default.
-- Protect QR content.
+- Mask student and staff IDs by default.
+- QR content is a random token, never personal data.
 - Avoid unnecessary personal information.
-- Establish appropriate visibility rules for event histories and attendee details.
-- Hide or disable unauthorized actions with an explanation where useful.
+- Hide or disable unauthorized actions, with an explanation where useful.
+- Visibility rules for event history and attendee lists remain to be finalized.
 
-The precise visibility rules for event history and attendee lists remain to be finalized.
+## 13. Development Order (rebuild)
 
-## 13. Planned Development Order
+The existing models, services, and mock data are kept; screens are rebuilt to this spec. One phase per session, reviewed by the user before moving on.
 
-Phase 1 — Foundation:
-- Inspect existing project.
-- Establish shared theme and reusable components.
-- Implement shared bottom navigation.
-- Add student and teacher preview modes.
-- Establish mock-data conventions.
-
-Phase 2 — Home:
-- Student Home.
-- Teacher Home.
-
-Phase 3 — Feature hubs:
-- Student Life.
-- Michaelean Life.
-
-Phase 4 — Profiles:
-- Student Profile.
-- Teacher Profile.
-- Photo-to-QR animation.
-- Identity tags.
-- Event history.
-- Settings pop-up.
-
-Phase 5 — Feature details:
-- Class schedules and attendance interfaces.
-- Event discovery and management.
-- Organization profiles and membership interfaces.
-- Clearance interfaces.
-
-Phase 6 — Frontend testing:
-- Navigation and state preservation.
-- Responsive layouts.
-- Loading, empty, unavailable, and error states.
-- Form validation.
-- Role-specific UI.
-- Permission-dependent controls.
-- QR and animation behavior.
-
-Phase 7 — Later integration, only when requested:
-- Microsoft 365 authentication.
-- School-record mapping.
-- Backend and database.
-- Official attendance and event records.
-- Organization memberships and permissions.
-- Clearance workflows.
-- Real notifications.
-- Production QR verification.
-- PWA deployment and offline caching.
+1. **Theme and shared pieces:** tokens (§2.2), Inter Display + Inter (§2.3), depth and shadows, rows, status pills, sheets, floating header and nav, motion basics.
+2. **Opening video and sign-in preview** (§1.1).
+3. **Home**, both roles (§6, §8), including the notifications sheet, long-press QR, and one-time hint (§1.3).
+4. **Hubs:** Student Life and Michaelean Life live previews (§7, §9).
+5. **Profile and Settings** (§10, §11).
+6. **Class:** student Class screen and teacher class management with the attendance scan flow (§7.1, §9.1).
+7. **Events:** discovery, detail, and teacher management (§7.3, §9.2).
+8. **Organizations:** directory and tabbed organization page (§7.4).
+9. **Clearance:** student clearance and teacher verification (§7.5, §9.3).
+10. **Frontend testing:** navigation and state, responsive layouts, empty/unavailable/error states, form validation, role-specific UI, permission-dependent controls, QR and motion.
+11. **Later integration, only when requested:** Microsoft 365 auth, school-record mapping, backend and database, official records, memberships and permissions, clearance workflows, real notifications, production QR verification, PWA deployment and offline caching.

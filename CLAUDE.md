@@ -30,10 +30,11 @@ The user is learning to code. Be a patient, practical partner.
 - **Flutter 3.47.7 (stable)**, Dart that ships with it.
 - **State:** Flutter built-ins — `setState` and `ChangeNotifier`. No state-management package unless discussed first.
 - **Navigation:** `go_router` — needed so the Android/browser Back gesture in the installed PWA closes pop-ups and goes back instead of exiting. Bottom tabs keep their state.
-- **Theme:** `lib/theme/app_theme.dart` (created in Phase 1) is the single source for colors, fonts, spacing, and radii. Never hardcode colors or sizes in screens.
+- **Theme:** `lib/theme/app_theme.dart` is the single source for colors, fonts, spacing, and radii. Never hardcode colors or sizes in screens.
 - **Dependencies:** add a package only with a clear reason, explained to the user first.
 - **Assets:** declare them file by file in `pubspec.yaml`. Never declare `assets/images/` as a folder (it holds the Luma screenshots, which must not ship).
-- **Fonts:** Inter (Regular, Medium, SemiBold, Bold) is bundled in `assets/fonts/` with its license.
+- **Fonts:** Inter (Regular, Medium, SemiBold, Bold) is bundled in `assets/fonts/` with its license. Inter Display (for large titles, spec §2.3) is added in rebuild Phase 1.
+- **Light mode only** for now (spec §2).
 - **Session:** the previewed user lives in `Session` (`lib/services/session.dart`); screens read it with `SessionScope.of(context)`.
 
 ## Folder layout
@@ -60,7 +61,7 @@ docs/
   spec.md         product spec
 ```
 
-Status (2026-10-20): Phases 1–2 done. Foundation, plus one shared `HomeScreen` for both roles (student and teacher sections come from `HomeService`). Student Life / Michaelean Life and Profile are placeholders.
+Status (2026-10-21): The spec was revised after a full design review (the first build didn't match the user's vision). The old Phases 1–4 code exists (theme, shared Home, hubs, Profile with QR coin) but screens are being **rebuilt** to the new spec, following spec §13. Models, services, and mock data are kept. Rebuild Phase 1 (theme and shared pieces) is next.
 
 ## Commands (run in `C:\Users\moril\projects\michaelean_app`)
 
