@@ -4,7 +4,7 @@ A campus-life app for students and teachers of **Saint Michael's College of Lagu
 
 Built with **Flutter/Dart**. The goal is a free-hosted, installable **PWA** (Progressive Web App) that students and teachers add to the home screen on Android and iPhone.
 
-> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–3 of 11 are done.**
+> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–4 of 11 are done.**
 
 ---
 
@@ -65,7 +65,7 @@ Before every commit, `flutter analyze` should say **No issues found!** and `flut
 
 The flow when you open the app:
 
-1. **Opening intro.** The SMCL emblem fades and scales in, then "Michaelean" and the school name rise in. After about 2.4 seconds it moves on by itself; **Skip** (top right) jumps ahead. It plays on **every** app open, including browser reloads. With "reduce motion" turned on, it shows the finished logo without movement.
+1. **Opening intro.** The SMCL emblem fades and scales in, then "Michaelean" and the school name rise in. After about 2.4 seconds it moves on by itself (there is no Skip button). It plays on **every** app open, including browser reloads. With "reduce motion" turned on, it shows the finished logo without movement.
 2. **Sign-in preview.** Pick **Student** or **Teacher** in the pill switch, then press **Sign in with Microsoft (preview)**. This is **not** a real sign-in: it loads a mock student (Nicolas) or mock teacher (Mark). The screen says so in plain words.
 3. **The app**, with a floating bottom bar of three tabs:
    - Students: **Home | Student Life | Profile**
@@ -78,7 +78,7 @@ What's behind each tab right now:
 |---|---|
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
 | Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
-| Student Life / Michaelean Life | Old design: a list of features that open "Coming soon" pages. To be rebuilt in Phase 4. |
+| Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Each `See all ›` opens a "Coming soon" page until Phases 6–9. |
 | Profile + Settings sheet | Old design: photo that flips to a QR "coin", tags, masked ID, event history, settings sheet with Log Out. To be rebuilt in Phase 5. |
 | Class, Events, Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 6–9. |
 
@@ -94,7 +94,7 @@ Michaelean is **one app** with a **student** experience and a **teacher** experi
 
 ### Start flow (spec §1.1)
 
-Opening intro/video (with Skip) → Sign-in preview screen → Home.
+Opening intro/video (no Skip button) → Sign-in preview screen → Home.
 
 In production, sign-in will go through the school's **Microsoft 365** accounts: sign in, verify the account belongs to SMCL, match it to an official student/faculty record, load the verified info, assign tags and permissions, then open Home (spec §4). **Not part of the prototype.**
 
@@ -145,8 +145,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 | 1 | Theme and shared pieces | §2 | ✅ **Done** |
 | 2 | Opening intro and sign-in preview | §1.1, §4 | ✅ **Done** (intro is a stand-in for a real video, see below) |
 | 3 | Home, both roles, incl. notifications sheet, long-press QR, one-time hint | §6, §8, §1.3 | ✅ **Done** |
-| 4 | Hubs: Student Life and Michaelean Life live previews | §7, §9 | ⏳ **Next** |
-| 5 | Profile and Settings | §10, §11 | To do |
+| 4 | Hubs: Student Life and Michaelean Life live previews | §7, §9 | ✅ **Done** |
+| 5 | Profile and Settings | §10, §11 | ⏳ **Next** |
 | 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | To do |
 | 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | To do |
 | 8 | Organizations: directory and tabbed organization page | §7.4 | To do |
@@ -171,7 +171,7 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 **Spec:** §1.1, §4. **Goal:** what users see when they open the app.
 
-- **Opening intro** (`opening_screen.dart`): animated SMCL emblem with a **Skip** button. Plays on every app open, including reloads. Stands in for a real SMCL opening video.
+- **Opening intro** (`opening_screen.dart`): animated SMCL emblem; moves on by itself after about 2.4 s (the Skip button was removed later, see Recent changes). Plays on every app open, including reloads. Stands in for a real SMCL opening video.
 - **Sign-in preview** (`preview_screen.dart`): emblem, **Student | Teacher** pill switch (`SegmentedPills`), `Sign in with Microsoft (preview)` button, and a visible note that it is a preview with sample data, not a real sign-in.
 
 #### Phase 3: Home, both roles ✅ Done
@@ -189,16 +189,24 @@ Each phase is one piece of work, reviewed by the group before the next one start
 - **One-time tip** above the nav bar: `Tip: hold Student Life to show your QR` (or `Michaelean Life`). Shown once per device, remembered with `shared_preferences` (`services/hint_store.dart`); hides after 8 seconds or with its X.
 - No `See all ›` links on Home: each section already shows everything there is, and the spec forbids buttons that do nothing.
 
-#### Phase 4: Hubs (Student Life and Michaelean Life) ⏳ Next
+#### Phase 4: Hubs (Student Life and Michaelean Life) ✅ Done
 
-**Spec:** §7, §9. **Goal:** each role's feature hub, for browsing. Replace the feature list in `screens/shared/life_hub_screen.dart` with **live previews**, each a real peek at its content with `See all ›`.
+**Spec:** §7, §9. **Goal:** each role's feature hub, for browsing. `screens/shared/life_hub_screen.dart` shows **live previews**: real peeks at each feature's content, each section with `See all ›` (a "Coming soon" page until that feature's phase).
 
-- **Student Life** (subtitle `Your campus, beyond the classroom.`): Class (next class and today's schedule), Events (horizontal strip of upcoming events with photos), Organizations (the student's org logos), Clearance (progress, or `Clearance Unavailable`).
-- **Michaelean Life** (heading `Teaching & Campus`): Classes (today's classes, each with Start attendance), Events you manage (upcoming and drafts), Clearance (assigned office and pending count, or `Clearance Unavailable`).
-- Features the teacher is not authorized for stay disabled, with an explanation.
-- The hub is for browsing; Home is for today and alerts. They don't repeat each other.
+- **Student Life** (subtitle `Your campus, beyond the classroom.`):
+  - **Class:** today's classes with `Ended`, `Now`, or `Next` pills (time, subject, room, teacher). With no class today: a line naming the next class.
+  - **Events:** a horizontal strip of photo cards (cover, day and time, title, venue) for published events the student is eligible for, soonest first.
+  - **Organizations:** the student's confirmed organizations (from their organization tags) with logo or initials and member count.
+  - **Clearance:** period name, deadline, a navy progress bar with `3/6`, and a red `1 needs correction` pill; outside a period, a calm `Clearance Unavailable` tile.
+- **Michaelean Life** (subtitle `Teaching & Campus`):
+  - **Classes:** today's classes. **Start attendance** appears only on classes that haven't ended (no scans after a session closes, spec §7.2); ended ones show `To finalize` or `Ended`.
+  - **Events You Manage:** photo rows of upcoming events and drafts the teacher may manage, with a `Draft` pill.
+  - **Clearance:** the assigned office and pending count, or `Clearance Unavailable`.
+- **Permissions, not the Teacher label, decide what's usable.** A section the user isn't authorized for stays visible with a lock icon and the reason, and has no `See all ›`. The mock teacher can manage classes and events but has no clearance area.
+- Data comes from the new `CampusService` (`services/campus_service.dart`) and `MockCampusService`, with sample events, organizations, and clearance in `mock/mock_campus.dart`.
+- One loading skeleton and one error state (with Retry) for the whole hub.
 
-#### Phase 5: Profile and Settings
+#### Phase 5: Profile and Settings ⏳ Next
 
 **Spec:** §10, §11. **Goal:** a social identity page in Luma's profile layout, the same for both roles.
 
@@ -269,6 +277,15 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Removed the Skip button from the opening intro.** The intro is about 2.4 seconds and moves on to sign-in by itself. Spec §1.1 updated to match.
+- **Rebuild Phase 4: Student Life and Michaelean Life hubs.**
+  - Hubs rebuilt to spec §7/§9 as live previews with `See all ›`: classes, an events photo strip, organizations, and clearance progress for students; classes with Start attendance, events you manage (with drafts), and clearance for teachers.
+  - New `CampusService` + `MockCampusService` and models in `models/campus.dart` (`CampusEvent`, `Organization`, `ClearanceSummary`, `ClearanceOffice`); sample data in `mock/mock_campus.dart`.
+  - Mock data: sample upcoming events (CSS events use the society's cover image; others use a placeholder tile), three organizations, a 1st Semester Clearance period. The mock student is now also a member of the invented `SMCL Chorale` (a labeled mock assumption).
+  - `SectionHeader` can show a `See all ›` link (read by screen readers as "See all <section>").
+  - `MichaeleanApp` now takes a `campusService` too.
+  - The events strip grows with the phone's text size instead of overflowing.
+  - Tests: hub previews for both roles, eligibility (no events for clubs you're not in, no drafts for students), managed events and drafts, organizations from tags, clearance and permission lock, hub error state.
 - **Rebuild Phase 3: Home, both roles.**
   - Home rebuilt to spec §6/§8: always-visible stats row, navy Up next card, today's classes for teachers, campus feed with urgent posts pinned, more mock announcements and news so sections feel full.
   - New shared widgets `StatsRow` and `UpNextCard`; removed the old `ExpandableOverview`.
@@ -311,10 +328,11 @@ lib/
     shared/          screens both roles use (opening, sign-in preview, Home, hubs, Profile, sheets)
     student/         planned: student-only screens (folder not created yet)
     teacher/         planned: teacher-only screens (folder not created yet)
-  models/            plain data classes: UserProfile, IdentityTag, Permission, feed items, EventRecord
-  mock/              CLEARLY LABELED sample data (mock_users.dart, mock_home.dart)
+  models/            plain data classes: UserProfile, IdentityTag, Permission, feed items,
+                     EventRecord, campus data (CampusEvent, Organization, clearance)
+  mock/              CLEARLY LABELED sample data (mock_users.dart, mock_home.dart, mock_campus.dart)
   services/          interfaces that return mock data now, real data later
-                     (UserService, HomeService) + Session (who is being previewed)
+                     (UserService, HomeService, CampusService) + Session (who is being previewed)
                      + HintStore (remembers one-time tips on the device)
   utils/dates.dart   date formatting helpers
 test/                widget and unit tests
@@ -334,7 +352,7 @@ CLAUDE.md            working rules for Claude Code (AI assistant); also a good s
 
 ### How data flows
 
-Screens never read mock data directly. They ask a **service** (e.g. `HomeService.loadHome(user)`), and `MockHomeService` / `MockUserService` return sample data from `lib/mock/`. Later, a real implementation (Microsoft 365 + school records) can replace the mock service **without changing the screens**.
+Screens never read mock data directly. They ask a **service** (e.g. `HomeService.loadHome(user)`), and `MockHomeService` / `MockUserService` / `MockCampusService` return sample data from `lib/mock/`. Later, a real implementation (Microsoft 365 + school records) can replace the mock service **without changing the screens**.
 
 The previewed user lives in `Session` (`lib/services/session.dart`). Any screen gets it with `SessionScope.of(context)`.
 
@@ -376,7 +394,7 @@ The look follows **Luma** (an events app for iPhone) closely in layout and feel,
 | `ContentRow` | The standard list row: thumbnail (pill overlaps it), source avatar + name, title, meta line with icon |
 | `StatusPill` | Small tinted status label (`PillTone.green/amber/navy/red/neutral`) |
 | `TwoToneDate` | `24 October / Friday` date header |
-| `SectionHeader` | Section title with consistent spacing |
+| `SectionHeader` | Section title with consistent spacing; optional `See all ›` link |
 | `SegmentedPills` | Pill segmented control (Student/Teacher, Discover/My events, …) |
 | `AppSheetPage` | Rounded bottom sheet as a router page: grab handle, round X, dimmed background, Back closes it |
 | `FloatingNavBar` | The floating pill bottom navigation |
@@ -410,12 +428,13 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-29 tests currently pass. They cover:
+35 tests currently pass. They cover:
 
-- **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; Skip leaves the intro; a reload at a saved address still plays the intro first.
+- **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
 - **Home data:** the student sees their department/society posts only, urgent posts first, the student's own next class with its teacher, the teacher's classes for today only, teacher sections, the attendance task appears only for an unfinalized session, next-class logic, no post in two sections.
-- **Hubs:** Student Life lists its features; Michaelean Life disables features the teacher isn't authorized for.
+- **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens a placeholder with Back; Michaelean Life shows classes, managed events with drafts, and locks Clearance without permission; a load failure shows Retry.
+- **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
 - **Profile:** identity, masked ID, tags, event history; the QR holds only the mock token; settings opens and closes; Log Out ends the preview.
 
 When you rebuild a screen, update its tests and add tests for new logic, especially permissions, status rules, and "no fake success" behavior.
@@ -443,7 +462,8 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 - **`assets/videos/app_opening.mp4` is a recording of Luma's app** (its logo and slogan). It is **not used** and not declared in `pubspec.yaml`. The animated emblem intro stands in until there is a real SMCL opening video. To use a real video later: replace the file, add the video back to `pubspec.yaml`, run `flutter pub add video_player`, and switch `opening_screen.dart` to play it. Browsers block autoplay with sound, so play it muted.
 - **Profile photos in `assets/images/profiles/` are of real people.** Use them only with their consent, and only as clearly labeled sample data. Event posters in `assets/images/events/` are placeholders too. The spec wants stock or real SMCL photos listed in one place in mock data so they are easy to swap.
 - **PWA settings are still Flutter defaults.** `web/manifest.json` has name `michaelean_app`, Flutter's blue color, and Flutter's icons. Set the name, colors, and icons (from the SMCL emblem) when the group picks the hosting (open decision 7).
-- **Hubs and Profile still use the old design** until Phases 4–5. Some old pieces contradict the new spec on purpose until then (e.g. the QR coin on Profile).
+- **Profile and Settings still use the old design** until Phase 5. Some old pieces contradict the new spec on purpose until then (e.g. the QR coin on Profile).
+- **Event covers are placeholders.** CSS events reuse the society's cover image; other events show a gray tile. Replace them with real SMCL event photos when the group has them (listed in `lib/mock/mock_campus.dart`).
 - **Long-press needs a real hold.** Hold the mouse button (or your finger) on Student Life / Michaelean Life for about half a second. Automated widget tests cover it.
 - **On narrow phones the quick-QR tip wraps to two lines.** It's readable; shorten the wording if the group prefers one line.
 - **Git warnings "LF will be replaced by CRLF"** on Windows are harmless.
@@ -454,7 +474,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 4 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 5 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.

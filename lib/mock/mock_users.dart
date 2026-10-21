@@ -22,6 +22,8 @@ const mockStudent = UserProfile(
     // Confirmed member (mock assumption). Society membership is not assumed
     // automatic — see CLAUDE.md open decision 2.
     IdentityTag('Computer Science Society', TagKind.organization),
+    // Invented school-wide club, confirmed member (mock assumption).
+    IdentityTag('SMCL Chorale', TagKind.organization),
   ],
 );
 

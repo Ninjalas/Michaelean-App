@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:michaelean_app/main.dart';
 import 'package:michaelean_app/screens/shared/notifications_sheet.dart';
 import 'package:michaelean_app/widgets/floating_nav_bar.dart';
+import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,7 @@ Future<void> openHome(WidgetTester tester, {String role = 'Student', bool fail =
   await tester.pumpWidget(MichaeleanApp(
     userService: MockUserService(),
     homeService: MockHomeService(delay: Duration.zero, fail: fail),
+    campusService: MockCampusService(delay: Duration.zero),
   ));
   await tester.pumpAndSettle();
   await tester.tap(find.text(role));

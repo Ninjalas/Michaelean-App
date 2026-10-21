@@ -28,6 +28,7 @@ flutter:
     - assets/images/SMCL_MAP.png
     - assets/images/profiles/nicolas.jpg
     - assets/images/profiles/css_profile.jpg
+    - assets/images/profiles/css_coverpage.png
     - assets/images/profiles/Sir_Georgio.png
     - assets/images/events/css_commitevent.jpg
     - assets/images/events/css_startupevent.jpg

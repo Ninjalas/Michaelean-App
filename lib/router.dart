@@ -12,6 +12,7 @@ import 'screens/shared/qr_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
 import 'screens/shared/post_detail_screen.dart';
 import 'screens/shared/preview_screen.dart';
+import 'services/campus_service.dart';
 import 'services/home_service.dart';
 import 'services/session.dart';
 import 'services/user_service.dart';
@@ -20,8 +21,8 @@ import 'widgets/app_sheet.dart';
 /// All app routes. The app opens on the opening intro, then the sign-in
 /// preview. With no previewed user, everything else redirects to /preview;
 /// once a role is picked, the app opens on Home (spec §1.1).
-GoRouter createRouter(
-    Session session, UserService userService, HomeService homeService) {
+GoRouter createRouter(Session session, UserService userService, HomeService homeService,
+    CampusService campusService) {
   final rootKey = GlobalKey<NavigatorState>();
   return GoRouter(
     navigatorKey: rootKey,
@@ -86,7 +87,7 @@ GoRouter createRouter(
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/life',
-              builder: (context, state) => const LifeHubScreen(),
+              builder: (context, state) => LifeHubScreen(campusService: campusService),
               routes: [
                 GoRoute(
                   path: 'soon',

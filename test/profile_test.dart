@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:michaelean_app/main.dart';
+import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
 import 'package:michaelean_app/widgets/profile_coin.dart';
@@ -13,6 +14,7 @@ Future<void> openProfile(WidgetTester tester, {String role = 'Student'}) async {
   await tester.pumpWidget(MichaeleanApp(
     userService: MockUserService(),
     homeService: MockHomeService(delay: Duration.zero),
+    campusService: MockCampusService(delay: Duration.zero),
   ));
   await tester.pumpAndSettle();
   await tester.tap(find.text(role));

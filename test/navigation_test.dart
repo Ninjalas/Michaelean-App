@@ -1,11 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:michaelean_app/main.dart';
+import 'package:michaelean_app/screens/shared/opening_screen.dart';
+import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
 
 MichaeleanApp testApp() => MichaeleanApp(
       userService: MockUserService(),
       homeService: MockHomeService(delay: Duration.zero),
+    campusService: MockCampusService(delay: Duration.zero),
     );
 
 void main() {
@@ -48,18 +51,18 @@ void main() {
     await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
     expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
-    expect(find.text('Skip'), findsNothing); // logging out doesn't replay the intro
+    expect(find.byType(OpeningScreen), findsNothing); // logging out doesn't replay the intro
   });
 
-  testWidgets('Skip leaves the opening intro right away', (tester) async {
+  testWidgets('the intro has no Skip button and moves on by itself', (tester) async {
     await tester.pumpWidget(testApp());
     await tester.pump(const Duration(milliseconds: 300)); // intro still playing
+    expect(find.byType(OpeningScreen), findsOneWidget);
+    expect(find.text('Skip'), findsNothing);
     expect(find.text('Sign in with Microsoft (preview)'), findsNothing);
 
-    await tester.tap(find.text('Skip'));
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(); // about 2.4 s later
     expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
-    expect(find.text('Skip'), findsNothing);
   });
 
   testWidgets('reopening at a saved address still plays the intro first', (tester) async {
@@ -69,7 +72,7 @@ void main() {
 
     await tester.pumpWidget(testApp());
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Skip'), findsOneWidget); // intro is showing
+    expect(find.byType(OpeningScreen), findsOneWidget); // intro is showing
 
     await tester.pumpAndSettle();
     expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);

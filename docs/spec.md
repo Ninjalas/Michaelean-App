@@ -14,7 +14,7 @@ Michaelean is one app with two role-specific experiences sharing one design syst
 
 ### 1.1 Start flow
 
-1. **Opening video** (`assets/videos/app_opening.mp4`) is the first thing shown when the app opens. It has a Skip button.
+1. **Opening video** (`assets/videos/app_opening.mp4`) is the first thing shown when the app opens. It is short and has no Skip button (decided 2026-10-21); it moves on to sign-in by itself.
 2. **Sign-in preview screen:** SMCL emblem, a `Sign in with Microsoft (preview)` button, and a choice of Student preview or Teacher preview. Clearly labeled as a preview, never real authentication (§4).
 3. **Home.**
 

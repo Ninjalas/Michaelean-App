@@ -2,20 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'router.dart';
+import 'services/campus_service.dart';
 import 'services/home_service.dart';
 import 'services/session.dart';
 import 'services/user_service.dart';
 import 'theme/app_theme.dart';
 
 void main() {
-  runApp(MichaeleanApp(userService: MockUserService(), homeService: MockHomeService()));
+  runApp(MichaeleanApp(
+    userService: MockUserService(),
+    homeService: MockHomeService(),
+    campusService: MockCampusService(),
+  ));
 }
 
 class MichaeleanApp extends StatefulWidget {
   final UserService userService;
   final HomeService homeService;
+  final CampusService campusService;
 
-  const MichaeleanApp({super.key, required this.userService, required this.homeService});
+  const MichaeleanApp({
+    super.key,
+    required this.userService,
+    required this.homeService,
+    required this.campusService,
+  });
 
   @override
   State<MichaeleanApp> createState() => _MichaeleanAppState();
@@ -23,7 +34,7 @@ class MichaeleanApp extends StatefulWidget {
 
 class _MichaeleanAppState extends State<MichaeleanApp> {
   final _session = Session();
-  late final GoRouter _router = createRouter(_session, widget.userService, widget.homeService);
+  late final GoRouter _router = createRouter(_session, widget.userService, widget.homeService, widget.campusService);
 
   @override
   void dispose() {

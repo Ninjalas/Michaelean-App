@@ -5,7 +5,7 @@ import '../../theme/app_theme.dart';
 
 /// Opening intro, the first thing shown when the app opens (spec §1.1).
 /// The SMCL emblem fades and scales in, then the name rises in. It ends on
-/// its own or with Skip, then goes to the sign-in preview.
+/// its own (about 2.4 s, no Skip button), then goes to the sign-in preview.
 ///
 /// Stands in for assets/videos/app_opening.mp4 until a real SMCL video exists.
 class OpeningScreen extends StatefulWidget {
@@ -57,55 +57,32 @@ class _OpeningScreenState extends State<OpeningScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FadeTransition(
-                  opacity: _emblemFade,
-                  child: ScaleTransition(
-                    scale: _emblemScale,
-                    // Same Hero tag as the sign-in screen: the emblem glides into place.
-                    child: Hero(
-                      tag: 'smcl-emblem',
-                      child: Image.asset('assets/images/SMCL_Emblem.png', height: 128,
-                          semanticLabel: "Saint Michael's College of Laguna emblem"),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _riseIn(_titleIn, Text('Michaelean', style: text.displaySmall)),
-                const SizedBox(height: AppSpacing.xs),
-                _riseIn(
-                  _subtitleIn,
-                  Text("Saint Michael's College of Laguna",
-                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                ),
-              ],
-            ),
-          ),
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: TextButton(
-                  onPressed: _finish,
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.fill,
-                    foregroundColor: AppColors.ink,
-                    minimumSize: const Size(72, 48),
-                    shape: const StadiumBorder(),
-                    textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                  child: const Text('Skip'),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FadeTransition(
+              opacity: _emblemFade,
+              child: ScaleTransition(
+                scale: _emblemScale,
+                // Same Hero tag as the sign-in screen: the emblem glides into place.
+                child: Hero(
+                  tag: 'smcl-emblem',
+                  child: Image.asset('assets/images/SMCL_Emblem.png', height: 128,
+                      semanticLabel: "Saint Michael's College of Laguna emblem"),
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            _riseIn(_titleIn, Text('Michaelean', style: text.displaySmall)),
+            const SizedBox(height: AppSpacing.xs),
+            _riseIn(
+              _subtitleIn,
+              Text("Saint Michael's College of Laguna",
+                  style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+            ),
+          ],
+        ),
       ),
     );
   }
