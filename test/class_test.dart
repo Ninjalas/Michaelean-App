@@ -8,6 +8,7 @@ import 'package:michaelean_app/screens/teacher/edit_session_screen.dart';
 import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
+import 'package:michaelean_app/utils/dates.dart';
 
 Future<void> signIn(WidgetTester tester, String role) async {
   tester.view.physicalSize = const Size(390, 844);
@@ -42,25 +43,72 @@ String nextTuesdayId() {
 }
 
 void main() {
-  testWidgets('student Class: day strip, Show QR, attendance from records', (tester) async {
+  testWidgets('student Class: attendance, scrollable schedule, records of the chosen day',
+      (tester) async {
     await signIn(tester, 'Student');
     await tester.tap(find.text('Student Life'));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('See all Class'));
     await tester.pumpAndSettle();
 
-    for (final day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
-      expect(find.text(day), findsOneWidget);
+    // 1. Attendance this semester: overall and by subject.
+    expect(find.text('Attendance'), findsOneWidget);
+    expect(find.textContaining('this semester'), findsOneWidget);
+    expect(find.text('By subject'), findsOneWidget);
+
+    // 2. Schedule: the day strip scrolls through the semester.
+    final page = find.byType(Scrollable).first; // the page; the strip is a second one
+    final strip = find.byKey(const Key('day-strip'));
+    // Scroll until the heading below the strip shows, so the strip is clear of the nav bar.
+    await tester.scrollUntilVisible(find.text('Records'), 300, scrollable: page);
+    expect(find.text('Schedule'), findsOneWidget);
+
+    DateTime classDay(int offset) {
+      var d = DateTime.now();
+      d = DateTime(d.year, d.month, d.day + offset);
+      while (d.weekday == DateTime.sunday) {
+        d = DateTime(d.year, d.month, d.day + offset.sign);
+      }
+      return d;
     }
-    // Saturday has only PE 103.
-    await tester.tap(find.text('Sat'));
+
+    String label(DateTime d) => '${weekdayName(d)} ${formatDayMonth(d)}';
+
+    // 3. A past day: its records are finalized, so each class shows a mark.
+    final past = classDay(-1);
+    await tester.tap(find.bySemanticsLabel(RegExp('^${label(past)}')));
     await tester.pumpAndSettle();
-    expect(find.text('No classes on Saturday.'), findsNothing);
-    expect(find.text('PE 103 · Team Sports'), findsWidgets); // also in Recent Records
+    await tester.scrollUntilVisible(find.text('Records'), 300, scrollable: page);
+    expect(find.text('${weekdayName(past)}, ${formatDayMonth(past)}'), findsOneWidget);
+    expect(find.text('Present').evaluate().length + find.text('Absent').evaluate().length,
+        greaterThan(0));
+    expect(find.text('Upcoming'), findsNothing);
 
-    await tester.scrollUntilVisible(find.text('Recent Records'), 300);
-    expect(find.textContaining('sessions'), findsWidgets); // "Present in X of Y sessions"
+    // A future day: nothing is marked yet.
+    await tester.scrollUntilVisible(find.text('Schedule'), -300, scrollable: page);
+    final future = classDay(2);
+    await tester.tap(find.bySemanticsLabel(RegExp('^${label(future)}')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Records'), 300, scrollable: page);
+    expect(find.text('Upcoming'), findsWidgets);
+    expect(find.text('Present'), findsNothing);
 
+    // Scrolling far ahead shows weeks beyond the current one.
+    await tester.scrollUntilVisible(find.text('Schedule'), -300, scrollable: page);
+    final farAhead = find.bySemanticsLabel(RegExp('^${label(classDay(28))}'));
+    expect(farAhead, findsNothing); // four weeks ahead: not built until scrolled to
+    await tester.scrollUntilVisible(farAhead, 200,
+        scrollable: find.descendant(of: strip, matching: find.byType(Scrollable)));
+    expect(farAhead, findsOneWidget);
+    await tester.tap(farAhead); // select it, so "Today" appears
+    await tester.pumpAndSettle();
+
+    // "Today" brings the strip back.
+    await tester.tap(find.text('Today'));
+    await tester.pumpAndSettle();
+    expect(find.text('Today'), findsNothing); // today is selected again
+
+    await tester.scrollUntilVisible(find.text('Show QR'), -300, scrollable: page);
     await tester.tap(find.text('Show QR'));
     await tester.pumpAndSettle();
     expect(find.text('Your QR code'), findsOneWidget);

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,8 +14,10 @@ import '../../widgets/content_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 
-/// A student's Class screen (spec §7.1): Show QR, a Mon–Sat day strip with
-/// that day's classes, and attendance from finalized records only (§7.2).
+/// A student's Class screen (spec §7.1), top to bottom: attendance this
+/// semester (overall and by subject), the schedule with a day strip that
+/// scrolls across the whole semester, and the records of the selected day.
+/// Attendance counts finalized sessions only (spec §7.2).
 class ClassScreen extends StatefulWidget {
   final CampusService campusService;
 
@@ -23,18 +27,24 @@ class ClassScreen extends StatefulWidget {
   State<ClassScreen> createState() => _ClassScreenState();
 }
 
+class _ClassData {
+  final List<DateTime> days; // every Mon–Sat class day of the semester
+  final List<ClassSession> sessions; // the student's sessions this semester
+  final List<AttendanceRecord> records; // finalized, newest first
+
+  const _ClassData(this.days, this.sessions, this.records);
+}
+
 class _ClassScreenState extends State<ClassScreen> {
-  Future<(List<ClassSession>, List<AttendanceRecord>)>? _data;
+  static const _pillExtent = 56.0; // width of one day in the strip
+
+  Future<_ClassData>? _data;
   String? _loadedFor; // Session.dataKey the data belongs to
-  late DateTime _selected = _initialDay(DateTime.now());
+  DateTime _selected = _dayOnly(DateTime.now());
+  List<DateTime> _days = const [];
+  ScrollController? _strip;
 
-  /// Today; on Sunday (no classes), the coming Monday.
-  static DateTime _initialDay(DateTime now) {
-    final today = DateTime(now.year, now.month, now.day);
-    return today.weekday == DateTime.sunday ? today.add(const Duration(days: 1)) : today;
-  }
-
-  DateTime get _monday => _selected.subtract(Duration(days: _selected.weekday - 1));
+  static DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   @override
   void didChangeDependencies() {
@@ -46,13 +56,31 @@ class _ClassScreenState extends State<ClassScreen> {
     }
   }
 
-  Future<(List<ClassSession>, List<AttendanceRecord>)> _load() {
+  @override
+  void dispose() {
+    _strip?.dispose();
+    super.dispose();
+  }
+
+  Future<_ClassData> _load() async {
     final user = SessionScope.of(context).user!;
-    return (
-      widget.campusService
-          .loadSchedule(user, _monday, _monday.add(const Duration(days: DateTime.saturday))),
-      widget.campusService.loadMyAttendance(user),
+    final s = widget.campusService;
+    final sem = await s.loadSemester(user);
+    final (sessions, records) = await (
+      s.loadSchedule(user, sem.start, sem.end.add(const Duration(days: 1))),
+      s.loadMyAttendance(user),
     ).wait;
+    final days = [
+      for (var d = sem.start; !d.isAfter(sem.end); d = DateTime(d.year, d.month, d.day + 1))
+        if (d.weekday != DateTime.sunday) d,
+    ];
+    // Start on today, or the nearest class day inside the semester.
+    if (!days.contains(_selected)) {
+      final today = _dayOnly(DateTime.now());
+      _selected = days.firstWhere((d) => !d.isBefore(today), orElse: () => days.last);
+    }
+    _days = days;
+    return _ClassData(days, sessions, records);
   }
 
   @override
@@ -79,29 +107,32 @@ class _ClassScreenState extends State<ClassScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilder(
+              child: FutureBuilder<_ClassData>(
                 future: _data,
                 builder: (context, snap) {
                   final data = snap.data;
+                  if (snap.hasError) return _error();
+                  if (data == null) {
+                    return const Align(
+                        alignment: Alignment.topCenter, child: LinearProgressIndicator());
+                  }
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(
                         AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
                     children: [
-                      _dayStrip(),
-                      if (snap.hasError)
-                        _error()
-                      else if (data == null)
-                        const Padding(
-                          padding: EdgeInsets.only(top: AppSpacing.section),
-                          child: LinearProgressIndicator(),
-                        )
-                      else ...[
-                        ..._dayClasses(data.$1),
-                        ..._attendance(data.$2),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text('Only finalized sessions count. Sample data, not official records.',
-                            style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                      ],
+                      ..._attendance(data.records),
+                      const SectionHeader('Schedule'),
+                      _monthRow(),
+                      const SizedBox(height: AppSpacing.sm),
+                      _dayStrip(data.days),
+                      ..._dayClasses(data.sessions),
+                      const SectionHeader('Records'),
+                      Text('${weekdayName(_selected)}, ${formatDayMonth(_selected)}',
+                          style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                      ..._dayRecords(data.sessions, data.records),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text('Only finalized sessions count. Sample data, not official records.',
+                          style: text.bodyMedium?.copyWith(color: AppColors.muted)),
                     ],
                   );
                 },
@@ -113,18 +144,123 @@ class _ClassScreenState extends State<ClassScreen> {
     );
   }
 
-  Widget _dayStrip() {
-    final now = DateTime.now();
+  // ---------- Attendance this semester ----------
+
+  List<Widget> _attendance(List<AttendanceRecord> records) {
+    final text = Theme.of(context).textTheme;
+    final title = Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.sm),
+      child: Semantics(header: true, child: Text('Attendance', style: text.titleLarge)),
+    );
+    if (records.isEmpty) return [title, _muted('No finalized sessions yet.')];
+
+    int presentIn(Iterable<AttendanceRecord> rs) =>
+        rs.where((r) => r.mark == AttendanceMark.present).length;
+    int pct(Iterable<AttendanceRecord> rs) => (presentIn(rs) * 100 / rs.length).round();
+    final bySubject = <String, List<AttendanceRecord>>{};
+    for (final r in records) {
+      bySubject.putIfAbsent(r.session.subject, () => []).add(r);
+    }
+
+    return [
+      title,
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('${pct(records)}%', style: text.displaySmall?.copyWith(color: AppColors.navy)),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                  'Present in ${presentIn(records)} of ${records.length} sessions this semester',
+                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      Text('By subject', style: text.labelMedium?.copyWith(color: AppColors.muted)),
+      for (final e in bySubject.entries)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              Expanded(child: Text(e.key, style: text.bodyLarge)),
+              Text('${presentIn(e.value)} of ${e.value.length}',
+                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+              const SizedBox(width: AppSpacing.md),
+              SizedBox(
+                width: 48,
+                child: Text('${pct(e.value)}%',
+                    textAlign: TextAlign.right, style: text.titleMedium),
+              ),
+            ],
+          ),
+        ),
+    ];
+  }
+
+  // ---------- Schedule ----------
+
+  /// "October 2026" for the selected day, and a way back to today.
+  Widget _monthRow() {
+    final text = Theme.of(context).textTheme;
+    final today = _dayOnly(DateTime.now());
+    final month = formatDate(_selected).split(' ').skip(1).join(' '); // "October 2026"
     return Row(
       children: [
-        for (var i = 0; i < 6; i++)
-          Expanded(child: _dayPill(_monday.add(Duration(days: i)), now)),
+        Expanded(child: Text(month, style: text.titleMedium)),
+        if (_selected != today && _days.contains(today))
+          TextButton(
+            onPressed: () => _select(today, scroll: true),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.navy,
+              minimumSize: const Size(48, 40),
+              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+            child: const Text('Today'),
+          ),
       ],
     );
   }
 
+  void _select(DateTime day, {bool scroll = false}) {
+    final i = _days.indexOf(day);
+    if (i < 0) return;
+    setState(() => _selected = day);
+    final strip = _strip;
+    if (scroll && strip != null && strip.hasClients) {
+      final target = i * _pillExtent - (strip.position.viewportDimension - _pillExtent) / 2;
+      strip.animateTo(target.clamp(0, strip.position.maxScrollExtent),
+          duration: AppMotion.slow, curve: AppMotion.curve);
+    }
+  }
+
+  /// Every class day of the semester, scrolling sideways; opens centered on
+  /// the selected day.
+  Widget _dayStrip(List<DateTime> days) {
+    final now = DateTime.now();
+    return LayoutBuilder(builder: (context, box) {
+      final i = max(0, days.indexOf(_selected));
+      _strip ??= ScrollController(
+          initialScrollOffset: max(0, i * _pillExtent - (box.maxWidth - _pillExtent) / 2));
+      return SizedBox(
+        height: 74,
+        child: ListView.builder(
+          key: const Key('day-strip'),
+          controller: _strip,
+          scrollDirection: Axis.horizontal,
+          itemExtent: _pillExtent,
+          itemCount: days.length,
+          itemBuilder: (_, i) => _dayPill(days[i], now),
+        ),
+      );
+    });
+  }
+
   Widget _dayPill(DateTime day, DateTime now) {
-    final selected = _sameDay(day, _selected);
+    final selected = day == _selected;
     final isToday = _sameDay(day, now);
     final fg = selected ? AppColors.white : AppColors.ink;
     return Padding(
@@ -132,10 +268,10 @@ class _ClassScreenState extends State<ClassScreen> {
       child: Semantics(
         button: true,
         selected: selected,
-        label: '${weekdayName(day)} ${day.day}${isToday ? ', today' : ''}',
+        label: '${weekdayName(day)} ${formatDayMonth(day)}${isToday ? ', today' : ''}',
         excludeSemantics: true,
         child: InkWell(
-          onTap: () => setState(() => _selected = day), // same week: no reload needed
+          onTap: () => _select(day),
           borderRadius: BorderRadius.circular(AppRadius.pill),
           child: AnimatedContainer(
             duration: AppMotion.fast,
@@ -170,8 +306,11 @@ class _ClassScreenState extends State<ClassScreen> {
     );
   }
 
-  List<Widget> _dayClasses(List<ClassSession> week) {
-    final day = week.where((c) => _sameDay(c.start, _selected)).toList();
+  List<ClassSession> _ofSelectedDay(List<ClassSession> sessions) =>
+      sessions.where((c) => _sameDay(c.start, _selected)).toList();
+
+  List<Widget> _dayClasses(List<ClassSession> sessions) {
+    final day = _ofSelectedDay(sessions);
     if (day.isEmpty) {
       return [
         const SizedBox(height: AppSpacing.lg),
@@ -192,73 +331,31 @@ class _ClassScreenState extends State<ClassScreen> {
     ];
   }
 
-  List<Widget> _attendance(List<AttendanceRecord> records) {
-    final text = Theme.of(context).textTheme;
-    if (records.isEmpty) {
-      return [const SectionHeader('Attendance'), _muted('No finalized sessions yet.')];
+  // ---------- Records of the selected day ----------
+
+  /// Each class of the selected day with its finalized mark, or why it has
+  /// none yet. Unfinalized sessions never show a mark (spec §7.2).
+  List<Widget> _dayRecords(List<ClassSession> sessions, List<AttendanceRecord> records) {
+    final day = _ofSelectedDay(sessions);
+    if (day.isEmpty) {
+      return [const SizedBox(height: AppSpacing.sm), _muted('No classes, so no records.')];
     }
-    int pct(Iterable<AttendanceRecord> rs) =>
-        (rs.where((r) => r.mark == AttendanceMark.present).length * 100 / rs.length).round();
-    final bySubject = <String, List<AttendanceRecord>>{};
-    for (final r in records) {
-      bySubject.putIfAbsent(r.session.subject, () => []).add(r);
-    }
-    final present = records.where((r) => r.mark == AttendanceMark.present).length;
+    final byId = {for (final r in records) r.session.id: r};
+    final now = DateTime.now();
     return [
-      const SectionHeader('Attendance'),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text('${pct(records)}%',
-              style: text.displaySmall?.copyWith(color: AppColors.navy)),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text('Present in $present of ${records.length} sessions',
-                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: AppSpacing.md),
-      for (final e in bySubject.entries)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: Text(e.key, style: text.bodyLarge)),
-                  Text('${pct(e.value)}%', style: text.titleMedium),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.xs + 2),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: LinearProgressIndicator(
-                  value: pct(e.value) / 100,
-                  minHeight: 5,
-                  backgroundColor: AppColors.fill,
-                  color: AppColors.navy,
-                  semanticsLabel: '${e.key} attendance',
-                ),
-              ),
-            ],
-          ),
-        ),
-      const SectionHeader('Recent Records'),
-      for (var i = 0; i < records.take(6).length; i++) ...[
+      for (var i = 0; i < day.length; i++) ...[
         if (i > 0) const Divider(height: 1),
         ContentRow(
-          title: records[i].session.subject,
-          meta: '${formatDayLabel(records[i].session.start, DateTime.now())} · '
-              '${formatTime(records[i].session.start)}',
-          metaIcon: Icons.calendar_today_outlined,
-          pill: records[i].mark == AttendanceMark.present
-              ? const StatusPill('Present', tone: PillTone.green)
-              : const StatusPill('Absent', tone: PillTone.red),
+          title: day[i].subject,
+          meta: formatTime(day[i].start),
+          metaIcon: Icons.schedule_rounded,
+          pill: switch (byId[day[i].id]?.mark) {
+            AttendanceMark.present => const StatusPill('Present', tone: PillTone.green),
+            AttendanceMark.absent => const StatusPill('Absent', tone: PillTone.red),
+            null => day[i].start.isAfter(now)
+                ? const StatusPill('Upcoming')
+                : const StatusPill('Not finalized yet'),
+          },
         ),
       ],
     ];
@@ -268,7 +365,7 @@ class _ClassScreenState extends State<ClassScreen> {
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted));
 
   Widget _error() => Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.section),
+        padding: const EdgeInsets.all(AppSpacing.screen),
         child: Column(
           children: [
             const Text("Couldn't load your classes."),

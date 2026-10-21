@@ -145,3 +145,16 @@ bool mockWasAbsent(String sessionId, String studentId) =>
 /// first 10 students scanned.
 const mockSeededOpenClassId = 'cs301-2a';
 const mockSeededScanCount = 10;
+
+/// MOCK semester: about 10 weeks before and 8 weeks after today, Monday to
+/// Saturday, so the prototype is always "mid-semester" whenever it runs.
+/// Real semester dates will come from the school calendar.
+({String name, DateTime start, DateTime end}) mockSemester(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  final monday = today.subtract(Duration(days: today.weekday - 1));
+  return (
+    name: '1st Semester',
+    start: monday.subtract(const Duration(days: 7 * 10)),
+    end: monday.add(const Duration(days: 7 * 8 + 5)), // a Saturday
+  );
+}

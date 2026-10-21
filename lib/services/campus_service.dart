@@ -21,7 +21,11 @@ abstract class CampusService {
   /// A class page for its assigned teacher; null if not theirs to manage.
   Future<ClassDetail?> loadClassDetail(UserProfile teacher, String classId);
 
-  /// The student's finalized attendance records, newest first (spec §7.2).
+  /// The current semester's first and last day (Mon–Sat class days).
+  Future<({String name, DateTime start, DateTime end})> loadSemester(UserProfile user);
+
+  /// The student's finalized attendance records this semester, newest first
+  /// (spec §7.2).
   Future<List<AttendanceRecord>> loadMyAttendance(UserProfile student);
 
   /// One session's roster and scans; null if not the teacher's to manage.
@@ -200,10 +204,16 @@ class MockCampusService implements CampusService {
   }
 
   @override
+  Future<({String name, DateTime start, DateTime end})> loadSemester(UserProfile user) async {
+    await _wait();
+    return mockSemester(clock());
+  }
+
+  @override
   Future<List<AttendanceRecord>> loadMyAttendance(UserProfile student) async {
     await _wait();
-    final sessions = _sessions(_classesOf(student), _today.subtract(const Duration(days: 21)),
-        clock(), forStudent: true);
+    final sessions = _sessions(_classesOf(student), mockSemester(clock()).start, clock(),
+        forStudent: true);
     return [
       for (final s in sessions.reversed)
         if (s.finalized) // unfinished sessions never count (spec §7.2)
