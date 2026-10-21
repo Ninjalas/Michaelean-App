@@ -199,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
           StatItem('${t.sessionsToFinalize}', 'To finalize',
               onTap: () => context.go('/life/classes')),
           StatItem('${t.upcomingEvents}', 'Upcoming events',
-              onTap: () => _openSoon('Upcoming events')),
+              onTap: () => context.go('/life/events')),
         ]),
       const SizedBox(height: AppSpacing.lg),
       UpNextCard(

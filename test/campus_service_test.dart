@@ -137,4 +137,112 @@ void main() {
       expect((thursday.start.hour, thursday.room), (10, 'Segunda Limaco Hall · 301'));
     });
   });
+
+  group('events (spec §7.3, §9.2)', () {
+    MockCampusService fresh() => MockCampusService(delay: Duration.zero, clock: () => morning);
+
+    test('registration: once only; never for full, closed, or ineligible events', () async {
+      final s = fresh();
+      await s.register(mockStudent, 'ev1');
+      expect((await s.loadEvent(mockStudent, 'ev1'))!.registered, isTrue);
+      expect(() => s.register(mockStudent, 'ev1'), throwsStateError); // duplicate
+      expect(() => s.register(mockStudent, 'ev4'), throwsStateError); // deadline passed
+      expect(() => s.register(mockStudent, 'ev5'), throwsStateError); // full
+      expect(() => s.register(mockStudent, 'ev6'), throwsStateError); // not a member
+      expect(await s.loadEvent(mockStudent, 'ev6'), isNull);
+      expect(await s.loadEvent(mockStudent, 'ev7'), isNull); // draft
+    });
+
+    test('My events: upcoming registrations, then past ones', () async {
+      final mine = await fresh().loadEvents(mockStudent, EventList.mine);
+      expect(mine.map((d) => d.event.id), ['ev3', 'ev8']);
+    });
+
+    test('drafts, publishing, and editing the same event', () async {
+      final s = fresh();
+      final start = DateTime(2026, 11, 3, 13);
+      final draft = await s.saveEvent(mockTeacher,
+          publish: false,
+          title: 'Hackathon',
+          start: start,
+          end: start.add(const Duration(hours: 3)),
+          venue: 'Lab 1');
+      expect(draft.status, EventStatus.draft);
+      expect(await s.loadEvent(mockStudent, draft.id), isNull); // students can't see drafts
+
+      final published = await s.saveEvent(mockTeacher,
+          eventId: draft.id,
+          publish: true,
+          title: 'Hackathon',
+          start: start,
+          end: start.add(const Duration(hours: 3)),
+          venue: 'Lab 2');
+      expect(published.id, draft.id); // same event, not a copy
+      expect(published.status, EventStatus.published);
+      expect(published.updateNote, isNull); // it wasn't published before
+
+      final moved = await s.saveEvent(mockTeacher,
+          eventId: draft.id,
+          publish: false, // a published event stays published
+          title: 'Hackathon',
+          start: start.add(const Duration(days: 1)),
+          end: start.add(const Duration(days: 1, hours: 3)),
+          venue: 'Lab 2');
+      expect(moved.status, EventStatus.published);
+      expect(moved.updateNote, isNotNull);
+
+      final managed = await s.loadEvents(mockTeacher, EventList.managed);
+      expect(managed.where((d) => d.event.title == 'Hackathon'), hasLength(1));
+    });
+
+    test('managers only; validation is checked by the service too', () async {
+      final s = fresh();
+      final start = DateTime(2026, 11, 3, 13);
+      expect(
+          () => s.saveEvent(mockTeacher,
+              eventId: 'ev1', // a CSS event the teacher doesn't manage
+              publish: true,
+              title: 'X',
+              start: start,
+              end: start.add(const Duration(hours: 1)),
+              venue: 'Y'),
+          throwsStateError);
+      expect(
+          () => s.saveEvent(mockTeacher,
+              publish: true, title: 'X', start: start, end: start, venue: 'Y'),
+          throwsArgumentError); // ends when it starts
+      expect(
+          () => s.saveEvent(mockTeacher,
+              publish: true,
+              title: 'X',
+              start: DateTime(2026, 10, 19, 13),
+              end: DateTime(2026, 10, 19, 14),
+              venue: 'Y'),
+          throwsArgumentError); // published in the past
+      expect(await s.loadRegistrations(mockStudent, 'ev2'), isNull);
+    });
+
+    test('inviting a section registers its students automatically', () async {
+      final s = fresh();
+      expect(await s.inviteSections(mockTeacher, 'ev2', ['BSCS 3A']), 7); // 5 already registered
+      final regs = (await s.loadRegistrations(mockTeacher, 'ev2'))!;
+      expect(regs, hasLength(12));
+      expect(regs.where((r) => r.invited), hasLength(7));
+      final mine = await s.loadEvent(mockStudent, 'ev2');
+      expect((mine!.registered, mine.invited), (true, true));
+      expect(() => s.inviteSections(mockTeacher, 'ev7', ['BSCS 3A']), throwsStateError); // draft
+      expect(() => s.inviteSections(mockTeacher, 'ev2', ['BSCS 1Z']), throwsStateError);
+    });
+
+    test('cancelling an event hides it from Discover but keeps registrations', () async {
+      final s = fresh();
+      await s.inviteSections(mockTeacher, 'ev2', ['BSCS 3A']);
+      await s.cancelEvent(mockTeacher, 'ev2');
+      final discover = await s.loadEvents(mockStudent, EventList.discover);
+      expect(discover.map((d) => d.event.id), isNot(contains('ev2')));
+      final mine = await s.loadEvents(mockStudent, EventList.mine);
+      expect(mine.firstWhere((d) => d.event.id == 'ev2').event.status, EventStatus.cancelled);
+      expect(() => s.cancelEvent(mockStudent, 'ev3'), throwsStateError);
+    });
+  });
 }

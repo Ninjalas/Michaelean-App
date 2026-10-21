@@ -78,10 +78,11 @@ What's behind each tab right now:
 |---|---|
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
 | Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
-| Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Each `See all ›` opens a "Coming soon" page until Phases 6–9. |
+| Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Class and Events open their real screens; Organizations and Clearance open "Coming soon" pages until Phases 8–9. |
 | Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and event history; Edit Profile (About only, saved in this preview); grouped Settings with the preview role switch and Log Out. |
 | Class (students), Classes + class page + attendance scanner (teachers) | **New (built in Phase 6).** Weekly schedule, attendance from finalized records, mock scanner with the attendance rules, review and finalize, single-session changes. |
-| Events, Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 7–9. |
+| Events (students: Discover / My events / event detail; teachers: Upcoming / Past / Drafts, create, edit, invite, registrations, cancel) | **New (built in Phase 7).** Registration, invitations, publishing, and cancelling change this preview only and say so. |
+| Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 8–9. |
 
 ---
 
@@ -149,8 +150,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 | 4 | Hubs: Student Life and Michaelean Life live previews | §7, §9 | ✅ **Done** |
 | 5 | Profile and Settings | §10, §11 | ✅ **Done** |
 | 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | ✅ **Done** |
-| 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | ⏳ **Next** |
-| 8 | Organizations: directory and tabbed organization page | §7.4 | To do |
+| 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | ✅ **Done** |
+| 8 | Organizations: directory and tabbed organization page | §7.4 | ⏳ **Next** |
 | 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | To do |
 | 10 | Frontend testing: navigation, responsive layouts, empty/error states, validation, role UI, permissions, QR, motion | all | To do |
 | 11 | Later integration (only when requested): auth, backend, hosting, PWA | §4, §13 | Later |
@@ -232,14 +233,28 @@ Each phase is one piece of work, reviewed by the group before the next one start
 - **Change one session** (`edit_session_screen.dart`): start/end time, room, optional reason; validated (ends after it starts, room required). **Mock assumption for open decisions 1 and 3:** a teacher may change a *single session* of their own assigned classes; recurring changes aren't offered. The confirmation says students were not notified.
 - **Shared state:** attendance (scans, finalizations, changes) lives in memory in `MockCampusService`, for this preview only, and resets when the app reloads. Home now gets classes from the same service, and `Session.refresh()` makes every screen reload after a change, so finalizing removes Home's task right away.
 
-#### Phase 7: Events (discovery, detail, teacher management) ⏳ Next
+#### Phase 7: Events (discovery, detail, teacher management) ✅ Done
 
 **Spec:** §7.3, §9.2. **Goal:** finding, registering for, and managing events.
 
-- **Discover | My events** segmented control. Discover: filter pills **All / School-wide / Department / My Orgs**; events grouped under two-tone date headers as photo rows; only events the user is eligible for, no duplicates. My events: registered, then past.
-- **Event detail** (Luma style): large cover photo (expands from the list image), title, date and time, action buttons (Register, Share, More), then **Venue** (with map), **Host**, **Attendees** (overlapping avatars, e.g. `+42`), **About**; deadline and capacity when they apply.
-- **Teacher management:** Upcoming, Past, Drafts, Create Event, Edit Event, Invite Students, View Registrations, Cancel Event. **Create/Edit** is one scrolling Luma-style form (cover photo picker, name, date, times, venue, audience, deadline, capacity, description) with **Save draft** and **Publish**.
-- **Rules:** no duplicate registrations; no registration for full, closed, or ineligible events; registration is not attendance; editing updates the same event; no real publishing, registration, or notifications in the prototype.
+- **Events list** (`screens/shared/events_screen.dart`, route `/life/events`, from the hub's `See all ›`).
+  - Students: **Discover | My events**. Discover has filter pills **All / School-wide / Department / My Orgs** and shows only published, upcoming events the student is eligible for, as photo rows under two-tone date headers. Each event appears once. My events lists the student's registrations (upcoming, then **Past**), including cancelled ones, and notes that registering isn't attendance.
+  - Teachers with the `manageEvents` permission see **Events You Manage**: **Upcoming | Past | Drafts**, with a round **+** to create an event. Teachers without the permission see a locked message.
+  - Row pills: `Going`, `Invited`, `Registered` (past), `Full`, `Closed` (deadline passed), `Draft`, `Cancelled`.
+- **Event detail** (`event_detail_screen.dart`, `/life/events/:eventId`), Luma style: square cover photo, title, date and time, a row of three action tiles, then **Venue** (with the campus map), **Host**, **Attendees** (blank avatar stack + count), **Registration** (deadline, capacity, spots left), and **About**.
+  - Students: **Register / Share / More**. Register is disabled with the reason shown when the event is full, closed, started, or not for them. After registering, the tile says `Registered` and the page says "You're registered". More → **Cancel registration**. Share says it isn't available in the preview.
+  - Managers: **Edit / Invite / More** (More → **View registrations**, **Cancel event** with a confirmation dialog).
+  - If a published event's time or venue changed, an amber "Updated" note shows on it.
+- **Create / Edit Event** (`screens/teacher/event_form_screen.dart`, `/life/events/new` and `/life/events/:eventId/edit`): one scrolling Luma-style form: cover picker (bundled photos or none), name, date, start/end, venue, audience (School-wide or the teacher's department), optional registration deadline and capacity, description. **Save draft** and **Publish**; a published event shows **Save Changes** instead and stays published. Problems are explained under the form and disable the buttons.
+- **Invite Students** (`event_invite_screen.dart`): pick whole sections you teach; invited students are **registered automatically** (no accept/decline) and marked `Invited`.
+- **Registrations** (`event_registrations_screen.dart`): managers only; names with masked IDs and an `Invited` pill.
+- **Rules** (enforced in `CampusService`, not just hidden in the UI): no duplicate registrations; no registration for full, closed, ineligible, draft, or cancelled events; registration is never attendance; editing changes the same event (never a copy); only an event's managers can edit, invite, cancel, or see names; validation is checked again by the service. Every confirmation says "in this preview only" and that **no one was notified**.
+- **Mock assumptions (easy to change):**
+  - Open decision 4: everyone sees the registration **count**, and only the event's managers see **names**.
+  - Teachers invite whole sections they teach (not individuals or departments yet), and those students count as eligible for the teacher's department events.
+  - A new event is hosted by the teacher's department.
+- **Mock data** (`mock/mock_campus.dart`): events now have end times, descriptions, deadlines, and capacities; one full event (Blood Donation Drive), one closed (Society Coding Challenge), two past events; starting registrations (Nicolas is going to the Intramurals opening); counts from people outside the mock rosters so numbers look real.
+- **Not done:** the cover photo doesn't animate from the list into the detail (a `Hero` like the emblem's). Events created or changed reset when the app reloads.
 
 #### Phase 8: Organizations
 
@@ -285,6 +300,14 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Rebuild Phase 7: Events.**
+  - New screens: Events list (both roles), event detail, Create/Edit Event, Invite Students, Registrations.
+  - `CampusService` gained `loadEvents` (Discover / My events / managed), `loadEvent`, `register`, `cancelRegistration`, `saveEvent`, `cancelEvent`, `loadRegistrations`, `inviteSections`, and `eventCovers`. Events and registrations live in memory in `MockCampusService`.
+  - Models: `CampusEvent` has end time, description, deadline, capacity, an update note, and a `cancelled` status; new `EventDetail`, `EventList`, `EventRegistrant`, and the shared `eventFormProblem` validator (used by the form and the service).
+  - Links wired: the hubs' Events `See all` and event rows, and Home's teacher "Upcoming events" stat.
+  - Theme: bottom sheets, dialogs, and date/time pickers are plain white instead of Material's navy-tinted default.
+  - Fixed while testing: the audience dropdown overflowed on phones; the start/end time fields wrapped; the event page went blank while reloading after Register.
+  - Tests: registration rules (duplicate, closed, full, ineligible), My events order, drafts → publish → edit keeps one event and marks time changes, managers only, service-side validation, section invitations, cancelling; widget tests for discover → filter → register → My events, a full event, create → publish → invite, and refusing to edit someone else's event.
 - **Class screen: semester view.** Order is now Attendance (overall + by subject, whole semester) → Schedule (day strip scrolls through the whole semester, with a Today button) → Records of the selected day. New `CampusService.loadSemester` and `mockSemester` (placed around today); attendance records now cover the semester. (A calendar-heatmap version was tried and removed.)
 - **Rebuild Phase 6: Class and attendance.**
   - New screens: student Class (day strip, schedule, attendance), teacher Classes list, class page, mock attendance scanner, review & finalize, change one session.
@@ -352,9 +375,11 @@ lib/
     app_theme.dart   THE single source of colors, fonts, spacing, radii, shadows, motion
   widgets/           shared building blocks (see Design system)
   screens/
-    shared/          screens both roles use (opening, sign-in preview, Home, hubs, Profile, sheets)
+    shared/          screens both roles use (opening, sign-in preview, Home, hubs, Events, event detail,
+                     Profile, sheets)
     student/         student-only screens (Class)
-    teacher/         teacher-only screens (Classes, class page, scanner, review, change session)
+    teacher/         teacher-only screens (Classes, class page, scanner, review, change session,
+                     event form, invite students, event registrations)
   models/            plain data classes: UserProfile, IdentityTag, Permission, feed items,
                      EventRecord, campus data (CampusEvent, Organization, clearance)
   mock/              CLEARLY LABELED sample data (mock_users.dart, mock_home.dart, mock_campus.dart,
@@ -456,13 +481,14 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-49 tests currently pass. They cover:
+59 tests currently pass. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
 - **Home data:** the student sees their department/society posts only, urgent posts first, the student's own next class with its teacher, the teacher's classes for today only, teacher sections, the attendance task appears only for an unfinalized session, next-class logic, no post in two sections.
-- **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens a placeholder with Back; Michaelean Life shows classes, managed events with drafts, and locks Clearance without permission; a load failure shows Retry.
+- **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens its page with Back; Michaelean Life shows classes, managed events with drafts, and locks Clearance without permission; a load failure shows Retry.
 - **Class and attendance:** an enrolled scan is Present once and a repeat counts once; unknown or other-section codes aren't marked; scans before the start or after the end are rejected (the preview tool skips only the clock); finalizing closes the session and only finalized sessions count; teachers manage only their assigned classes; class page roster and recent sessions; single-session changes are validated and move only that session; finalizing removes Home's task; the Class screen's day strip and Show QR; the full scan → review → finalize flow (scanner and review really close); the session form's validation and honest confirmation; another teacher's class is refused.
+- **Events:** registering works once and never for full, closed, or ineligible events; My events lists upcoming then past registrations; a draft is hidden from students, publishing and editing keep one event and mark time changes; only managers edit, see names, invite, or cancel; the service re-checks form rules; inviting a section registers its students; a cancelled event leaves Discover but stays in My events. Widget tests: discover → My Orgs filter → register → My events; a full event can't be registered; create → publish → invite a section → registration count; editing someone else's event is refused.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
 - **Profile:** identity, masked ID, counted stats, tags, and event history for students; Classes I Teach and hosted count for teachers; no QR on Profile; Edit Profile enables Save only after a change and confirms "preview only"; Settings items, Back closes it, Log Out ends the preview; switching role in Settings refreshes Home, the hub, and Profile.
 
@@ -492,7 +518,9 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 - **Profile photos in `assets/images/profiles/` are of real people.** Use them only with their consent, and only as clearly labeled sample data. Event posters in `assets/images/events/` are placeholders too. The spec wants stock or real SMCL photos listed in one place in mock data so they are easy to swap.
 - **PWA settings are still Flutter defaults.** `web/manifest.json` has name `michaelean_app`, Flutter's blue color, and Flutter's icons. Set the name, colors, and icons (from the SMCL emblem) when the group picks the hosting (open decision 7).
 - **Changing the profile photo isn't built.** It needs a file-picker package; Edit Profile says so instead of showing a button that does nothing.
-- **Event covers are placeholders.** CSS events reuse the society's cover image; other events show a gray tile. Replace them with real SMCL event photos when the group has them (listed in `lib/mock/mock_campus.dart`).
+- **Event covers are placeholders.** CSS events reuse the society's cover image; other events show a navy-tint tile. The form's cover picker offers the bundled photos (`mockEventCovers` in `lib/mock/mock_campus.dart`). Replace them with real SMCL event photos when the group has them; a real photo upload needs a file-picker package.
+- **Event changes reset on reload.** Registrations, new events, edits, invitations, and cancellations live in memory for this preview only.
+- **A snackbar can briefly cover the bottom button** of the next form (for example, right after Publish, on Invite Students). It goes away after about 4 seconds.
 - **Long-press needs a real hold.** Hold the mouse button (or your finger) on Student Life / Michaelean Life for about half a second. Automated widget tests cover it.
 - **On narrow phones the quick-QR tip wraps to two lines.** It's readable; shorten the wording if the group prefers one line.
 - **Git warnings "LF will be replaced by CRLF"** on Windows are harmless.
@@ -503,7 +531,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 7 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 8 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.

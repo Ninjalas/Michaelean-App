@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/edit_profile_screen.dart';
+import 'screens/shared/event_detail_screen.dart';
+import 'screens/shared/events_screen.dart';
 import 'screens/shared/home_screen.dart';
 import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
@@ -17,6 +19,9 @@ import 'screens/teacher/attendance_scan_screen.dart';
 import 'screens/teacher/class_detail_screen.dart';
 import 'screens/teacher/classes_screen.dart';
 import 'screens/teacher/edit_session_screen.dart';
+import 'screens/teacher/event_form_screen.dart';
+import 'screens/teacher/event_invite_screen.dart';
+import 'screens/teacher/event_registrations_screen.dart';
 import 'screens/shared/post_detail_screen.dart';
 import 'screens/shared/preview_screen.dart';
 import 'services/campus_service.dart';
@@ -138,6 +143,51 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                           builder: (context, state) => EditSessionScreen(
                             campusService: campusService,
                             sessionId: state.uri.queryParameters['session'] ?? '',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                // Events (spec §7.3, §9.2). Forms cover the nav bar, like
+                // Edit Session, since their buttons sit at the bottom.
+                GoRoute(
+                  path: 'events',
+                  builder: (context, state) => EventsScreen(campusService: campusService),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      parentNavigatorKey: rootKey,
+                      builder: (context, state) => EventFormScreen(campusService: campusService),
+                    ),
+                    GoRoute(
+                      path: ':eventId',
+                      builder: (context, state) => EventDetailScreen(
+                        campusService: campusService,
+                        eventId: state.pathParameters['eventId']!,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: 'edit',
+                          parentNavigatorKey: rootKey,
+                          builder: (context, state) => EventFormScreen(
+                            campusService: campusService,
+                            eventId: state.pathParameters['eventId']!,
+                          ),
+                        ),
+                        GoRoute(
+                          path: 'invite',
+                          parentNavigatorKey: rootKey,
+                          builder: (context, state) => EventInviteScreen(
+                            campusService: campusService,
+                            eventId: state.pathParameters['eventId']!,
+                          ),
+                        ),
+                        GoRoute(
+                          path: 'registrations',
+                          builder: (context, state) => EventRegistrationsScreen(
+                            campusService: campusService,
+                            eventId: state.pathParameters['eventId']!,
                           ),
                         ),
                       ],

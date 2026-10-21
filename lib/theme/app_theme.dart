@@ -70,6 +70,9 @@ class AppTheme {
         error: AppColors.red,
         surface: AppColors.white,
         onSurface: AppColors.ink,
+        // Bottom sheets, dialogs, and pickers: plain white, not navy-tinted.
+        surfaceContainerLow: AppColors.white,
+        surfaceContainerHigh: AppColors.white,
       ),
       scaffoldBackgroundColor: AppColors.paper,
       dividerColor: AppColors.hairline,

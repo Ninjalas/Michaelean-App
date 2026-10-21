@@ -47,8 +47,51 @@ abstract class CampusService {
   /// Published events the user is eligible for, soonest first.
   Future<List<CampusEvent>> loadUpcomingEvents(UserProfile user);
 
-  /// Events the user is allowed to manage, including drafts.
+  /// Upcoming events the user is allowed to manage, including drafts.
   Future<List<CampusEvent>> loadManagedEvents(UserProfile user);
+
+  /// One of the events lists (spec §7.3, §9.2), with the user's
+  /// registration on each. Upcoming events soonest first, then past ones
+  /// newest first.
+  Future<List<EventDetail>> loadEvents(UserProfile user, EventList list);
+
+  /// One event; null if the user may not see it.
+  Future<EventDetail?> loadEvent(UserProfile user, String eventId);
+
+  /// Registers the student. Throws [StateError] with a reason when the
+  /// event is full, closed, ineligible, or already registered.
+  Future<void> register(UserProfile student, String eventId);
+
+  Future<void> cancelRegistration(UserProfile student, String eventId);
+
+  /// Creates ([eventId] null) or edits an event the user manages. Editing
+  /// changes the same event, never a copy. A published event stays published.
+  Future<CampusEvent> saveEvent(
+    UserProfile user, {
+    String? eventId,
+    required bool publish,
+    required String title,
+    required DateTime start,
+    required DateTime end,
+    required String venue,
+    String? audience,
+    DateTime? deadline,
+    int? capacity,
+    String description,
+    String? coverAsset,
+  });
+
+  Future<void> cancelEvent(UserProfile user, String eventId);
+
+  /// Cover photos a teacher can pick for an event.
+  List<String> get eventCovers;
+
+  /// Registered students, for the event's managers; null for anyone else.
+  Future<List<EventRegistrant>?> loadRegistrations(UserProfile user, String eventId);
+
+  /// Invites whole sections; invited students are registered automatically
+  /// (spec §7.3). Returns how many students were newly registered.
+  Future<int> inviteSections(UserProfile user, String eventId, List<String> sections);
 
   /// Organizations the user is a confirmed member of.
   Future<List<Organization>> loadMyOrganizations(UserProfile user);
@@ -281,16 +324,61 @@ class MockCampusService implements CampusService {
     return _session(c, DateTime(s.start.year, s.start.month, s.start.day), forStudent: false);
   }
 
+  // ---------- Events (in memory, this preview only) ----------
+
+  late final _events = {for (final e in mockEvents(clock())) e.id: e};
+  final _registered = mockRegistrations();
+  final _invited = <String, Set<String>>{}; // event id → invited student ids
+  var _newEvents = 0;
+
+  bool _eligible(UserProfile user, CampusEvent e) =>
+      e.audience == null || user.tags.any((t) => t.label == e.audience);
+
+  bool _manages(UserProfile user, CampusEvent e) =>
+      user.can(Permission.manageEvents) && e.managerIds.contains(user.id);
+
+  int _going(CampusEvent e) =>
+      (mockOtherRegistrations[e.id] ?? 0) + (_registered[e.id]?.length ?? 0);
+
+  EventDetail _detail(UserProfile user, CampusEvent e) {
+    final registered = _registered[e.id]?.contains(user.id) ?? false;
+    final now = clock();
+    final going = _going(e);
+    String? closed;
+    if (e.status == EventStatus.cancelled) {
+      closed = 'This event was cancelled.';
+    } else if (e.status == EventStatus.draft) {
+      closed = "This event isn't published yet.";
+    } else if (!e.start.isAfter(now)) {
+      closed = e.end.isAfter(now) ? 'This event has started.' : 'This event has ended.';
+    } else if (!registered) {
+      if (user.role != UserRole.student) {
+        closed = 'Only students register for events.';
+      } else if (!_eligible(user, e)) {
+        closed = "You aren't eligible for this event.";
+      } else if (e.deadline != null && !e.deadline!.isAfter(now)) {
+        closed = 'Registration closed.';
+      } else if (e.capacity != null && going >= e.capacity!) {
+        closed = 'This event is full.';
+      }
+    }
+    return EventDetail(
+      event: e,
+      registered: registered,
+      invited: _invited[e.id]?.contains(user.id) ?? false,
+      going: going,
+      canManage: _manages(user, e),
+      closedReason: closed,
+    );
+  }
+
   @override
   Future<List<CampusEvent>> loadUpcomingEvents(UserProfile user) async {
     await _wait();
     final now = clock();
-    final myTags = user.tags.map((t) => t.label).toSet();
-    return mockEvents(now)
+    return _events.values
         .where((e) =>
-            e.status == EventStatus.published &&
-            e.start.isAfter(now) &&
-            (e.audience == null || myTags.contains(e.audience)))
+            e.status == EventStatus.published && e.start.isAfter(now) && _eligible(user, e))
         .toList()
       ..sort((a, b) => a.start.compareTo(b.start));
   }
@@ -298,12 +386,193 @@ class MockCampusService implements CampusService {
   @override
   Future<List<CampusEvent>> loadManagedEvents(UserProfile user) async {
     await _wait();
-    if (!user.can(Permission.manageEvents)) return const [];
     final now = clock();
-    return mockEvents(now)
-        .where((e) => e.managerIds.contains(user.id) && e.start.isAfter(now))
+    return _events.values
+        .where((e) =>
+            _manages(user, e) && e.status != EventStatus.cancelled && e.start.isAfter(now))
         .toList()
       ..sort((a, b) => a.start.compareTo(b.start));
+  }
+
+  @override
+  Future<List<EventDetail>> loadEvents(UserProfile user, EventList list) async {
+    await _wait();
+    final now = clock();
+    final events = _events.values.where((e) => switch (list) {
+          EventList.discover =>
+            e.status == EventStatus.published && e.start.isAfter(now) && _eligible(user, e),
+          // Kept even if the student left the organization (spec §7.3).
+          EventList.mine =>
+            e.status != EventStatus.draft && (_registered[e.id]?.contains(user.id) ?? false),
+          EventList.managed => _manages(user, e),
+        });
+    final upcoming = events.where((e) => e.end.isAfter(now)).toList()
+      ..sort((a, b) => a.start.compareTo(b.start));
+    final past = events.where((e) => !e.end.isAfter(now)).toList()
+      ..sort((a, b) => b.start.compareTo(a.start));
+    return [for (final e in [...upcoming, ...past]) _detail(user, e)];
+  }
+
+  @override
+  Future<EventDetail?> loadEvent(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null) return null;
+    final registered = _registered[e.id]?.contains(user.id) ?? false;
+    final visible = _manages(user, e) ||
+        (e.status != EventStatus.draft && (registered || _eligible(user, e)));
+    return visible ? _detail(user, e) : null;
+  }
+
+  @override
+  Future<void> register(UserProfile student, String eventId) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null) throw StateError('This event no longer exists.');
+    final d = _detail(student, e);
+    if (d.registered) throw StateError("You're already registered.");
+    if (d.closedReason != null) throw StateError(d.closedReason!);
+    _registered.putIfAbsent(eventId, () => {}).add(student.id);
+  }
+
+  @override
+  Future<void> cancelRegistration(UserProfile student, String eventId) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null || !e.start.isAfter(clock())) {
+      throw StateError("This registration can't be cancelled.");
+    }
+    _registered[eventId]?.remove(student.id);
+    _invited[eventId]?.remove(student.id);
+  }
+
+  @override
+  Future<CampusEvent> saveEvent(
+    UserProfile user, {
+    String? eventId,
+    required bool publish,
+    required String title,
+    required DateTime start,
+    required DateTime end,
+    required String venue,
+    String? audience,
+    DateTime? deadline,
+    int? capacity,
+    String description = '',
+    String? coverAsset,
+  }) async {
+    await _wait();
+    if (!user.can(Permission.manageEvents)) throw StateError("You can't manage events.");
+    final old = eventId == null ? null : _events[eventId];
+    if (eventId != null && (old == null || !_manages(user, old))) {
+      throw StateError("You can't edit this event.");
+    }
+    if (old?.status == EventStatus.cancelled) throw StateError('This event was cancelled.');
+    final problem = eventFormProblem(
+      title: title,
+      venue: venue,
+      start: start,
+      end: end,
+      deadline: deadline,
+      capacity: capacity,
+      registered: _registered[eventId]?.length ?? 0,
+      publishing: old?.status == EventStatus.published || publish,
+      now: clock(),
+    );
+    if (problem != null) throw ArgumentError(problem);
+    final published = old?.status == EventStatus.published || publish;
+    final moved = old != null &&
+        old.status == EventStatus.published &&
+        (old.start != start || old.end != end || old.venue != venue.trim());
+    final id = old?.id ?? 'new-${++_newEvents}';
+    // Mock assumption: an event a teacher creates is hosted by their department.
+    final host = old?.host ??
+        user.tags.where((t) => t.kind == TagKind.department).firstOrNull?.label ??
+        user.fullName;
+    return _events[id] = CampusEvent(
+      id: id,
+      title: title.trim(),
+      host: host,
+      hostLogo: old?.hostLogo,
+      start: start,
+      end: end,
+      venue: venue.trim(),
+      coverAsset: coverAsset,
+      status: published ? EventStatus.published : EventStatus.draft,
+      description: description.trim(),
+      deadline: deadline,
+      capacity: capacity,
+      updateNote: moved ? 'The time or venue changed.' : old?.updateNote,
+      audience: audience,
+      managerIds: old?.managerIds ?? {user.id},
+    );
+  }
+
+  @override
+  List<String> get eventCovers => mockEventCovers;
+
+  @override
+  Future<void> cancelEvent(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null || !_manages(user, e)) throw StateError("You can't cancel this event.");
+    _events[eventId] = e.copyWith(status: EventStatus.cancelled);
+  }
+
+  RosterStudent? _rosterStudent(String id) {
+    for (final roster in mockRosters.values) {
+      for (final s in roster) {
+        if (s.id == id) return s;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<List<EventRegistrant>?> loadRegistrations(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null || !_manages(user, e)) return null;
+    final invited = _invited[eventId] ?? const <String>{};
+    return [
+      for (final id in _registered[eventId] ?? const <String>{})
+        if (_rosterStudent(id) case final s?)
+          EventRegistrant(
+            name: s.name,
+            maskedId: s.maskedId,
+            photoAsset: s.photoAsset,
+            invited: invited.contains(id),
+          ),
+    ]..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  @override
+  Future<int> inviteSections(UserProfile user, String eventId, List<String> sections) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null || !_manages(user, e)) throw StateError("You can't manage this event.");
+    if (e.status != EventStatus.published || !e.start.isAfter(clock())) {
+      throw StateError('Only upcoming published events can take invitations.');
+    }
+    // Mock assumption: a teacher invites only sections they teach, and every
+    // student in them belongs to the teacher's department.
+    final mine = _classesOf(user).map((c) => c.section).toSet();
+    if (!sections.every(mine.contains)) throw StateError('You can only invite your sections.');
+    if (e.audience != null && !user.tags.any((t) => t.label == e.audience)) {
+      throw StateError("These students aren't eligible for this event.");
+    }
+    final registered = _registered.putIfAbsent(eventId, () => {});
+    final added = {
+      for (final s in sections)
+        for (final st in mockRosters[s] ?? const <RosterStudent>[])
+          if (!registered.contains(st.id)) st.id,
+    };
+    if (e.capacity != null && _going(e) + added.length > e.capacity!) {
+      throw StateError('Not enough spots left for everyone in these sections.');
+    }
+    registered.addAll(added);
+    _invited.putIfAbsent(eventId, () => {}).addAll(added);
+    return added.length;
   }
 
   @override

@@ -127,7 +127,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       _pad(SectionHeader('Class', onSeeAll: () => context.push('/life/class'))),
       ..._studentClasses(d.classes, now),
 
-      _pad(SectionHeader('Events', onSeeAll: () => _open('Events'))),
+      _pad(SectionHeader('Events', onSeeAll: () => context.push('/life/events'))),
       if (d.events.isEmpty)
         _pad(_muted('No upcoming events for you right now.'))
       else
@@ -142,7 +142,10 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
             itemCount: d.events.length,
             separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
             itemBuilder: (_, i) =>
-                _EventCard(event: d.events[i], now: now, onTap: () => _open(d.events[i].title)),
+                _EventCard(
+                event: d.events[i],
+                now: now,
+                onTap: () => context.push('/life/events/${d.events[i].id}')),
           ),
         ),
 
@@ -220,7 +223,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       if (!user.can(Permission.manageEvents))
         ..._denied('Events You Manage', "You aren't an authorized event manager.")
       else ...[
-        _pad(SectionHeader('Events You Manage', onSeeAll: () => _open('Events you manage'))),
+        _pad(SectionHeader('Events You Manage', onSeeAll: () => context.push('/life/events'))),
         if (d.events.isEmpty)
           _pad(_muted('No events to manage yet.'))
         else
@@ -235,7 +238,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
                 imageAsset: e.coverAsset,
                 placeholderIcon: Icons.event_outlined,
                 pill: e.status == EventStatus.draft ? const StatusPill('Draft') : null,
-                onTap: () => _open(e.title),
+                onTap: () => context.push('/life/events/${e.id}'),
               ),
           ]),
       ],
