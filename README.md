@@ -346,6 +346,7 @@ docs/
   CLAUDE.original.md the original, longer project brief (historical)
   plans/             old phase plans (historical)
 web/                 PWA files: index.html, manifest.json, icons
+CLAUDE.md            working rules for Claude Code (AI assistant); kept locally, not in git (.gitignore)
 .claude/launch.json  config that lets Claude Code preview the web build
 ```
 
