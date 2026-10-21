@@ -30,7 +30,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _scroll = ScrollController();
   Future<HomeFeed>? _feed;
-  String? _loadedFor; // user id the feed belongs to
+  String? _loadedFor; // Session.dataKey the feed belongs to
   bool _collapsed = false;
 
   @override
@@ -48,8 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Reload when the previewed account changes (role switch in Settings);
     // the tab stays alive, so it would otherwise keep the old user's feed.
     final user = SessionScope.of(context).user;
-    if (user != null && user.id != _loadedFor) {
-      _loadedFor = user.id;
+    if (user != null && SessionScope.of(context).dataKey != _loadedFor) {
+      _loadedFor = SessionScope.of(context).dataKey;
       _feed = _load();
     }
   }
@@ -185,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (a != null)
         StatsRow(items: [
           StatItem('${a.classPercent}%', 'Class attendance',
-              onTap: () => _openSoon('Class attendance')),
+              onTap: () => context.go('/life/class')),
           StatItem('${a.eventPercent}%', 'Event attendance',
               onTap: () => _openSoon('Event attendance')),
           // Event history lives on Profile.
@@ -195,9 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ]),
       if (t != null)
         StatsRow(items: [
-          StatItem('${t.classesToday}', 'Classes today', onTap: () => _openSoon('Classes')),
+          StatItem('${t.classesToday}', 'Classes today', onTap: () => context.go('/life/classes')),
           StatItem('${t.sessionsToFinalize}', 'To finalize',
-              onTap: () => _openSoon('Attendance to finalize')),
+              onTap: () => context.go('/life/classes')),
           StatItem('${t.upcomingEvents}', 'Upcoming events',
               onTap: () => _openSoon('Upcoming events')),
         ]),
@@ -205,12 +205,16 @@ class _HomeScreenState extends State<HomeScreen> {
       UpNextCard(
         session: feed.nextClass,
         now: now,
-        onTap: feed.nextClass == null ? null : () => _openSoon(feed.nextClass!.subject),
+        onTap: feed.nextClass == null
+            ? null
+            : () => context.go(isTeacher
+                ? '/life/classes/${feed.nextClass!.classId}'
+                : '/life/class'),
         // Permission, not the Teacher label, decides who sees this (spec §12).
         onStartAttendance: isTeacher &&
                 feed.nextClass != null &&
                 user.can(Permission.manageAssignedClasses)
-            ? () => _openSoon('Start attendance')
+            ? () => context.push('/attendance/${feed.nextClass!.id}')
             : null,
       ),
 
@@ -222,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: t.title,
               meta: t.detail,
               pill: _taskPill(t.status),
-              onTap: () => _openSoon(t.title),
+              onTap: () => t.route != null ? context.push(t.route!) : _openSoon(t.title),
             ),
         ]),
       ],
@@ -241,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 meta: '${formatTime(c.start)} – ${formatTime(c.end)} · ${c.room}',
                 metaIcon: Icons.schedule_rounded,
                 pill: _classPill(c, now),
-                onTap: () => _openSoon(c.subject),
+                onTap: () => context.go('/life/classes/${c.classId}'),
               ),
           ]),
       ],
@@ -342,6 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Only states a teacher can act on or that are plain facts of the clock.
   StatusPill? _classPill(ClassSession c, DateTime now) {
+    if (c.finalized) return const StatusPill('Finalized', tone: PillTone.green);
     if (c.awaitingFinalization) return const StatusPill('To finalize', tone: PillTone.amber);
     if (!c.start.isAfter(now) && c.end.isAfter(now)) {
       return const StatusPill('Now', tone: PillTone.green);

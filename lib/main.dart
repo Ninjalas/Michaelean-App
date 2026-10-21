@@ -9,10 +9,13 @@ import 'services/user_service.dart';
 import 'theme/app_theme.dart';
 
 void main() {
+  // One campus service for the whole app, so Home and the Class screens
+  // share the same (preview-only) attendance state.
+  final campus = MockCampusService();
   runApp(MichaeleanApp(
     userService: MockUserService(),
-    homeService: MockHomeService(),
-    campusService: MockCampusService(),
+    homeService: MockHomeService(campus: campus),
+    campusService: campus,
   ));
 }
 

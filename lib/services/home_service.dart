@@ -1,6 +1,8 @@
 import '../mock/mock_home.dart';
+import '../models/attendance.dart';
 import '../models/feed.dart';
 import '../models/user_profile.dart';
+import 'campus_service.dart';
 
 /// Where Home content comes from. Screens use this, not mock data directly.
 abstract class HomeService {
@@ -21,11 +23,18 @@ class MockHomeService implements HomeService {
   final bool fail; // tests use this to check the error state
   final DateTime Function() clock;
 
+  /// Classes and attendance come from here, so Home always agrees with the
+  /// Class screens (e.g. a finalized session stops being a task).
+  late final CampusService campus;
+
   MockHomeService({
     this.delay = const Duration(milliseconds: 500),
     this.fail = false,
     DateTime Function()? clock,
-  }) : clock = clock ?? DateTime.now;
+    CampusService? campus,
+  }) : clock = clock ?? DateTime.now {
+    this.campus = campus ?? MockCampusService(delay: Duration.zero, clock: this.clock);
+  }
 
   @override
   Future<HomeFeed> loadHome(UserProfile user) async {
@@ -52,10 +61,22 @@ class MockHomeService implements HomeService {
       ...personal.where((p) => !p.urgent),
     ];
 
+    final classes = await campus.loadClasses(user);
+
     if (user.role == UserRole.student) {
+      final records = await campus.loadMyAttendance(user);
+      final present = records.where((r) => r.mark == AttendanceMark.present).length;
+      final a = mockAttendance;
       return HomeFeed(
-        attendance: mockAttendance,
-        nextClass: nextClass(mockStudentClasses(now), now),
+        attendance: AttendanceSummary(
+          // Finalized records only (spec §7.2).
+          classPercent: records.isEmpty ? 0 : (present * 100 / records.length).round(),
+          eventPercent: a.eventPercent,
+          eventsCompleted: a.eventsCompleted,
+          requirementsCleared: a.requirementsCleared,
+          requirementsTotal: a.requirementsTotal,
+        ),
+        nextClass: nextClass(classes, now),
         tasks: mockTasks,
         announcements: ofKind(PostKind.announcement),
         featuredNews: news.isEmpty ? null : news.first,
@@ -65,7 +86,6 @@ class MockHomeService implements HomeService {
       );
     }
 
-    final classes = mockTeacherClasses(now);
     final unfinalized = classes.where((c) => c.awaitingFinalization).toList();
     return HomeFeed(
       today: TodayOverview(
@@ -84,6 +104,7 @@ class MockHomeService implements HomeService {
             title: 'Finalize attendance',
             detail: '${c.subject} · ${c.section}',
             status: TaskStatus.actionRequired,
+            route: '/attendance/${c.id}/review',
           ),
         ...mockTeacherTasks,
       ],

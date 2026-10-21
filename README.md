@@ -4,7 +4,7 @@ A campus-life app for students and teachers of **Saint Michael's College of Lagu
 
 Built with **Flutter/Dart**. The goal is a free-hosted, installable **PWA** (Progressive Web App) that students and teachers add to the home screen on Android and iPhone.
 
-> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–5 of 11 are done.**
+> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–6 of 11 are done.**
 
 ---
 
@@ -80,7 +80,8 @@ What's behind each tab right now:
 | Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
 | Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Each `See all ›` opens a "Coming soon" page until Phases 6–9. |
 | Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and event history; Edit Profile (About only, saved in this preview); grouped Settings with the preview role switch and Log Out. |
-| Class, Events, Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 6–9. |
+| Class (students), Classes + class page + attendance scanner (teachers) | **New (built in Phase 6).** Weekly schedule, attendance from finalized records, mock scanner with the attendance rules, review and finalize, single-session changes. |
+| Events, Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 7–9. |
 
 ---
 
@@ -147,8 +148,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 | 3 | Home, both roles, incl. notifications sheet, long-press QR, one-time hint | §6, §8, §1.3 | ✅ **Done** |
 | 4 | Hubs: Student Life and Michaelean Life live previews | §7, §9 | ✅ **Done** |
 | 5 | Profile and Settings | §10, §11 | ✅ **Done** |
-| 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | ⏳ **Next** |
-| 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | To do |
+| 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | ✅ **Done** |
+| 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | ⏳ **Next** |
 | 8 | Organizations: directory and tabbed organization page | §7.4 | To do |
 | 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | To do |
 | 10 | Frontend testing: navigation, responsive layouts, empty/error states, validation, role UI, permissions, QR, motion | all | To do |
@@ -217,16 +218,21 @@ Each phase is one piece of work, reviewed by the group before the next one start
 - **Role switch refreshes every tab.** Home, the hub, and Profile reload when the previewed account changes, so no tab keeps the old user's data.
 - Theme: shared Luma-style text fields (borderless, light gray, rounded) and a plain-gray disabled button.
 
-#### Phase 6: Class (student Class + teacher class management) ⏳ Next
+#### Phase 6: Class (student Class + teacher class management) ✅ Done
 
 **Spec:** §7.1, §7.2, §9.1. **Goal:** schedules and attendance.
 
-- **Student Class screen:** `Show QR` button at the top; a **Mon–Sat day strip** (today selected) with that day's classes (subject, teacher, start–end time, room); **attendance**: overall %, % per subject, recent records (Present / Absent).
-- **Teacher class management:** assigned classes, today's schedule, class details, student roster, recent sessions, schedule and room editing (date or recurrence, times, room, reason, Save Changes). Who may edit what is open decision 1 and 3.
-- **Attendance scan flow (mock):** Start attendance → full-screen mock camera with a live counter `Present 18 · Unchecked 7` → each scan briefly flashes the student's photo and name → **Finish** → roster review of unchecked students → **Confirm finalization**.
-- **Rules (§7.2):** only enrolled students can be marked Present; no scans before the session starts or after it closes; duplicate scans don't count twice; late counts as Present; percentages use finalized records only. Mock scanning is always labeled and never shown as real verification or a saved official record.
+- **Weekly timetable** (`mock/mock_classes.dart`): classes with weekdays, times, rooms, and assigned teachers, plus a 12-student roster per section (invented names, masked IDs, random mock QR tokens). Nicolas is in BSCS 3A, which Mark teaches CS 302. Past sessions come pre-finalized with a few seeded absences; today's CS 301 comes pre-scanned (10 of 12) so the teacher has a real "Finalize attendance" task.
+- **Student Class** (`screens/student/class_screen.dart`, route `/life/class`): `Show QR`; a **Mon–Sat day strip** (today selected, a dot marks today); that day's classes; **Attendance** with the overall %, % per subject, and recent Present/Absent records. Everything counts **finalized sessions only**. Home's "Class attendance" stat uses the same numbers.
+- **Teacher Classes** (`screens/teacher/classes_screen.dart`, `/life/classes`): assigned classes with days and times.
+- **Class page** (`class_detail_screen.dart`, `/life/classes/:classId`): today's or the next session with the right action (**Start attendance**, **Review & finalize**, or **Attendance finalized**), **Change this session**, the **roster** (masked IDs), and **recent sessions** (`Finalized`, `To finalize`, or `Not taken`). Another teacher's class shows "You can't manage this class."
+- **Mock scanner** (`attendance_scan_screen.dart`, `/attendance/:sessionId`, full screen, reached only through Start attendance or a finalize task): labeled **MOCK SCANNER · no camera is used**. **Simulate scan** (next unchecked student) and **Unknown code**. Each result flashes for about 1.4 s (photo or initials, name, result), and a live counter shows `Present 3 · Unchecked 9`.
+- **Attendance rules** (spec §7.2, enforced in `CampusService.recordScan`): unknown or other-section codes are not marked; a second scan counts once; scans before the start or after the end are rejected ("Attendance opens at 10:30 AM"). A clearly labeled **preview tool** ("Open anyway") lets you demo outside class hours; it skips only the time check.
+- **Review & finalize** (`attendance_review_screen.dart`, `/attendance/:sessionId/review`): present/unchecked counts, the unchecked list ("will be marked Absent"), and **Confirm finalization**. The confirmation says "finalized in this preview only. Not an official record." A failed save shows an error and never success.
+- **Change one session** (`edit_session_screen.dart`): start/end time, room, optional reason; validated (ends after it starts, room required). **Mock assumption for open decisions 1 and 3:** a teacher may change a *single session* of their own assigned classes; recurring changes aren't offered. The confirmation says students were not notified.
+- **Shared state:** attendance (scans, finalizations, changes) lives in memory in `MockCampusService`, for this preview only, and resets when the app reloads. Home now gets classes from the same service, and `Session.refresh()` makes every screen reload after a change, so finalizing removes Home's task right away.
 
-#### Phase 7: Events (discovery, detail, teacher management)
+#### Phase 7: Events (discovery, detail, teacher management) ⏳ Next
 
 **Spec:** §7.3, §9.2. **Goal:** finding, registering for, and managing events.
 
@@ -279,6 +285,15 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Rebuild Phase 6: Class and attendance.**
+  - New screens: student Class (day strip, schedule, attendance), teacher Classes list, class page, mock attendance scanner, review & finalize, change one session.
+  - Weekly timetable and rosters replace the old "today and tomorrow" class mock (`mock/mock_classes.dart`); new models in `models/attendance.dart`.
+  - `CampusService` gained schedule, class page, attendance records, scanning (with the §7.2 rules), finalizing, and single-session changes; Home reads classes and class attendance from it, so everything agrees.
+  - `Session.refresh()` / `dataKey`: screens reload after shared data changes.
+  - Links wired: Home's Start attendance, class stats, finalize task, and class rows; the hubs' `See all` and class rows; Profile's Classes I Teach.
+  - Fixed while testing: finalizing reopened the review screen (the refresh ran before the screens closed). Tests now check that closed screens are really gone.
+  - New `BackHeader` widget; date helpers `weekdayShort` and `formatMinutesRange`.
+  - Tests: attendance rules, finalization and records, permissions, class page, single-session changes, Home task removal, plus widget tests for the Class screen, the full scan → review → finalize flow, and the session form.
 - **Rebuild Phase 5: Profile and Settings.**
   - Profile rebuilt in Luma's layout; inline stats are counted from records; Classes I Teach for teachers; QR coin removed.
   - New Edit Profile page (About only; honest "preview only" confirmation; locked school fields).
@@ -337,11 +352,12 @@ lib/
   widgets/           shared building blocks (see Design system)
   screens/
     shared/          screens both roles use (opening, sign-in preview, Home, hubs, Profile, sheets)
-    student/         planned: student-only screens (folder not created yet)
-    teacher/         planned: teacher-only screens (folder not created yet)
+    student/         student-only screens (Class)
+    teacher/         teacher-only screens (Classes, class page, scanner, review, change session)
   models/            plain data classes: UserProfile, IdentityTag, Permission, feed items,
                      EventRecord, campus data (CampusEvent, Organization, clearance)
-  mock/              CLEARLY LABELED sample data (mock_users.dart, mock_home.dart, mock_campus.dart)
+  mock/              CLEARLY LABELED sample data (mock_users.dart, mock_home.dart, mock_campus.dart,
+                     mock_classes.dart)
   services/          interfaces that return mock data now, real data later
                      (UserService, HomeService, CampusService) + Session (who is being previewed)
                      + HintStore (remembers one-time tips on the device)
@@ -413,6 +429,7 @@ The look follows **Luma** (an events app for iPhone) closely in layout and feel,
 | `UserAvatar` | Round photo or initials |
 | `StatsRow` | Compact row of tappable stats with navy numbers (Home) |
 | `UpNextCard` | Solid navy "Up next" class card, optional Start attendance button, empty state |
+| `BackHeader` | Top of a pushed page: round back button, title, optional action (e.g. `Show QR`) |
 
 ---
 
@@ -438,12 +455,13 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-36 tests currently pass. They cover:
+49 tests currently pass. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
 - **Home data:** the student sees their department/society posts only, urgent posts first, the student's own next class with its teacher, the teacher's classes for today only, teacher sections, the attendance task appears only for an unfinalized session, next-class logic, no post in two sections.
 - **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens a placeholder with Back; Michaelean Life shows classes, managed events with drafts, and locks Clearance without permission; a load failure shows Retry.
+- **Class and attendance:** an enrolled scan is Present once and a repeat counts once; unknown or other-section codes aren't marked; scans before the start or after the end are rejected (the preview tool skips only the clock); finalizing closes the session and only finalized sessions count; teachers manage only their assigned classes; class page roster and recent sessions; single-session changes are validated and move only that session; finalizing removes Home's task; the Class screen's day strip and Show QR; the full scan → review → finalize flow (scanner and review really close); the session form's validation and honest confirmation; another teacher's class is refused.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
 - **Profile:** identity, masked ID, counted stats, tags, and event history for students; Classes I Teach and hosted count for teachers; no QR on Profile; Edit Profile enables Save only after a change and confirms "preview only"; Settings items, Back closes it, Log Out ends the preview; switching role in Settings refreshes Home, the hub, and Profile.
 
@@ -484,7 +502,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 6 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 7 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.

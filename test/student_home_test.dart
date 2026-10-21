@@ -87,7 +87,9 @@ void main() {
     // Which class is next depends on the time of day; each has a teacher.
     expect(
       find.byWidgetPredicate((w) =>
-          w is Text && const {'Ana Reyes', 'Mark Villanueva', 'Jose Cruz'}.contains(w.data)),
+          w is Text &&
+          const {'Ana Reyes', 'Mark Villanueva', 'Jose Cruz', 'Paolo Garcia', 'Liza Ramos'}
+              .contains(w.data)),
       findsOneWidget,
     );
     expect(find.text('Start attendance'), findsNothing);

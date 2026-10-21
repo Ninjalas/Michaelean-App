@@ -44,15 +44,15 @@ class _HubData {
 
 class _LifeHubScreenState extends State<LifeHubScreen> {
   Future<_HubData>? _data;
-  String? _loadedFor; // user id the data belongs to
+  String? _loadedFor; // Session.dataKey the data belongs to
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Reload when the previewed account changes (role switch in Settings).
     final user = SessionScope.of(context).user;
-    if (user != null && user.id != _loadedFor) {
-      _loadedFor = user.id;
+    if (user != null && SessionScope.of(context).dataKey != _loadedFor) {
+      _loadedFor = SessionScope.of(context).dataKey;
       _data = _load(user);
     }
   }
@@ -124,7 +124,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
   List<Widget> _student(_HubData d) {
     final now = DateTime.now();
     return [
-      _pad(SectionHeader('Class', onSeeAll: () => _open('Class'))),
+      _pad(SectionHeader('Class', onSeeAll: () => context.push('/life/class'))),
       ..._studentClasses(d.classes, now),
 
       _pad(SectionHeader('Events', onSeeAll: () => _open('Events'))),
@@ -180,7 +180,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
           meta: [c.room, if (c.teacher != null) c.teacher!].join(' · '),
           metaIcon: Icons.place_outlined,
           pill: _timePill(c, now, isNext: c.id == next?.id),
-          onTap: () => _open(c.subject),
+          onTap: () => context.push('/life/class'),
         ),
     ]);
   }
@@ -202,7 +202,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       if (!user.can(Permission.manageAssignedClasses))
         ..._denied('Classes', 'No classes are assigned to you.')
       else ...[
-        _pad(SectionHeader('Classes', onSeeAll: () => _open('Classes'))),
+        _pad(SectionHeader('Classes', onSeeAll: () => context.push('/life/classes'))),
         if (today.isEmpty)
           _pad(_muted('No classes today.'))
         else
@@ -211,8 +211,8 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
               _TeacherClassRow(
                 session: c,
                 now: now,
-                onTap: () => _open(c.subject),
-                onStartAttendance: () => _open('Start attendance'),
+                onTap: () => context.push('/life/classes/${c.classId}'),
+                onStartAttendance: () => context.push('/attendance/${c.id}'),
               ),
           ]),
       ],
@@ -457,6 +457,8 @@ class _TeacherClassRow extends StatelessWidget {
                 ),
                 child: const Text('Start attendance'),
               )
+            else if (c.finalized)
+              const StatusPill('Finalized', tone: PillTone.green)
             else if (c.awaitingFinalization)
               const StatusPill('To finalize', tone: PillTone.amber)
             else

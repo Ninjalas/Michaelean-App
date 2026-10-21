@@ -37,15 +37,15 @@ class _ProfileData {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Future<_ProfileData>? _data;
-  String? _loadedFor; // user id the data belongs to
+  String? _loadedFor; // Session.dataKey the data belongs to
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Reload when the previewed account changes (role switch in Settings).
     final user = SessionScope.of(context).user;
-    if (user != null && user.id != _loadedFor) {
-      _loadedFor = user.id;
+    if (user != null && SessionScope.of(context).dataKey != _loadedFor) {
+      _loadedFor = SessionScope.of(context).dataKey;
       _data = _load(user);
     }
   }
@@ -156,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: c.subject,
                           meta: c.room,
                           metaIcon: Icons.place_outlined,
-                          onTap: () => _openSoon(c.subject),
+                          onTap: () => context.go('/life/classes/${c.classId}'),
                         ),
                     ]),
                 ],

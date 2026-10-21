@@ -44,12 +44,14 @@ class PendingTask {
   final String title;
   final String detail;
   final TaskStatus status;
+  final String? route; // where tapping it goes; null → its feature isn't built yet
 
   const PendingTask({
     required this.id,
     required this.title,
     required this.detail,
     required this.status,
+    this.route,
   });
 }
 
@@ -88,8 +90,10 @@ class AppNotification {
   });
 }
 
+/// One meeting of a class on a specific day.
 class ClassSession {
-  final String id;
+  final String id; // "<classId>@<yyyy-mm-dd>"
+  final String classId; // the class this session belongs to
   final String subject; // e.g. "CS 301 · Data Structures"
   final String section;
   final DateTime start;
@@ -100,9 +104,11 @@ class ClassSession {
   /// Attendance was taken but the teacher hasn't finalized it yet. Only this
   /// creates an attendance task; a scheduled class alone does not (spec §8).
   final bool awaitingFinalization;
+  final bool finalized; // official record closed (in this preview: mock)
 
   const ClassSession({
     required this.id,
+    required this.classId,
     required this.subject,
     required this.section,
     required this.start,
@@ -110,6 +116,7 @@ class ClassSession {
     required this.room,
     this.teacher,
     this.awaitingFinalization = false,
+    this.finalized = false,
   });
 }
 

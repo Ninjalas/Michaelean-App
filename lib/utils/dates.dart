@@ -49,3 +49,13 @@ String greetingFor(DateTime now) {
   if (now.hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
+
+/// "Mon", "Tue", … for DateTime.monday … DateTime.sunday.
+String weekdayShort(int weekday) => _weekdays[weekday - 1].substring(0, 3);
+
+/// "7:30 – 9:00 AM" for a class's start and end, in minutes after midnight.
+String formatMinutesRange(int start, int end) {
+  final today = DateTime(2000);
+  return '${formatTime(today.add(Duration(minutes: start)))} – '
+      '${formatTime(today.add(Duration(minutes: end)))}';
+}

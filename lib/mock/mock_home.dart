@@ -192,102 +192,15 @@ const mockTasks = [
   ),
 ];
 
+/// Home's student stats. Class attendance is not here: it is counted from
+/// finalized attendance records (see CampusService.loadMyAttendance).
 const mockAttendance = AttendanceSummary(
-  classPercent: 92,
+  classPercent: 0, // replaced by the counted value
   eventPercent: 80,
   eventsCompleted: 5,
   requirementsCleared: 3,
   requirementsTotal: 6,
 );
-
-/// Nicolas Santos's classes: three today, one tomorrow, at fixed hours.
-/// Teacher names are invented sample data.
-List<ClassSession> mockStudentClasses(DateTime now) {
-  final today = DateTime(now.year, now.month, now.day);
-  DateTime at(int dayOffset, int hour, int minute) =>
-      today.add(Duration(days: dayOffset, hours: hour, minutes: minute));
-  return [
-    ClassSession(
-      id: 's1',
-      subject: 'CS 305 · Software Engineering',
-      section: 'BSCS 3A',
-      start: at(0, 7, 30),
-      end: at(0, 9, 0),
-      room: 'Saint Theodore Hall · Lab 1',
-      teacher: 'Ana Reyes',
-    ),
-    ClassSession(
-      id: 's2',
-      subject: 'CS 302 · Algorithms',
-      section: 'BSCS 3A',
-      start: at(0, 10, 30),
-      end: at(0, 12, 0),
-      room: 'Segunda Limaco Hall · 301',
-      teacher: 'Mark Villanueva',
-    ),
-    ClassSession(
-      id: 's3',
-      subject: 'GE 104 · Ethics',
-      section: 'BSCS 3A',
-      start: at(0, 13, 0),
-      end: at(0, 14, 30),
-      room: 'Pura Limaco Hall I · 110',
-      teacher: 'Jose Cruz',
-    ),
-    ClassSession(
-      id: 's4',
-      subject: 'CS 305 · Software Engineering',
-      section: 'BSCS 3A',
-      start: at(1, 7, 30),
-      end: at(1, 9, 0),
-      room: 'Saint Theodore Hall · Lab 1',
-      teacher: 'Ana Reyes',
-    ),
-  ];
-}
-
-/// Mark Villanueva's classes: three today, one tomorrow, at fixed hours.
-List<ClassSession> mockTeacherClasses(DateTime now) {
-  final today = DateTime(now.year, now.month, now.day);
-  DateTime at(int dayOffset, int hour, int minute) =>
-      today.add(Duration(days: dayOffset, hours: hour, minutes: minute));
-  return [
-    ClassSession(
-      id: 'k1',
-      subject: 'CS 301 · Data Structures',
-      section: 'BSCS 2A',
-      start: at(0, 7, 30),
-      end: at(0, 9, 0),
-      room: 'Pura Limaco Hall I · 204',
-      // Scanned during class but not finalized yet; only once the class is over.
-      awaitingFinalization: now.isAfter(at(0, 9, 0)),
-    ),
-    ClassSession(
-      id: 'k2',
-      subject: 'CS 302 · Algorithms',
-      section: 'BSCS 3A',
-      start: at(0, 10, 30),
-      end: at(0, 12, 0),
-      room: 'Segunda Limaco Hall · 301',
-    ),
-    ClassSession(
-      id: 'k3',
-      subject: 'CS 310 · Web Development',
-      section: 'BSCS 3B',
-      start: at(0, 13, 0),
-      end: at(0, 14, 30),
-      room: 'Saint Theodore Hall · Lab 2',
-    ),
-    ClassSession(
-      id: 'k4',
-      subject: 'CS 301 · Data Structures',
-      section: 'BSCS 2A',
-      start: at(1, 9, 0),
-      end: at(1, 10, 30),
-      room: 'Pura Limaco Hall I · 204',
-    ),
-  ];
-}
 
 const mockTeacherTasks = [
   PendingTask(

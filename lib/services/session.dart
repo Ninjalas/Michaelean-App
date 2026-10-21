@@ -9,6 +9,19 @@ class Session extends ChangeNotifier {
 
   UserProfile? get user => _user;
 
+  /// Goes up whenever shared data changes (e.g. attendance finalized), so
+  /// screens know to reload. See [dataKey].
+  int _revision = 0;
+
+  /// Screens reload when this changes: a different user, or newer data.
+  String? get dataKey => _user == null ? null : '${_user!.id}#$_revision';
+
+  /// Tells every screen that shared data changed and should be reloaded.
+  void refresh() {
+    _revision++;
+    notifyListeners();
+  }
+
   void startPreview(UserProfile user) {
     _user = user;
     notifyListeners();

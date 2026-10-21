@@ -11,6 +11,12 @@ import 'screens/shared/opening_screen.dart';
 import 'screens/shared/profile_screen.dart';
 import 'screens/shared/qr_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
+import 'screens/student/class_screen.dart';
+import 'screens/teacher/attendance_review_screen.dart';
+import 'screens/teacher/attendance_scan_screen.dart';
+import 'screens/teacher/class_detail_screen.dart';
+import 'screens/teacher/classes_screen.dart';
+import 'screens/teacher/edit_session_screen.dart';
 import 'screens/shared/post_detail_screen.dart';
 import 'screens/shared/preview_screen.dart';
 import 'services/campus_service.dart';
@@ -49,6 +55,25 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
         path: '/qr',
         pageBuilder: (context, state) =>
             AppSheetPage(key: state.pageKey, title: 'Your QR code', child: const QrSheet()),
+      ),
+      // Attendance scanner and review: full screen over the nav bar, reached
+      // only through Start attendance / a finalize task (spec §9.1).
+      GoRoute(
+        path: '/attendance/:sessionId',
+        builder: (context, state) => AttendanceScanScreen(
+          campusService: campusService,
+          sessionId: state.pathParameters['sessionId']!,
+        ),
+        routes: [
+          GoRoute(
+            path: 'review',
+            builder: (context, state) => AttendanceReviewScreen(
+              campusService: campusService,
+              sessionId: state.pathParameters['sessionId']!,
+              fromScanner: state.uri.queryParameters['from'] == 'scanner',
+            ),
+          ),
+        ],
       ),
       // indexedStack keeps each tab alive, so its scroll position and
       // inner pages are preserved when switching tabs.
@@ -90,6 +115,35 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               path: '/life',
               builder: (context, state) => LifeHubScreen(campusService: campusService),
               routes: [
+                // Student Class screen (spec §7.1).
+                GoRoute(
+                  path: 'class',
+                  builder: (context, state) => ClassScreen(campusService: campusService),
+                ),
+                // Teacher class management (spec §9.1).
+                GoRoute(
+                  path: 'classes',
+                  builder: (context, state) => ClassesScreen(campusService: campusService),
+                  routes: [
+                    GoRoute(
+                      path: ':classId',
+                      builder: (context, state) => ClassDetailScreen(
+                        campusService: campusService,
+                        classId: state.pathParameters['classId']!,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: 'edit',
+                          parentNavigatorKey: rootKey, // form with Save at the bottom
+                          builder: (context, state) => EditSessionScreen(
+                            campusService: campusService,
+                            sessionId: state.uri.queryParameters['session'] ?? '',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 GoRoute(
                   path: 'soon',
                   builder: (context, state) => ComingSoonScreen(
