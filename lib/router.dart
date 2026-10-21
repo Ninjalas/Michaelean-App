@@ -14,6 +14,8 @@ import 'screens/shared/profile_screen.dart';
 import 'screens/shared/qr_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
 import 'screens/student/class_screen.dart';
+import 'screens/student/organization_screen.dart';
+import 'screens/student/organizations_screen.dart';
 import 'screens/teacher/attendance_review_screen.dart';
 import 'screens/teacher/attendance_scan_screen.dart';
 import 'screens/teacher/class_detail_screen.dart';
@@ -143,6 +145,31 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                           builder: (context, state) => EditSessionScreen(
                             campusService: campusService,
                             sessionId: state.uri.queryParameters['session'] ?? '',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                // Organizations (spec §7.4). An event opened from an
+                // organization is pushed on top, so Back returns to it.
+                GoRoute(
+                  path: 'organizations',
+                  builder: (context, state) =>
+                      OrganizationsScreen(campusService: campusService),
+                  routes: [
+                    GoRoute(
+                      path: ':orgId',
+                      builder: (context, state) => OrganizationScreen(
+                        campusService: campusService,
+                        orgId: state.pathParameters['orgId']!,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: 'post/:postId',
+                          builder: (context, state) => PostDetailScreen(
+                            postId: state.pathParameters['postId']!,
+                            homeService: homeService,
                           ),
                         ),
                       ],

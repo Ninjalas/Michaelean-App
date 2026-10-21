@@ -1,3 +1,5 @@
+import 'feed.dart';
+
 /// Draft and published are separate states (spec §9.2). Only published
 /// events are shown to students. Cancelled events stay visible to people
 /// who registered, marked as cancelled.
@@ -114,17 +116,82 @@ class EventRegistrant {
   });
 }
 
+/// A departmental society belongs to one department; a club is open to
+/// the whole school (spec §7.4). A department is not its society.
+enum OrgKind { society, club }
+
+/// A regular meeting on an organization's schedule.
+class OrgMeeting {
+  final String title;
+  final String when; // e.g. "Every Friday · 3:00 PM"
+  final String place;
+
+  const OrgMeeting({required this.title, required this.when, required this.place});
+}
+
+/// An officer as listed on the organization page. Listing someone here
+/// doesn't give them permissions (spec §12).
+class OrgOfficer {
+  final String name;
+  final String position;
+  final String? photoAsset;
+
+  const OrgOfficer({required this.name, required this.position, this.photoAsset});
+}
+
 class Organization {
   final String id;
   final String name; // matches the organization tag label exactly
   final String? logoAsset; // null → initials
+  final String? coverAsset; // null → plain tinted cover
   final int memberCount;
+  final OrgKind kind;
+
+  /// For a society: the department it belongs to. Null for clubs.
+  final String? department;
+  final String about;
+  final List<OrgMeeting> meetings;
+  final List<OrgOfficer> officers;
 
   const Organization({
     required this.id,
     required this.name,
     this.logoAsset,
+    this.coverAsset,
     required this.memberCount,
+    this.kind = OrgKind.club,
+    this.department,
+    this.about = '',
+    this.meetings = const [],
+    this.officers = const [],
+  });
+}
+
+/// The Organizations directory (spec §7.4), in its three groups.
+class OrgDirectory {
+  final List<Organization> society; // the user's departmental society, if any
+  final List<Organization> clubs; // approved school-wide clubs
+  final List<Organization> mine; // confirmed memberships
+
+  const OrgDirectory({required this.society, required this.clubs, required this.mine});
+}
+
+/// An organization page as one user sees it.
+class OrganizationPage {
+  final Organization org;
+  final bool isMember; // a confirmed membership tag, never self-assigned
+  final bool requested; // asked to join in this preview; still not a member
+  final List<EventDetail> events; // upcoming events the user may see
+  final List<Post> news; // posts the user may see, newest first
+  final int membersOnlyHidden; // events and posts hidden from non-members
+
+  const OrganizationPage({
+    required this.org,
+    required this.isMember,
+    required this.requested,
+    required this.events,
+    required this.news,
+    required this.membersOnlyHidden,
   });
 }
 

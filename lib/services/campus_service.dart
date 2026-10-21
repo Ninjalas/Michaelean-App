@@ -1,5 +1,6 @@
 import '../mock/mock_campus.dart';
 import '../mock/mock_classes.dart';
+import '../mock/mock_home.dart' show mockPosts;
 import '../models/attendance.dart';
 import '../models/campus.dart';
 import '../models/feed.dart';
@@ -95,6 +96,18 @@ abstract class CampusService {
 
   /// Organizations the user is a confirmed member of.
   Future<List<Organization>> loadMyOrganizations(UserProfile user);
+
+  /// The Organizations directory (spec §7.4): the user's departmental
+  /// society, school-wide clubs, and confirmed memberships.
+  Future<OrgDirectory> loadOrganizationDirectory(UserProfile user);
+
+  /// One organization page; null if the user may not see it (another
+  /// department's society they don't belong to).
+  Future<OrganizationPage?> loadOrganization(UserProfile user, String orgId);
+
+  /// Records a request to join in this preview. It never makes the user a
+  /// member: memberships are confirmed by administrators (spec §5).
+  Future<void> requestToJoin(UserProfile user, String orgId);
 
   /// The active clearance period; null when there is none.
   Future<ClearanceSummary?> loadClearance(UserProfile user);
@@ -584,6 +597,74 @@ class MockCampusService implements CampusService {
         .map((t) => t.label)
         .toSet();
     return mockOrganizations.where((o) => memberOf.contains(o.name)).toList();
+  }
+
+  // ---------- Organizations ----------
+
+  final _joinRequests = <String, Set<String>>{}; // org id → user ids
+
+  bool _isMember(UserProfile user, Organization o) =>
+      user.tags.any((t) => t.kind == TagKind.organization && t.label == o.name);
+
+  bool _inDepartmentOf(UserProfile user, Organization o) =>
+      o.department != null &&
+      user.tags.any((t) => t.kind == TagKind.department && t.label == o.department);
+
+  /// Clubs are open to all; a society only to its own department (and members).
+  bool _canSee(UserProfile user, Organization o) =>
+      o.kind == OrgKind.club || _inDepartmentOf(user, o) || _isMember(user, o);
+
+  @override
+  Future<OrgDirectory> loadOrganizationDirectory(UserProfile user) async {
+    await _wait();
+    return OrgDirectory(
+      society: mockOrganizations
+          .where((o) => o.kind == OrgKind.society && _inDepartmentOf(user, o))
+          .toList(),
+      // Other departments' societies are never listed as school-wide clubs.
+      clubs: mockOrganizations.where((o) => o.kind == OrgKind.club).toList(),
+      mine: mockOrganizations.where((o) => _isMember(user, o)).toList(),
+    );
+  }
+
+  @override
+  Future<OrganizationPage?> loadOrganization(UserProfile user, String orgId) async {
+    await _wait();
+    final o = mockOrganizations.where((o) => o.id == orgId).firstOrNull;
+    if (o == null || !_canSee(user, o)) return null;
+    final now = clock();
+    final events = _events.values
+        .where((e) => e.host == o.name && e.status == EventStatus.published && e.end.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.start.compareTo(b.start));
+    final visibleEvents = events
+        .where((e) => _eligible(user, e) || (_registered[e.id]?.contains(user.id) ?? false))
+        .toList();
+    final posts = mockPosts(now).where((p) => p.source == o.name).toList()
+      ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    final visiblePosts = posts
+        .where((p) => p.audience == null || user.tags.any((t) => t.label == p.audience))
+        .toList();
+    return OrganizationPage(
+      org: o,
+      isMember: _isMember(user, o),
+      requested: _joinRequests[o.id]?.contains(user.id) ?? false,
+      events: [for (final e in visibleEvents) _detail(user, e)],
+      news: visiblePosts,
+      membersOnlyHidden:
+          events.length - visibleEvents.length + posts.length - visiblePosts.length,
+    );
+  }
+
+  @override
+  Future<void> requestToJoin(UserProfile user, String orgId) async {
+    await _wait();
+    final o = mockOrganizations.where((o) => o.id == orgId).firstOrNull;
+    if (o == null || !_canSee(user, o)) throw StateError("This organization isn't available.");
+    if (_isMember(user, o)) throw StateError("You're already a member.");
+    if (!_joinRequests.putIfAbsent(orgId, () => {}).add(user.id)) {
+      throw StateError('You already asked to join.');
+    }
   }
 
   @override

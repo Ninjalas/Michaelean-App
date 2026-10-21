@@ -10,9 +10,9 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/org_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
-import '../../widgets/user_avatar.dart';
 
 /// The feature hub tab, for browsing: Student Life for students (spec §7),
 /// Michaelean Life for teachers (spec §9). Each feature shows a live preview
@@ -149,13 +149,15 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
           ),
         ),
 
-      _pad(SectionHeader('Organizations', onSeeAll: () => _open('Organizations'))),
+      _pad(SectionHeader('Organizations',
+          onSeeAll: () => context.push('/life/organizations'))),
       if (d.organizations.isEmpty)
         _pad(_muted("You haven't joined any organizations yet."))
       else
         ..._divided([
-          for (final o in d.organizations) _OrgRow(org: o, onTap: () => _open(o.name)),
-        ], indent: 48 + AppSpacing.md),
+          for (final o in d.organizations)
+            OrgRow(org: o, onTap: () => context.push('/life/organizations/${o.id}')),
+        ], indent: OrgRow.textIndent),
 
       _pad(SectionHeader('Clearance', onSeeAll: () => _open('Clearance'))),
       _pad(d.clearance == null
@@ -365,41 +367,6 @@ class _EventCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(event.venue, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OrgRow extends StatelessWidget {
-  final Organization org;
-  final VoidCallback onTap;
-
-  const _OrgRow({required this.org, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: Row(
-          children: [
-            UserAvatar(name: org.name, imageAsset: org.logoAsset, size: 48),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(org.name, style: text.titleMedium),
-                  Text('${org.memberCount} members',
-                      style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
           ],
         ),
       ),

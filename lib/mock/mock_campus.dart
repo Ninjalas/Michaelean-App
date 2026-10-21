@@ -150,10 +150,87 @@ const mockEventCovers = [
   'assets/images/events/css_unpackingevent.jpg',
 ];
 
+/// Organizations. Officers, meetings, and descriptions are invented sample
+/// data. Kinds and departments are mock assumptions, not official records.
 const mockOrganizations = [
-  Organization(id: 'org1', name: _css, logoAsset: _cssLogo, memberCount: 248),
-  Organization(id: 'org2', name: 'SMCL Chorale', memberCount: 64),
-  Organization(id: 'org3', name: 'Dance Company', memberCount: 52),
+  Organization(
+    id: 'org1',
+    name: _css,
+    logoAsset: _cssLogo,
+    coverAsset: _cssCover,
+    memberCount: 248,
+    kind: OrgKind.society,
+    department: _dcs,
+    about: 'Sample description. The student society of the Department of '
+        'Computer Studies: seminars, coding challenges, and study groups for '
+        'anyone into computing.',
+    meetings: [
+      OrgMeeting(
+          title: 'General assembly',
+          when: 'First Friday of the month · 3:00 PM',
+          place: 'Milagros Limaco Hall'),
+      OrgMeeting(
+          title: 'Study group',
+          when: 'Every Wednesday · 4:30 PM',
+          place: 'Saint Theodore Hall · Lab 2'),
+    ],
+    officers: [
+      OrgOfficer(name: 'Andrea Bautista', position: 'President'),
+      OrgOfficer(name: 'Carlo Mendoza', position: 'Vice President'),
+      OrgOfficer(name: 'Erika Lim', position: 'Secretary'),
+      OrgOfficer(name: 'Mark Villanueva', position: 'Adviser',
+          photoAsset: 'assets/images/profiles/Sir_Georgio.png'),
+    ],
+  ),
+  Organization(
+    id: 'org2',
+    name: 'SMCL Chorale',
+    memberCount: 64,
+    about: 'Sample description. The school choir sings at Masses, '
+        'ceremonies, and the yearly concert. Auditions every semester.',
+    meetings: [
+      OrgMeeting(title: 'Rehearsal', when: 'Every Tuesday and Thursday · 4:00 PM',
+          place: 'Music Room'),
+    ],
+    officers: [
+      OrgOfficer(name: 'Bea Villareal', position: 'President'),
+      OrgOfficer(name: 'Hans Navarro', position: 'Section leader'),
+    ],
+  ),
+  Organization(
+    id: 'org3',
+    name: 'Dance Company',
+    memberCount: 52,
+    about: 'Sample description. Contemporary and folk dance, performing at '
+        'school events and competitions.',
+    meetings: [
+      OrgMeeting(title: 'Practice', when: 'Every Monday and Wednesday · 5:00 PM',
+          place: 'Main Auditorium'),
+    ],
+    officers: [
+      OrgOfficer(name: 'Gabrielle Ocampo', position: 'Captain'),
+    ],
+  ),
+  Organization(
+    id: 'org4',
+    name: 'Campus Ministry Volunteers',
+    memberCount: 87,
+    about: 'Sample description. Volunteers who help with Masses, outreach, '
+        'and retreats.',
+    meetings: [
+      OrgMeeting(title: 'Volunteer meeting', when: 'Every other Saturday · 9:00 AM',
+          place: 'Chapel Hall'),
+    ],
+  ),
+  // Another department's society: never listed as a school-wide club.
+  Organization(
+    id: 'org5',
+    name: 'Nursing Students Association',
+    memberCount: 310,
+    kind: OrgKind.society,
+    department: 'Department of Nursing',
+    about: 'Sample description.',
+  ),
 ];
 
 /// Active clearance period per user id; missing means no active period.

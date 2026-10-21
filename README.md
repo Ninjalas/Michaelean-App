@@ -78,11 +78,12 @@ What's behind each tab right now:
 |---|---|
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
 | Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
-| Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Class and Events open their real screens; Organizations and Clearance open "Coming soon" pages until Phases 8–9. |
+| Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Class, Events, and Organizations open their real screens; Clearance opens a "Coming soon" page until Phase 9. |
 | Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and event history; Edit Profile (About only, saved in this preview); grouped Settings with the preview role switch and Log Out. |
 | Class (students), Classes + class page + attendance scanner (teachers) | **New (built in Phase 6).** Weekly schedule, attendance from finalized records, mock scanner with the attendance rules, review and finalize, single-session changes. |
 | Events (students: Discover / My events / event detail; teachers: Upcoming / Past / Drafts, create, edit, invite, registrations, cancel) | **New (built in Phase 7).** Registration, invitations, publishing, and cancelling change this preview only and say so. |
-| Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 8–9. |
+| Organizations directory and organization page (students) | **New (built in Phase 8).** Three groups, tabbed organization page, honest "Request to join". |
+| Clearance | **Not built yet** ("Coming soon" placeholders). Phase 9. |
 
 ---
 
@@ -151,8 +152,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 | 5 | Profile and Settings | §10, §11 | ✅ **Done** |
 | 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | ✅ **Done** |
 | 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | ✅ **Done** |
-| 8 | Organizations: directory and tabbed organization page | §7.4 | ⏳ **Next** |
-| 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | To do |
+| 8 | Organizations: directory and tabbed organization page | §7.4 | ✅ **Done** |
+| 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | ⏳ **Next** |
 | 10 | Frontend testing: navigation, responsive layouts, empty/error states, validation, role UI, permissions, QR, motion | all | To do |
 | 11 | Later integration (only when requested): auth, backend, hosting, PWA | §4, §13 | Later |
 
@@ -256,13 +257,25 @@ Each phase is one piece of work, reviewed by the group before the next one start
 - **Mock data** (`mock/mock_campus.dart`): events now have end times, descriptions, deadlines, and capacities; one full event (Blood Donation Drive), one closed (Society Coding Challenge), two past events; starting registrations (Nicolas is going to the Intramurals opening); counts from people outside the mock rosters so numbers look real.
 - **Not done:** the cover photo doesn't animate from the list into the detail (a `Hero` like the emblem's). Events created or changed reset when the app reloads.
 
-#### Phase 8: Organizations
+#### Phase 8: Organizations ✅ Done
 
 **Spec:** §7.4. **Goal:** campus organizations.
 
-- **Directory**, three groups: the student's departmental society, approved school-wide clubs, My Organizations. Each entry shows logo, name, and member count.
-- **Organization page:** cover photo, logo, name, tags, membership status (Member / Join), then tabs **About, Schedule, Events, News, Officers**. An event in the Events tab opens the shared event detail, and Back returns to the organization.
-- **Rules:** a department is not its society; only authorized officers manage organization content.
+- **Directory** (`screens/student/organizations_screen.dart`, route `/life/organizations`, from Student Life's `See all ›`), three groups:
+  - **Your Department Society**: the society of the student's department (CSS for Computer Studies). A department is not its society; they're separate records.
+  - **School-wide Clubs**: approved clubs. Other departments' societies (e.g. the invented Nursing Students Association) are **never** listed here.
+  - **My Organizations**: confirmed memberships (the student's organization tags).
+  - Each row (shared `widgets/org_row.dart`, also used by the hub) shows logo, name, member count, and a `Member` pill.
+- **Organization page** (`organization_screen.dart`, `/life/organizations/:orgId`): cover photo with the logo overlapping it, name, member count, tags (`Departmental society` / `School-wide club`, the department, `Member`), then tabs:
+  - **About**: description.
+  - **Schedule**: regular meetings (what, when, where).
+  - **Events**: the organization's upcoming events the student may see. Tapping one opens the **shared event page**, and **Back returns to the organization** on the same tab.
+  - **News**: the organization's posts, newest first, `URGENT` pinned label; tapping opens the post (`/life/organizations/:orgId/post/:postId`).
+  - **Officers**: names and positions (listing someone doesn't give them app permissions).
+- **Members-only content:** non-members don't see members-only events or posts; the page says "Some events and posts are for members only." Another department's society isn't available at all.
+- **Request to Join** (mock assumption for open decision 2): records a request in this preview only. The message says nothing was sent and you're **not a member**; the button becomes `Request saved`. Membership stays a confirmed tag that only administrators assign (spec §5).
+- **Mock data** (`mock/mock_campus.dart`): five organizations with kind (society/club), department, About text, meetings, and officers (invented names; Mark is listed as CSS adviser). Only CSS has a real logo and cover.
+- **Not done:** officer tools (posting news, managing the schedule). The spec allows only authorized officers to manage content, and no mock account is an officer yet, so this waits until someone decides who the mock officer is.
 
 #### Phase 9: Clearance (student clearance + teacher verification)
 
@@ -300,6 +313,13 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Rebuild Phase 8: Organizations.**
+  - New screens: Organizations directory (three groups) and the tabbed organization page (About, Schedule, Events, News, Officers).
+  - `CampusService` gained `loadOrganizationDirectory`, `loadOrganization`, and `requestToJoin`; organization news comes from the same mock posts as Home.
+  - Models: `Organization` has kind (society/club), department, cover, About, meetings (`OrgMeeting`), and officers (`OrgOfficer`); new `OrgDirectory` and `OrganizationPage`.
+  - New shared `OrgRow` widget (moved out of the hub).
+  - Links wired: Student Life's Organizations `See all` and organization rows.
+  - Tests: directory groups (no other department's society among clubs), members-only events and posts, other departments' societies hidden, join request never makes a member; widget tests for the directory, the tabs, event → Back → organization, and the honest join request.
 - **Rebuild Phase 7: Events.**
   - New screens: Events list (both roles), event detail, Create/Edit Event, Invite Students, Registrations.
   - `CampusService` gained `loadEvents` (Discover / My events / managed), `loadEvent`, `register`, `cancelRegistration`, `saveEvent`, `cancelEvent`, `loadRegistrations`, `inviteSections`, and `eventCovers`. Events and registrations live in memory in `MockCampusService`.
@@ -377,7 +397,7 @@ lib/
   screens/
     shared/          screens both roles use (opening, sign-in preview, Home, hubs, Events, event detail,
                      Profile, sheets)
-    student/         student-only screens (Class)
+    student/         student-only screens (Class, Organizations directory, organization page)
     teacher/         teacher-only screens (Classes, class page, scanner, review, change session,
                      event form, invite students, event registrations)
   models/            plain data classes: UserProfile, IdentityTag, Permission, feed items,
@@ -481,7 +501,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-59 tests currently pass. They cover:
+63 tests currently pass (one Home test fails between midnight and 1 AM; see Known issues). They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
@@ -489,6 +509,7 @@ flutter test
 - **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens its page with Back; Michaelean Life shows classes, managed events with drafts, and locks Clearance without permission; a load failure shows Retry.
 - **Class and attendance:** an enrolled scan is Present once and a repeat counts once; unknown or other-section codes aren't marked; scans before the start or after the end are rejected (the preview tool skips only the clock); finalizing closes the session and only finalized sessions count; teachers manage only their assigned classes; class page roster and recent sessions; single-session changes are validated and move only that session; finalizing removes Home's task; the Class screen's day strip and Show QR; the full scan → review → finalize flow (scanner and review really close); the session form's validation and honest confirmation; another teacher's class is refused.
 - **Events:** registering works once and never for full, closed, or ineligible events; My events lists upcoming then past registrations; a draft is hidden from students, publishing and editing keep one event and mark time changes; only managers edit, see names, invite, or cancel; the service re-checks form rules; inviting a section registers its students; a cancelled event leaves Discover but stays in My events. Widget tests: discover → My Orgs filter → register → My events; a full event can't be registered; create → publish → invite a section → registration count; editing someone else's event is refused.
+- **Organizations:** directory groups (another department's society is never a school-wide club), members-only events and posts hidden from non-members, other departments' societies unavailable, a join request never makes a member; widget tests for the directory, tabs, event → Back → organization, and the join request.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
 - **Profile:** identity, masked ID, counted stats, tags, and event history for students; Classes I Teach and hosted count for teachers; no QR on Profile; Edit Profile enables Save only after a change and confirms "preview only"; Settings items, Back closes it, Log Out ends the preview; switching role in Settings refreshes Home, the hub, and Profile.
 
@@ -521,6 +542,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 - **Event covers are placeholders.** CSS events reuse the society's cover image; other events show a navy-tint tile. The form's cover picker offers the bundled photos (`mockEventCovers` in `lib/mock/mock_campus.dart`). Replace them with real SMCL event photos when the group has them; a real photo upload needs a file-picker package.
 - **Event changes reset on reload.** Registrations, new events, edits, invitations, and cancellations live in memory for this preview only.
 - **A snackbar can briefly cover the bottom button** of the next form (for example, right after Publish, on Invite Students). It goes away after about 4 seconds.
+- **One Home test fails between midnight and 1 AM.** "Notifications are grouped into Today and Earlier" expects a notification from today, but the newest mock notification is 1 hour old. Run the tests again after 1 AM, or make the mock times depend less on the clock.
 - **Long-press needs a real hold.** Hold the mouse button (or your finger) on Student Life / Michaelean Life for about half a second. Automated widget tests cover it.
 - **On narrow phones the quick-QR tip wraps to two lines.** It's readable; shorten the wording if the group prefers one line.
 - **Git warnings "LF will be replaced by CRLF"** on Windows are harmless.
@@ -531,7 +553,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 8 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 9 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.

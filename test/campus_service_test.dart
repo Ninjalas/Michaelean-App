@@ -245,4 +245,42 @@ void main() {
       expect(() => s.cancelEvent(mockStudent, 'ev3'), throwsStateError);
     });
   });
+
+  group('organizations (spec §7.4)', () {
+    MockCampusService fresh() => MockCampusService(delay: Duration.zero, clock: () => morning);
+
+    test('directory: own department society, clubs, memberships', () async {
+      final d = await fresh().loadOrganizationDirectory(mockStudent);
+      expect(d.society.map((o) => o.name), ['Computer Science Society']);
+      // Another department's society is never a school-wide club.
+      expect(d.clubs.map((o) => o.name), isNot(contains('Nursing Students Association')));
+      expect(d.clubs.map((o) => o.name), contains('Dance Company'));
+      expect(d.mine.map((o) => o.name), ['Computer Science Society', 'SMCL Chorale']);
+    });
+
+    test('page: members see members-only events and posts; others see a note', () async {
+      final s = fresh();
+      final css = (await s.loadOrganization(mockStudent, 'org1'))!;
+      expect(css.isMember, isTrue);
+      expect(css.events.map((d) => d.event.id), ['ev1', 'ev4']);
+      expect(css.news, isNotEmpty);
+      expect(css.membersOnlyHidden, 0);
+
+      final dance = (await s.loadOrganization(mockStudent, 'org3'))!;
+      expect(dance.isMember, isFalse);
+      expect(dance.events, isEmpty); // its showcase is for members only
+      expect(dance.membersOnlyHidden, greaterThan(0));
+
+      expect(await s.loadOrganization(mockStudent, 'org5'), isNull); // other department
+    });
+
+    test('a join request never makes the student a member', () async {
+      final s = fresh();
+      await s.requestToJoin(mockStudent, 'org3');
+      final dance = (await s.loadOrganization(mockStudent, 'org3'))!;
+      expect((dance.requested, dance.isMember), (true, false));
+      expect(() => s.requestToJoin(mockStudent, 'org3'), throwsStateError); // twice
+      expect(() => s.requestToJoin(mockStudent, 'org1'), throwsStateError); // already a member
+    });
+  });
 }

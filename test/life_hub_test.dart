@@ -43,7 +43,7 @@ void main() {
 
     await tester.tap(find.bySemanticsLabel('See all Organizations'));
     await tester.pumpAndSettle();
-    expect(find.textContaining("hasn't been built yet"), findsOneWidget);
+    expect(find.text('School-wide Clubs'), findsOneWidget); // the directory (Phase 8)
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     expect(find.text('Student Life'), findsWidgets); // back on the hub
