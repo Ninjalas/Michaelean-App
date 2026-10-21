@@ -14,6 +14,13 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Replaces the previewed profile, e.g. after Edit Profile. Changes stay
+  /// in this preview; nothing is sent anywhere.
+  void update(UserProfile user) {
+    _user = user;
+    notifyListeners();
+  }
+
   void endPreview() {
     _user = null;
     notifyListeners();

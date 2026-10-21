@@ -30,6 +30,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _scroll = ScrollController();
   Future<HomeFeed>? _feed;
+  String? _loadedFor; // user id the feed belongs to
   bool _collapsed = false;
 
   @override
@@ -44,7 +45,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _feed ??= _load();
+    // Reload when the previewed account changes (role switch in Settings);
+    // the tab stays alive, so it would otherwise keep the old user's feed.
+    final user = SessionScope.of(context).user;
+    if (user != null && user.id != _loadedFor) {
+      _loadedFor = user.id;
+      _feed = _load();
+    }
   }
 
   Future<HomeFeed> _load() =>

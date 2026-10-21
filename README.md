@@ -4,7 +4,7 @@ A campus-life app for students and teachers of **Saint Michael's College of Lagu
 
 Built with **Flutter/Dart**. The goal is a free-hosted, installable **PWA** (Progressive Web App) that students and teachers add to the home screen on Android and iPhone.
 
-> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–4 of 11 are done.**
+> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–5 of 11 are done.**
 
 ---
 
@@ -79,7 +79,7 @@ What's behind each tab right now:
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
 | Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
 | Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Each `See all ›` opens a "Coming soon" page until Phases 6–9. |
-| Profile + Settings sheet | Old design: photo that flips to a QR "coin", tags, masked ID, event history, settings sheet with Log Out. To be rebuilt in Phase 5. |
+| Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and event history; Edit Profile (About only, saved in this preview); grouped Settings with the preview role switch and Log Out. |
 | Class, Events, Organizations, Clearance | **Not built yet** ("Coming soon" placeholders). Phases 6–9. |
 
 ---
@@ -146,8 +146,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 | 2 | Opening intro and sign-in preview | §1.1, §4 | ✅ **Done** (intro is a stand-in for a real video, see below) |
 | 3 | Home, both roles, incl. notifications sheet, long-press QR, one-time hint | §6, §8, §1.3 | ✅ **Done** |
 | 4 | Hubs: Student Life and Michaelean Life live previews | §7, §9 | ✅ **Done** |
-| 5 | Profile and Settings | §10, §11 | ⏳ **Next** |
-| 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | To do |
+| 5 | Profile and Settings | §10, §11 | ✅ **Done** |
+| 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | ⏳ **Next** |
 | 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | To do |
 | 8 | Organizations: directory and tabbed organization page | §7.4 | To do |
 | 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | To do |
@@ -206,16 +206,18 @@ Each phase is one piece of work, reviewed by the group before the next one start
 - Data comes from the new `CampusService` (`services/campus_service.dart`) and `MockCampusService`, with sample events, organizations, and clearance in `mock/mock_campus.dart`.
 - One loading skeleton and one error state (with Retry) for the whole hub.
 
-#### Phase 5: Profile and Settings ⏳ Next
+#### Phase 5: Profile and Settings ✅ Done
 
 **Spec:** §10, §11. **Goal:** a social identity page in Luma's profile layout, the same for both roles.
 
-- **Profile:** large photo, left-aligned name, Student/Teacher designation, academic or faculty info, masked ID (`2023-****-12`), identity tags, inline stats (students `12 Attended · 3 Orgs`; teachers `4 Classes · 6 Hosted`), Edit Profile button, settings icon, About, **Classes I teach** (teachers), **event history** as photo rows (status + recorded role).
-- **Remove the QR coin from Profile:** the QR now lives on the long-press sheet and in Class. `widgets/profile_coin.dart` can be reused for the QR sheet or deleted.
-- **Edit Profile:** only photo and About. Academic info, IDs, memberships, roles, and history can't be edited.
-- **Settings sheet:** grouped, rounded inset list: Personal Information, Account & Security, Notifications, Help & Support, About Michaelean, **preview role switch** (reuse `SegmentedPills`, labeled as a preview tool), Log Out. Closes with X, outside tap, or Back. Unbuilt items show clear placeholders.
+- **Profile** (`screens/shared/profile_screen.dart`): large photo (left) with the settings icon, the name in the big title font, Student/Teacher and program, masked ID in the spec's format (`2023-****-21`), **inline stats counted from records** (students `3 Attended · 2 Orgs`; teachers `3 Classes · 1 Hosted`, where only events whose record says *host* count), official tags, **Edit Profile**, About, **Classes I Teach** (teachers, each class listed once), and **Event History** photo rows (status pill + recorded role).
+- **No QR on Profile.** The QR coin was removed (`widgets/profile_coin.dart` deleted); the QR lives on the long-press sheet.
+- **Edit Profile** (`screens/shared/edit_profile_screen.dart`, route `/profile/edit`): only **About** is editable (rounded gray field, 160 characters). **Save** stays gray until something changes, then updates this preview only and says so: "Saved in this preview only. Nothing was sent to the school." Name, program, ID, and tags are shown locked as "Set by the school". Changing the photo is explained as not available in the preview yet (it needs a file picker).
+- **Settings sheet** (`screens/shared/settings_sheet.dart`): grouped, rounded inset lists: Personal Information, Account & Security, Notifications | Help & Support, About Michaelean | **Preview tools** with a Student / Teacher switch (labeled "Not a sign-in and not a security feature") | Log Out. Unbuilt items open "Coming soon" pages. X, outside tap, and Back close it.
+- **Role switch refreshes every tab.** Home, the hub, and Profile reload when the previewed account changes, so no tab keeps the old user's data.
+- Theme: shared Luma-style text fields (borderless, light gray, rounded) and a plain-gray disabled button.
 
-#### Phase 6: Class (student Class + teacher class management)
+#### Phase 6: Class (student Class + teacher class management) ⏳ Next
 
 **Spec:** §7.1, §7.2, §9.1. **Goal:** schedules and attendance.
 
@@ -277,6 +279,15 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Rebuild Phase 5: Profile and Settings.**
+  - Profile rebuilt in Luma's layout; inline stats are counted from records; Classes I Teach for teachers; QR coin removed.
+  - New Edit Profile page (About only; honest "preview only" confirmation; locked school fields).
+  - Settings rebuilt as grouped inset lists with a **Student / Teacher preview switch**.
+  - Fixed: Home and the hub kept the previous user's data after a role change; they now reload when the account changes.
+  - Mock data: masked IDs in the spec's format (`2023-****-21`, `2015-****-93`); the mock teacher has one event recorded as **host**.
+  - `Session.update` (for Edit Profile) and `UserProfile.withAbout`; theme text-field and disabled-button styles.
+  - Tests: profile identity and stats for both roles, no QR on Profile, Edit Profile save rules, Settings items, and a role switch that refreshes Home, hub, and Profile.
+- **Stopped sharing `CLAUDE.md`** in the repo (it's in `.gitignore` and stays on the owner's computer).
 - **Removed the Skip button from the opening intro.** The intro is about 2.4 seconds and moves on to sign-in by itself. Spec §1.1 updated to match.
 - **Rebuild Phase 4: Student Life and Michaelean Life hubs.**
   - Hubs rebuilt to spec §7/§9 as live previews with `See all ›`: classes, an events photo strip, organizations, and clearance progress for students; classes with Start attendance, events you manage (with drafts), and clearance for teachers.
@@ -402,7 +413,6 @@ The look follows **Luma** (an events app for iPhone) closely in layout and feel,
 | `UserAvatar` | Round photo or initials |
 | `StatsRow` | Compact row of tappable stats with navy numbers (Home) |
 | `UpNextCard` | Solid navy "Up next" class card, optional Start attendance button, empty state |
-| `ProfileCoin` | Photo that flips to a QR; leaves Profile in Phase 5 |
 
 ---
 
@@ -428,14 +438,14 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-35 tests currently pass. They cover:
+36 tests currently pass. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
 - **Home data:** the student sees their department/society posts only, urgent posts first, the student's own next class with its teacher, the teacher's classes for today only, teacher sections, the attendance task appears only for an unfinalized session, next-class logic, no post in two sections.
 - **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens a placeholder with Back; Michaelean Life shows classes, managed events with drafts, and locks Clearance without permission; a load failure shows Retry.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
-- **Profile:** identity, masked ID, tags, event history; the QR holds only the mock token; settings opens and closes; Log Out ends the preview.
+- **Profile:** identity, masked ID, counted stats, tags, and event history for students; Classes I Teach and hosted count for teachers; no QR on Profile; Edit Profile enables Save only after a change and confirms "preview only"; Settings items, Back closes it, Log Out ends the preview; switching role in Settings refreshes Home, the hub, and Profile.
 
 When you rebuild a screen, update its tests and add tests for new logic, especially permissions, status rules, and "no fake success" behavior.
 
@@ -462,7 +472,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 - **`assets/videos/app_opening.mp4` is a recording of Luma's app** (its logo and slogan). It is **not used** and not declared in `pubspec.yaml`. The animated emblem intro stands in until there is a real SMCL opening video. To use a real video later: replace the file, add the video back to `pubspec.yaml`, run `flutter pub add video_player`, and switch `opening_screen.dart` to play it. Browsers block autoplay with sound, so play it muted.
 - **Profile photos in `assets/images/profiles/` are of real people.** Use them only with their consent, and only as clearly labeled sample data. Event posters in `assets/images/events/` are placeholders too. The spec wants stock or real SMCL photos listed in one place in mock data so they are easy to swap.
 - **PWA settings are still Flutter defaults.** `web/manifest.json` has name `michaelean_app`, Flutter's blue color, and Flutter's icons. Set the name, colors, and icons (from the SMCL emblem) when the group picks the hosting (open decision 7).
-- **Profile and Settings still use the old design** until Phase 5. Some old pieces contradict the new spec on purpose until then (e.g. the QR coin on Profile).
+- **Changing the profile photo isn't built.** It needs a file-picker package; Edit Profile says so instead of showing a button that does nothing.
 - **Event covers are placeholders.** CSS events reuse the society's cover image; other events show a gray tile. Replace them with real SMCL event photos when the group has them (listed in `lib/mock/mock_campus.dart`).
 - **Long-press needs a real hold.** Hold the mouse button (or your finger) on Student Life / Michaelean Life for about half a second. Automated widget tests cover it.
 - **On narrow phones the quick-QR tip wraps to two lines.** It's readable; shorten the wording if the group prefers one line.
@@ -474,7 +484,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 5 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 6 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.

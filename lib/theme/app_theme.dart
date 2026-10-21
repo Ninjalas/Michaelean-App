@@ -110,10 +110,29 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.navy,
           foregroundColor: AppColors.white,
+          // Disabled is plain gray (spec §2.1 Forms).
+          disabledBackgroundColor: AppColors.fill,
+          disabledForegroundColor: AppColors.muted,
           minimumSize: const Size(48, 52),
           shape: const StadiumBorder(),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
+      ),
+      // Luma-style inputs: borderless, light gray, rounded (spec §2.1 Forms).
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.fill,
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md + 2),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.large),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.large),
+          borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+        ),
+        hintStyle: const TextStyle(color: AppColors.muted),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(

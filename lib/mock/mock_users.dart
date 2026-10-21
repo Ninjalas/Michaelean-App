@@ -11,7 +11,7 @@ const mockStudent = UserProfile(
   firstName: 'Nicolas',
   lastName: 'Santos',
   designation: 'BS Computer Science · 3rd Year',
-  maskedId: '••••-••-4821',
+  maskedId: '2023-****-21',
   qrToken: 'MOCK-7F3K9Q',
   photoAsset: 'assets/images/profiles/nicolas.jpg',
   about: 'Sample bio. Into web development and campus tech events.',
@@ -33,7 +33,7 @@ const mockTeacher = UserProfile(
   firstName: 'Mark',
   lastName: 'Villanueva',
   designation: 'Faculty · Department of Computer Studies',
-  maskedId: '••••-1093',
+  maskedId: '2015-****-93',
   qrToken: 'MOCK-2M8XW4',
   photoAsset: 'assets/images/profiles/Sir_Georgio.png',
   tags: [
@@ -82,6 +82,13 @@ final mockEventHistory = <String, List<EventRecord>>{
       imageAsset: 'assets/images/events/css_commitevent.jpg',
       status: ParticipationStatus.participated,
       role: EventRole.organizer,
+    ),
+    EventRecord(
+      id: 'h5',
+      eventName: 'Web development bootcamp',
+      date: DateTime(2025, 8, 22),
+      status: ParticipationStatus.participated,
+      role: EventRole.host, // recorded as host on the event, not inferred
     ),
   ],
 };

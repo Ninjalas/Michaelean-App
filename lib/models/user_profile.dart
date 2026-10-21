@@ -49,5 +49,21 @@ class UserProfile {
 
   String get fullName => '$firstName $lastName';
 
+  /// The same profile with new About text. About and the photo are the only
+  /// things a user may edit (spec §10).
+  UserProfile withAbout(String? about) => UserProfile(
+        id: id,
+        role: role,
+        firstName: firstName,
+        lastName: lastName,
+        designation: designation,
+        maskedId: maskedId,
+        qrToken: qrToken,
+        photoAsset: photoAsset,
+        about: about,
+        tags: tags,
+        permissions: permissions,
+      );
+
   bool can(Permission p) => permissions.contains(p);
 }

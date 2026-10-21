@@ -44,12 +44,17 @@ class _HubData {
 
 class _LifeHubScreenState extends State<LifeHubScreen> {
   Future<_HubData>? _data;
+  String? _loadedFor; // user id the data belongs to
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Reload when the previewed account changes (role switch in Settings).
     final user = SessionScope.of(context).user;
-    if (user != null) _data ??= _load(user);
+    if (user != null && user.id != _loadedFor) {
+      _loadedFor = user.id;
+      _data = _load(user);
+    }
   }
 
   Future<_HubData> _load(UserProfile user) async {

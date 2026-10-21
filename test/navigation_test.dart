@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:michaelean_app/main.dart';
 import 'package:michaelean_app/screens/shared/opening_screen.dart';
@@ -29,6 +30,9 @@ void main() {
 
   testWidgets('teacher preview shows Michaelean Life tab; switching works',
       (tester) async {
+    tester.view.physicalSize = const Size(390, 844); // phone-sized, like the other tests
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(testApp());
     await tester.pumpAndSettle();
 

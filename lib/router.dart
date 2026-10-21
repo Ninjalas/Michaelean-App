@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
+import 'screens/shared/edit_profile_screen.dart';
 import 'screens/shared/home_screen.dart';
 import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
@@ -101,7 +102,8 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/profile',
-              builder: (context, state) => ProfileScreen(userService: userService),
+              builder: (context, state) =>
+                  ProfileScreen(userService: userService, campusService: campusService),
               routes: [
                 GoRoute(
                   path: 'settings',
@@ -109,8 +111,13 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                   pageBuilder: (context, state) => AppSheetPage(
                     key: state.pageKey,
                     title: 'Settings',
-                    child: const SettingsSheet(),
+                    child: SettingsSheet(userService: userService),
                   ),
+                ),
+                GoRoute(
+                  path: 'edit',
+                  parentNavigatorKey: rootKey, // full page over the nav bar (Save sits at the bottom)
+                  builder: (context, state) => const EditProfileScreen(),
                 ),
                 GoRoute(
                   path: 'soon',
