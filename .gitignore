@@ -49,3 +49,6 @@ app.*.map.json
 
 # Luma design reference screenshots: third-party images, kept locally only
 assets/images/luma_screens/
+
+# Claude Code instructions: kept locally, not shared in the repo
+CLAUDE.md
