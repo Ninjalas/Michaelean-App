@@ -28,6 +28,7 @@ class AttendanceScanScreen extends StatefulWidget {
 class _AttendanceScanScreenState extends State<AttendanceScanScreen> {
   SessionAttendance? _att;
   bool _loaded = false;
+  bool _failed = false; // couldn't load: say so, never show a scanner
   bool _busy = false;
   bool _previewOpen = false; // preview tool: scan outside class hours
   ({ScanOutcome? outcome, RosterStudent? student, String? error})? _flash;
@@ -46,11 +47,18 @@ class _AttendanceScanScreenState extends State<AttendanceScanScreen> {
   }
 
   Future<void> _reload() async {
-    final a = await widget.campusService
-        .loadSessionAttendance(SessionScope.of(context).user!, widget.sessionId);
+    SessionAttendance? a;
+    var failed = false;
+    try {
+      a = await widget.campusService
+          .loadSessionAttendance(SessionScope.of(context).user!, widget.sessionId);
+    } catch (_) {
+      failed = true;
+    }
     if (!mounted) return;
     setState(() {
       _att = a;
+      _failed = failed;
       _loaded = true;
     });
   }
@@ -105,7 +113,9 @@ class _AttendanceScanScreenState extends State<AttendanceScanScreen> {
       body: SafeArea(
         child: !_loaded
             ? const Center(child: CircularProgressIndicator(color: AppColors.white))
-            : a == null
+            : _failed
+                ? _message("Couldn't load this session. Go back and try again.")
+                : a == null
                 ? _message("You can't take attendance for this class.")
                 : _scanner(a),
       ),
@@ -154,7 +164,17 @@ class _AttendanceScanScreenState extends State<AttendanceScanScreen> {
         ),
       );
 
-  Widget _scanner(SessionAttendance a) {
+  Widget _scanner(SessionAttendance a) => LayoutBuilder(
+        // Fills the screen when it fits; scrolls on short screens or large text.
+        builder: (context, box) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: box.maxHeight),
+            child: IntrinsicHeight(child: _scannerBody(a)),
+          ),
+        ),
+      );
+
+  Widget _scannerBody(SessionAttendance a) {
     final s = a.session;
     final now = DateTime.now();
     return Column(
@@ -172,7 +192,7 @@ class _AttendanceScanScreenState extends State<AttendanceScanScreen> {
         Expanded(
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.screen * 2),
+              padding: const EdgeInsets.all(AppSpacing.screen),
               child: AspectRatio(
                 aspectRatio: 1,
                 child: Stack(

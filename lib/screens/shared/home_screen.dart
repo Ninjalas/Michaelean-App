@@ -141,8 +141,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   Image.asset('assets/images/SMCL_Emblem.png', height: 34,
                       semanticLabel: "Saint Michael's College of Laguna emblem"),
                   const SizedBox(width: AppSpacing.sm),
-                  Text('Michaelean',
-                      style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                  Flexible(
+                    child: Text('Michaelean',
+                        overflow: TextOverflow.ellipsis,
+                        style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                  ),
                 ],
               ),
       ),
@@ -186,9 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
         StatsRow(items: [
           StatItem('${a.classPercent}%', 'Class attendance',
               onTap: () => context.go('/life/class')),
-          StatItem('${a.eventPercent}%', 'Event attendance',
-              onTap: () => _openSoon('Event attendance')),
           // Event history lives on Profile.
+          StatItem('${a.eventPercent}%', 'Event attendance', onTap: () => context.go('/profile')),
           StatItem('${a.eventsCompleted}', 'Events completed', onTap: () => context.go('/profile')),
           StatItem('${a.requirementsCleared}/${a.requirementsTotal}', 'Cleared',
               onTap: () => context.go('/life/clearance')),

@@ -33,43 +33,51 @@ class _PreviewScreenState extends State<PreviewScreen> {
     final text = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Spacer(),
-              Hero(
-                tag: 'smcl-emblem', // glides in from the opening intro
-                child: Image.asset('assets/images/SMCL_Emblem.png', height: 128,
-                    semanticLabel: "Saint Michael's College of Laguna emblem"),
+        // Fills the screen when it fits; scrolls on short screens or large text.
+        child: LayoutBuilder(
+          builder: (context, box) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: box.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Spacer(),
+                    Hero(
+                      tag: 'smcl-emblem', // glides in from the opening intro
+                      child: Image.asset('assets/images/SMCL_Emblem.png', height: 128,
+                          semanticLabel: "Saint Michael's College of Laguna emblem"),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text('Michaelean', textAlign: TextAlign.center, style: text.displaySmall),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text("Saint Michael's College of Laguna",
+                        textAlign: TextAlign.center,
+                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                    const Spacer(),
+                    Text('Preview as', style: text.labelMedium?.copyWith(color: AppColors.muted)),
+                    const SizedBox(height: AppSpacing.sm),
+                    SegmentedPills<UserRole>(
+                      segments: const [(UserRole.student, 'Student'), (UserRole.teacher, 'Teacher')],
+                      selected: _role,
+                      onChanged: (r) => setState(() => _role = r),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    FilledButton(
+                      onPressed: _loading ? null : _signIn,
+                      child: const Text('Sign in with Microsoft (preview)'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text('Preview only. This does not sign you in, and it uses sample data, '
+                        'not official school records.',
+                        textAlign: TextAlign.center,
+                        style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              Text('Michaelean', textAlign: TextAlign.center, style: text.displaySmall),
-              const SizedBox(height: AppSpacing.xs),
-              Text("Saint Michael's College of Laguna",
-                  textAlign: TextAlign.center,
-                  style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-              const Spacer(),
-              Text('Preview as', style: text.labelMedium?.copyWith(color: AppColors.muted)),
-              const SizedBox(height: AppSpacing.sm),
-              SegmentedPills<UserRole>(
-                segments: const [(UserRole.student, 'Student'), (UserRole.teacher, 'Teacher')],
-                selected: _role,
-                onChanged: (r) => setState(() => _role = r),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              FilledButton(
-                onPressed: _loading ? null : _signIn,
-                child: const Text('Sign in with Microsoft (preview)'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text('Preview only. This does not sign you in, and it uses sample data, '
-                  'not official school records.',
-                  textAlign: TextAlign.center,
-                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-              const SizedBox(height: AppSpacing.lg),
-            ],
+            ),
           ),
         ),
       ),

@@ -92,6 +92,12 @@ class _EventInviteScreenState extends State<EventInviteScreen> {
                 const BackHeader('Invite Students'),
                 if (snap.connectionState != ConnectionState.done)
                   const LinearProgressIndicator()
+                else if (snap.hasError)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.screen),
+                    child: Text("Couldn't load this event.",
+                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                  )
                 else if (!live)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.screen),

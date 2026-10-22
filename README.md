@@ -154,8 +154,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 | 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | ✅ **Done** |
 | 8 | Organizations: directory and tabbed organization page | §7.4 | ✅ **Done** |
 | 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | ✅ **Done** |
-| 10 | Frontend testing: navigation, responsive layouts, empty/error states, validation, role UI, permissions, QR, motion | all | ⏳ **Next** |
-| 11 | Later integration (only when requested): auth, backend, hosting, PWA | §4, §13 | Later |
+| 10 | Frontend testing: navigation, responsive layouts, empty/error states, validation, role UI, permissions, QR, motion | all | ✅ **Done** |
+| 11 | Later integration (only when requested): auth, backend, hosting, PWA | §4, §13 | Later (the prototype is complete) |
 
 ### The phases in order
 
@@ -297,16 +297,24 @@ Each phase is one piece of work, reviewed by the group before the next one start
   - Requirements, offices, and past clearances are invented sample data.
 - **Not done:** evidence upload (needs a file-picker package), a real camera scanner, and deadlines (overdue doesn't change any status, as the spec requires).
 
-#### Phase 10: Frontend testing
+#### Phase 10: Frontend testing ✅ Done
 
 **Spec:** all sections. **Goal:** make the whole prototype solid before any real integration.
 
-- Navigation and state: Back gesture, tabs keeping their state, sheets closing.
-- Responsive layouts on small and large phones; touch targets at least 48 × 48 px.
-- Loading, empty, unavailable, and error states on every screen.
-- Form validation (event form, schedule editing, Edit Profile).
-- Role-specific UI and permission-dependent controls.
-- QR (mock token only) and motion (smooth, 200–300 ms).
+- **Screen audit** (`test/screens_audit_test.dart`): visits **every screen of both roles** (34 routes) three ways:
+  1. On a **small phone (320 × 568) with large text (130 %)**, scrolled to the bottom: no overflow or layout error anywhere. Each problem is reported with its route and the file and line that caused it.
+  2. On a normal phone against Flutter's accessibility guidelines: every tappable thing is **at least 48 × 48 px** and **has a label** for screen readers.
+  3. With **every service failing**: each screen shows a "Couldn't load…" message, never a crash, an endless spinner, or fake content.
+- **What the audit found and fixed:**
+  - Segmented pill buttons (Discover / My events, Student / Teacher, …) were 44 px tall; now 48.
+  - The sign-in screen and the attendance scanner didn't fit short screens; they now scroll when needed.
+  - Overflows with large text: Home's header, the Up next date pill, the Class day strip (now grows with the text size), Edit Profile's title, the event form's time fields, the event page's attendees row.
+  - The attendance scanner spun forever when loading failed (an unhandled error); it now says it couldn't load.
+  - Change Session, Edit Event, Invite Students, and Verify Requirement said "you can't…" when loading failed, which blames permissions; they now say "Couldn't load…". The post page now shows an error when loading fails.
+- **No more dead ends:** Home's "Event attendance" stat opens the event history on Profile; the "Event requirements" and "Review schedule change" tasks open Events and the class page; the clearance and attendance notifications open their screens. The only "Coming soon" pages left are Settings items that need real accounts (Personal Information, Account & Security, Notifications, Help & Support, About) and the detail of a past event record.
+- **Fixed the midnight test:** the notifications test now uses a fixed noon clock, so it passes at any hour.
+- **Web app identity:** the installed app is named **Michaelean**, uses navy and white, and its icons and favicon are made from the SMCL emblem (whole emblem on white; the maskable icon has extra margin for phones that crop icons into shapes).
+- **Already covered by earlier phases' tests:** Back closing sheets and pages, tabs keeping their state, form validation (event form, session change, Edit Profile, clearance outcome), role-specific UI and permission locks, the QR as a mock token only, and reduced motion on the intro.
 
 #### Phase 11: Later integration (only when the group decides)
 
@@ -323,6 +331,12 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Rebuild Phase 10: Frontend testing.**
+  - New `test/screens_audit_test.dart`: every screen of both roles on a small phone with large text, against the tap-target and label guidelines, and with failing services.
+  - Fixed everything it found (see Phase 10 above): 48 px segmented pills, scrolling sign-in and scanner, seven large-text overflows, the scanner's unhandled load error, and honest "Couldn't load" messages on four forms and the post page.
+  - Home stats, tasks, and notifications now open real screens.
+  - The midnight-dependent notifications test now uses a fixed clock.
+  - `web/manifest.json` and `web/index.html`: name Michaelean, SMCL colors, description; new icons and favicon from the emblem.
 - **Rebuild Phase 9: Clearance.**
   - New screens: student Clearance, requirement detail, staff Clearance Verification (with a mock QR scanner), and Verify Requirement.
   - `CampusService` gained `loadClearanceView`, `markSubmitted`, `loadClearanceDesk`, `findStudentByQr`, `loadClearanceCase`, and `recordOutcome`; `loadClearance` and `loadClearanceOffice` are now counted from the requirements.
@@ -520,7 +534,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-69 tests currently pass (one Home test fails between midnight and 1 AM; see Known issues). They cover:
+75 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
@@ -528,6 +542,7 @@ flutter test
 - **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens its page with Back; Michaelean Life shows classes, managed events with drafts, and the teacher's clearance office; a load failure shows Retry.
 - **Class and attendance:** an enrolled scan is Present once and a repeat counts once; unknown or other-section codes aren't marked; scans before the start or after the end are rejected (the preview tool skips only the clock); finalizing closes the session and only finalized sessions count; teachers manage only their assigned classes; class page roster and recent sessions; single-session changes are validated and move only that session; finalizing removes Home's task; the Class screen's day strip and Show QR; the full scan → review → finalize flow (scanner and review really close); the session form's validation and honest confirmation; another teacher's class is refused.
 - **Events:** registering works once and never for full, closed, or ineligible events; My events lists upcoming then past registrations; a draft is hidden from students, publishing and editing keep one event and mark time changes; only managers edit, see names, invite, or cancel; the service re-checks form rules; inviting a section registers its students; a cancelled event leaves Discover but stays in My events. Widget tests: discover → My Orgs filter → register → My events; a full event can't be registered; create → publish → invite a section → registration count; editing someone else's event is refused.
+- **Screen audit (Phase 10):** all 34 screens of both roles fit a 320 × 568 phone at 130 % text with no layout errors; every tappable thing is at least 48 × 48 px and labeled; with failing services every screen shows a "Couldn't load…" message instead of crashing or spinning forever.
 - **Clearance:** progress counts skip Not applicable; submitting only sends for review; a QR scan only finds the student; staff process only their office's requirements and must give a reason unless Cleared; widget tests for the student resubmit flow and the staff scan → outcome → confirmation flow.
 - **Organizations:** directory groups (another department's society is never a school-wide club), members-only events and posts hidden from non-members, other departments' societies unavailable, a join request never makes a member; widget tests for the directory, tabs, event → Back → organization, and the join request.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
@@ -557,12 +572,11 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 - **The Luma reference screenshots are not in the repo.** The spec points to `assets/images/luma_screens/` as the visual reference, but that folder is git-ignored (third-party images, kept locally). **Ask the repo owner for a copy**, or look up Luma's iOS app screens on Mobbin. Keep them out of git and never declare them in `pubspec.yaml`.
 - **`assets/videos/app_opening.mp4` is a recording of Luma's app** (its logo and slogan). It is **not used** and not declared in `pubspec.yaml`. The animated emblem intro stands in until there is a real SMCL opening video. To use a real video later: replace the file, add the video back to `pubspec.yaml`, run `flutter pub add video_player`, and switch `opening_screen.dart` to play it. Browsers block autoplay with sound, so play it muted.
 - **Profile photos in `assets/images/profiles/` are of real people.** Use them only with their consent, and only as clearly labeled sample data. Event posters in `assets/images/events/` are placeholders too. The spec wants stock or real SMCL photos listed in one place in mock data so they are easy to swap.
-- **PWA settings are still Flutter defaults.** `web/manifest.json` has name `michaelean_app`, Flutter's blue color, and Flutter's icons. Set the name, colors, and icons (from the SMCL emblem) when the group picks the hosting (open decision 7).
+- **PWA name, colors, and icons are set** (Michaelean, navy/white, icons from the SMCL emblem in `web/icons/` and `web/favicon.png`). Hosting is still open decision 7. To remake the icons after changing the emblem, center the whole emblem on white (about 86 % of the square; 66 % for the maskable ones).
 - **Changing the profile photo isn't built.** It needs a file-picker package; Edit Profile says so instead of showing a button that does nothing.
 - **Event covers are placeholders.** CSS events reuse the society's cover image; other events show a navy-tint tile. The form's cover picker offers the bundled photos (`mockEventCovers` in `lib/mock/mock_campus.dart`). Replace them with real SMCL event photos when the group has them; a real photo upload needs a file-picker package.
 - **Event changes reset on reload.** Registrations, new events, edits, invitations, and cancellations live in memory for this preview only.
 - **A snackbar can briefly cover the bottom button** of the next form (for example, right after Publish, on Invite Students). It goes away after about 4 seconds.
-- **One Home test fails between midnight and 1 AM.** "Notifications are grouped into Today and Earlier" expects a notification from today, but the newest mock notification is 1 hour old. Run the tests again after 1 AM, or make the mock times depend less on the clock.
 - **Long-press needs a real hold.** Hold the mouse button (or your finger) on Student Life / Michaelean Life for about half a second. Automated widget tests cover it.
 - **On narrow phones the quick-QR tip wraps to two lines.** It's readable; shorten the wording if the group prefers one line.
 - **Git warnings "LF will be replaced by CRLF"** on Windows are harmless.
@@ -573,7 +587,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 10 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (all prototype phases are done; Phase 11 only when the group decides). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.

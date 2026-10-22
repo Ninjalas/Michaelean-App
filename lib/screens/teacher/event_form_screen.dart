@@ -261,6 +261,12 @@ class _EventFormScreenState extends State<EventFormScreen> {
                 BackHeader(isNew ? 'Create Event' : 'Edit Event'),
                 if (loading)
                   const LinearProgressIndicator()
+                else if (snap.hasError)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.screen),
+                    child: Text("Couldn't load this event.",
+                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                  )
                 else if (denied || !user.can(Permission.manageEvents) || cancelled)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.screen),
@@ -497,11 +503,15 @@ class _PickerTile extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                 ],
                 if (prefix != null) ...[
-                  Text(prefix!,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppColors.muted)),
+                  Flexible(
+                    child: Text(prefix!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: AppColors.muted)),
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                 ],
                 Expanded(

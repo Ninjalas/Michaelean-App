@@ -324,9 +324,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             const SizedBox(width: AppSpacing.md),
             Expanded(child: Text('${d.going} registered', style: text.titleMedium)),
             if (d.canManage)
-              TextButton(
-                onPressed: () => context.push('/life/events/${e.id}/registrations'),
-                child: const Text('View all ›'),
+              Flexible(
+                child: TextButton(
+                  onPressed: () => context.push('/life/events/${e.id}/registrations'),
+                  child: const Text('View all ›', maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
               ),
           ],
         ),

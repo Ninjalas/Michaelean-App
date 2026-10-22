@@ -124,6 +124,12 @@ class _ClearanceCaseScreenState extends State<ClearanceCaseScreen> {
                 const BackHeader('Verify Requirement'),
                 if (snap.connectionState != ConnectionState.done)
                   const LinearProgressIndicator()
+                else if (snap.hasError)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.screen),
+                    child: Text("Couldn't load this student's clearance.",
+                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                  )
                 else if (c == null)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.screen),

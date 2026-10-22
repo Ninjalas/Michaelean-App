@@ -8,13 +8,14 @@ import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> openHome(WidgetTester tester, {String role = 'Student', bool fail = false}) async {
+Future<void> openHome(WidgetTester tester,
+    {String role = 'Student', bool fail = false, DateTime Function()? clock}) async {
   tester.view.physicalSize = const Size(390, 844); // phone-sized
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(MichaeleanApp(
     userService: MockUserService(),
-    homeService: MockHomeService(delay: Duration.zero, fail: fail),
+    homeService: MockHomeService(delay: Duration.zero, fail: fail, clock: clock),
     campusService: MockCampusService(delay: Duration.zero),
   ));
   await tester.pumpAndSettle();
@@ -105,7 +106,9 @@ void main() {
   });
 
   testWidgets('notifications are grouped into Today and Earlier', (tester) async {
-    await openStudentHome(tester);
+    // Noon today, so "1 hour ago" is today even right after midnight.
+    final now = DateTime.now();
+    await openHome(tester, clock: () => DateTime(now.year, now.month, now.day, 12));
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
     Finder inSheet(String text) =>

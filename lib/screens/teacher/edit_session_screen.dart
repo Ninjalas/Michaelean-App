@@ -120,6 +120,12 @@ class _EditSessionScreenState extends State<EditSessionScreen> {
                 const BackHeader('Change Session'),
                 if (snap.connectionState != ConnectionState.done)
                   const LinearProgressIndicator()
+                else if (snap.hasError)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.screen),
+                    child: Text("Couldn't load this session.",
+                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                  )
                 else if (a == null || _day == null)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.screen),

@@ -184,6 +184,7 @@ const mockTasks = [
     title: 'Event requirements',
     detail: '3 of 6 cleared. Attend 3 more required events.',
     status: TaskStatus.actionRequired,
+    route: '/life/events',
   ),
 ];
 
@@ -203,6 +204,7 @@ const mockTeacherTasks = [
     title: 'Review schedule change',
     detail: 'CS 302 on Thursday: confirm the new room.',
     status: TaskStatus.actionRequired,
+    route: '/life/classes/cs302-3a',
   ),
 ];
 
@@ -228,6 +230,7 @@ List<AppNotification> mockTeacherNotifications(DateTime now) => [
         kind: NotificationKind.attendance,
         title: 'CS 301 attendance is waiting to be finalized',
         time: now.subtract(const Duration(hours: 11)),
+        route: '/life/classes/cs301-2a',
       ),
     ];
 
@@ -251,6 +254,7 @@ List<AppNotification> mockNotifications(DateTime now) => [
         kind: NotificationKind.clearance,
         title: 'Library clearance needs correction',
         time: now.subtract(const Duration(hours: 6)),
+        route: '/life/clearance/lib',
       ),
       AppNotification(
         id: 'm4',

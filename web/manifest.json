@@ -1,11 +1,11 @@
 {
-    "name": "michaelean_app",
-    "short_name": "michaelean_app",
+    "name": "Michaelean",
+    "short_name": "Michaelean",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#242A5E",
+    "description": "Campus life for Saint Michael's College of Laguna (prototype).",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

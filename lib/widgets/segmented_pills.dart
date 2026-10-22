@@ -21,7 +21,7 @@ class SegmentedPills<T> extends StatelessWidget {
     final index = segments.indexWhere((s) => s.$1 == selected);
     final n = segments.length;
     return Container(
-      height: 52,
+      height: 56, // 48 px tap targets inside the 4 px track padding
       padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
         color: AppColors.fill,

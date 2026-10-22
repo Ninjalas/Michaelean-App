@@ -246,7 +246,8 @@ class _ClassScreenState extends State<ClassScreen> {
       _strip ??= ScrollController(
           initialScrollOffset: max(0, i * _pillExtent - (box.maxWidth - _pillExtent) / 2));
       return SizedBox(
-        height: 74,
+        // Room for weekday, date, and the today dot at the phone's text size.
+        height: 46 + MediaQuery.textScalerOf(context).scale(28),
         child: ListView.builder(
           key: const Key('day-strip'),
           controller: _strip,

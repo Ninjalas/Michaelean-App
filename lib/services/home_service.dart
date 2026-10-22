@@ -145,6 +145,7 @@ class MockHomeService implements HomeService {
   @override
   Future<Post?> findPost(String id) async {
     await Future.delayed(delay);
+    if (fail) throw Exception('Mock load failure');
     for (final p in mockPosts(clock())) {
       if (p.id == id) return p;
     }

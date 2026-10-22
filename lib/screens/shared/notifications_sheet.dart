@@ -32,7 +32,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
     router.pop(); // close the pop-up first
     router.push(n.postId != null
         ? '/home/post/${n.postId}'
-        : Uri(path: '/home/soon', queryParameters: {'what': n.title}).toString());
+        : n.route ?? Uri(path: '/home/soon', queryParameters: {'what': n.title}).toString());
   }
 
   @override

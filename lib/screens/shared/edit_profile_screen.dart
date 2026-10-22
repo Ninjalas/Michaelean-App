@@ -73,7 +73,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  Text('Edit Profile', style: text.titleLarge),
+                  Expanded(
+                    child: Text('Edit Profile',
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleLarge),
+                  ),
                 ],
               ),
             ),

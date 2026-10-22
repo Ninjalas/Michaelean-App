@@ -79,7 +79,8 @@ class AppNotification {
   final String title;
   final DateTime time;
   final NotificationKind kind;
-  final String? postId; // opens this post; null → its feature isn't built yet
+  final String? postId; // opens this post
+  final String? route; // or opens this screen; neither → "Coming soon"
 
   const AppNotification({
     required this.id,
@@ -87,6 +88,7 @@ class AppNotification {
     required this.time,
     this.kind = NotificationKind.announcement,
     this.postId,
+    this.route,
   });
 }
 

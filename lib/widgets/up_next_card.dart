@@ -49,18 +49,26 @@ class UpNextCard extends StatelessWidget {
                     Text('UP NEXT',
                         style: text.labelMedium
                             ?.copyWith(color: AppColors.onNavyMuted, letterSpacing: 1.2)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm + 2, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Text(
-                        inProgress ? 'Now' : formatDayLabel(c.start, now),
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.white),
+                    const SizedBox(width: AppSpacing.sm),
+                    // A long date shortens instead of overflowing.
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm + 2, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            inProgress ? 'Now' : formatDayLabel(c.start, now),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.white),
+                          ),
+                        ),
                       ),
                     ),
                   ],

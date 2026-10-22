@@ -47,6 +47,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 if (snap.connectionState != ConnectionState.done)
                   const Center(child: CircularProgressIndicator())
+                else if (snap.hasError)
+                  Text("Couldn't load this post.", style: text.titleMedium)
                 else if (p == null)
                   Text("This post isn't available.", style: text.titleMedium)
                 else ...[
