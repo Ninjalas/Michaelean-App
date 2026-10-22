@@ -49,7 +49,7 @@ void main() {
     expect(find.text('Student Life'), findsWidgets); // back on the hub
   });
 
-  testWidgets('Michaelean Life: managed events and drafts; clearance locked without permission',
+  testWidgets('Michaelean Life: managed events and drafts; clearance office',
       (tester) async {
     await openHub(tester, 'Teacher', 'Michaelean Life');
 
@@ -59,14 +59,11 @@ void main() {
     expect(find.text('Department Assembly'), findsOneWidget);
     expect(find.text('Draft'), findsOneWidget);
 
-    // Mock teacher can manage classes and events, but has no clearance area.
-    await tester.scrollUntilVisible(find.text("You aren't assigned to a clearance area."), 200,
-        scrollable: page);
-    expect(find.bySemanticsLabel('See all Clearance'), findsNothing);
-    await tester.tap(find.text('Clearance'));
+    // Mock assumption: the teacher processes the department's clearance items.
+    await tester.scrollUntilVisible(find.text('3 pending'), 200, scrollable: page);
+    await tester.tap(find.text('3 pending'));
     await tester.pumpAndSettle();
-    expect(find.textContaining("hasn't been built yet"), findsNothing); // didn't navigate
-    expect(find.text("You aren't assigned to a clearance area."), findsOneWidget);
+    expect(find.text('Clearance Verification'), findsOneWidget);
   });
 
   testWidgets('hub load failure shows Retry, never fake content', (tester) async {

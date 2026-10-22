@@ -177,13 +177,8 @@ List<Post> mockPosts(DateTime now) => [
       ),
     ];
 
+/// Student tasks besides clearance ones (those come from the clearance data).
 const mockTasks = [
-  PendingTask(
-    id: 't1',
-    title: 'Library clearance',
-    detail: 'Receipt photo is unreadable. Resubmit a clearer copy.',
-    status: TaskStatus.needsCorrection,
-  ),
   PendingTask(
     id: 't2',
     title: 'Event requirements',
@@ -198,8 +193,8 @@ const mockAttendance = AttendanceSummary(
   classPercent: 0, // replaced by the counted value
   eventPercent: 80,
   eventsCompleted: 5,
-  requirementsCleared: 3,
-  requirementsTotal: 6,
+  requirementsCleared: 0, // replaced by the counted clearance values
+  requirementsTotal: 0,
 );
 
 const mockTeacherTasks = [

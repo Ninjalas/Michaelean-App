@@ -9,6 +9,7 @@ import '../../services/home_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../widgets/clearance_widgets.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/org_row.dart';
 import '../../widgets/section_header.dart';
@@ -76,9 +77,6 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
     ).wait;
     return _HubData(classes: classes, events: events, office: office);
   }
-
-  void _open(String what) =>
-      context.push(Uri(path: '/life/soon', queryParameters: {'what': what}).toString());
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +157,11 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
             OrgRow(org: o, onTap: () => context.push('/life/organizations/${o.id}')),
         ], indent: OrgRow.textIndent),
 
-      _pad(SectionHeader('Clearance', onSeeAll: () => _open('Clearance'))),
+      _pad(SectionHeader('Clearance', onSeeAll: () => context.push('/life/clearance'))),
       _pad(d.clearance == null
-          ? const _ClearanceUnavailable()
-          : _ClearanceProgress(summary: d.clearance!, onTap: () => _open('Clearance'))),
+          ? const ClearanceUnavailable()
+          : _ClearanceProgress(
+              summary: d.clearance!, onTap: () => context.push('/life/clearance'))),
     ];
   }
 
@@ -248,10 +247,10 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       if (!user.can(Permission.processClearance))
         ..._denied('Clearance', "You aren't assigned to a clearance area.")
       else ...[
-        _pad(SectionHeader('Clearance', onSeeAll: () => _open('Clearance verification'))),
+        _pad(SectionHeader('Clearance', onSeeAll: () => context.push('/life/verify'))),
         _pad(d.office == null
-            ? const _ClearanceUnavailable()
-            : _OfficeTile(office: d.office!, onTap: () => _open('Clearance verification'))),
+            ? const ClearanceUnavailable()
+            : _OfficeTile(office: d.office!, onTap: () => context.push('/life/verify'))),
       ],
     ];
   }
@@ -518,40 +517,6 @@ class _OfficeTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Calm empty state outside a clearance period (spec §7.5).
-class _ClearanceUnavailable extends StatelessWidget {
-  const _ClearanceUnavailable();
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.screen),
-      decoration: BoxDecoration(
-        color: AppColors.fill,
-        borderRadius: BorderRadius.circular(AppRadius.large),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.event_busy_outlined, color: AppColors.muted, size: 28),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Clearance Unavailable', style: text.titleMedium),
-                const SizedBox(height: 2),
-                Text("There's no active clearance period right now.",
-                    style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -30,12 +30,14 @@ void main() {
     expect(await service.loadMyOrganizations(mockTeacher), isEmpty);
   });
 
-  test('clearance: active for the student; no office without permission', () async {
+  test('clearance: active for the student; office only with permission', () async {
     final c = await service.loadClearance(mockStudent);
     expect(c!.cleared, 3);
-    expect(c.total, 6);
+    expect(c.total, 7); // Not applicable doesn't count
+    expect(c.needsCorrection, 1);
     expect(await service.loadClearance(mockTeacher), isNull);
-    expect(await service.loadClearanceOffice(mockTeacher), isNull);
+    expect((await service.loadClearanceOffice(mockTeacher))!.pendingCount, 3);
+    expect(await service.loadClearanceOffice(mockStudent), isNull); // no permission
   });
 
   test('classes: today (also ended ones) and later, in time order', () async {
@@ -281,6 +283,50 @@ void main() {
       expect((dance.requested, dance.isMember), (true, false));
       expect(() => s.requestToJoin(mockStudent, 'org3'), throwsStateError); // twice
       expect(() => s.requestToJoin(mockStudent, 'org1'), throwsStateError); // already a member
+    });
+  });
+
+  group('clearance (spec §7.5, §9.3)', () {
+    MockCampusService fresh() => MockCampusService(delay: Duration.zero, clock: () => morning);
+    Future<ClearanceStatus> statusOf(MockCampusService s, String id) async =>
+        (await s.loadClearanceView(mockStudent)).active!.items.firstWhere((i) => i.id == id).status;
+
+    test('submitting only sends for review; it never clears', () async {
+      final s = fresh();
+      await s.markSubmitted(mockStudent, 'lib'); // needs correction → resubmitted
+      expect(await statusOf(s, 'lib'), ClearanceStatus.inReview);
+      expect(() => s.markSubmitted(mockStudent, 'acc'), throwsStateError); // already cleared
+      expect(() => s.markSubmitted(mockStudent, 'pub'), throwsStateError); // not applicable
+    });
+
+    test('a QR scan only finds the student', () async {
+      final s = fresh();
+      expect(await s.findStudentByQr(mockTeacher, mockStudent.qrToken), mockStudent.id);
+      expect(await s.findStudentByQr(mockTeacher, 'MOCK-UNKNOWN'), isNull);
+      expect(await statusOf(s, 'dcs-lab'), ClearanceStatus.inReview); // unchanged
+      expect(() => s.findStudentByQr(mockStudent, mockStudent.qrToken), throwsStateError);
+    });
+
+    test('staff record outcomes only for their office, with a reason when not cleared',
+        () async {
+      final s = fresh();
+      final c = (await s.loadClearanceCase(mockTeacher, mockStudent.id))!;
+      expect(c.items.map((i) => i.id), ['dcs-lab', 'dcs-adviser']); // this office only
+      expect(
+          () => s.recordOutcome(mockTeacher, mockStudent.id, 'lib', ClearanceStatus.cleared),
+          throwsStateError); // the Library's requirement
+      expect(
+          () => s.recordOutcome(
+              mockTeacher, mockStudent.id, 'dcs-lab', ClearanceStatus.needsCorrection),
+          throwsArgumentError); // no reason
+      expect(
+          () => s.recordOutcome(mockStudent, mockStudent.id, 'dcs-lab', ClearanceStatus.cleared),
+          throwsStateError); // no permission
+
+      await s.recordOutcome(mockTeacher, mockStudent.id, 'dcs-lab', ClearanceStatus.cleared);
+      expect(await statusOf(s, 'dcs-lab'), ClearanceStatus.cleared);
+      expect((await s.loadClearance(mockStudent))!.cleared, 4);
+      expect((await s.loadClearanceDesk(mockTeacher))!.pending, hasLength(2));
     });
   });
 }

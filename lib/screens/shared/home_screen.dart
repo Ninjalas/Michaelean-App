@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Event history lives on Profile.
           StatItem('${a.eventsCompleted}', 'Events completed', onTap: () => context.go('/profile')),
           StatItem('${a.requirementsCleared}/${a.requirementsTotal}', 'Cleared',
-              onTap: () => _openSoon('Clearance')),
+              onTap: () => context.go('/life/clearance')),
         ]),
       if (t != null)
         StatsRow(items: [

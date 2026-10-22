@@ -1,5 +1,6 @@
 import '../mock/mock_home.dart';
 import '../models/attendance.dart';
+import '../models/campus.dart';
 import '../models/feed.dart';
 import '../models/user_profile.dart';
 import 'campus_service.dart';
@@ -67,17 +68,33 @@ class MockHomeService implements HomeService {
       final records = await campus.loadMyAttendance(user);
       final present = records.where((r) => r.mark == AttendanceMark.present).length;
       final a = mockAttendance;
+      // Clearance stat and tasks come from the Clearance screen's data.
+      final clearance = (await campus.loadClearanceView(user)).active;
+      const studentTodo = {ClearanceStatus.needsCorrection, ClearanceStatus.actionRequired};
       return HomeFeed(
         attendance: AttendanceSummary(
           // Finalized records only (spec §7.2).
           classPercent: records.isEmpty ? 0 : (present * 100 / records.length).round(),
           eventPercent: a.eventPercent,
           eventsCompleted: a.eventsCompleted,
-          requirementsCleared: a.requirementsCleared,
-          requirementsTotal: a.requirementsTotal,
+          requirementsCleared: clearance?.cleared ?? 0,
+          requirementsTotal: clearance?.applicable.length ?? 0,
         ),
         nextClass: nextClass(classes, now),
-        tasks: mockTasks,
+        tasks: [
+          for (final i in clearance?.items ?? const <ClearanceItem>[])
+            if (studentTodo.contains(i.status))
+              PendingTask(
+                id: 'clearance-${i.id}',
+                title: '${i.office} clearance',
+                detail: i.reason ?? i.instructions,
+                status: i.status == ClearanceStatus.needsCorrection
+                    ? TaskStatus.needsCorrection
+                    : TaskStatus.actionRequired,
+                route: '/life/clearance/${i.id}',
+              ),
+          ...mockTasks,
+        ],
         announcements: ofKind(PostKind.announcement),
         featuredNews: news.isEmpty ? null : news.first,
         moreNews: news.skip(1).toList(),

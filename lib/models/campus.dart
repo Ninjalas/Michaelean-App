@@ -195,6 +195,71 @@ class OrganizationPage {
   });
 }
 
+/// Clearance statuses (spec §7.5). Action required: the student has
+/// something to do for the first time. Needs correction: staff returned a
+/// submission with a reason. (Proposed meanings, open decision 8.)
+enum ClearanceStatus {
+  notStarted,
+  actionRequired,
+  inReview,
+  needsCorrection,
+  cleared,
+  onHold,
+  notApplicable,
+}
+
+/// One requirement in a clearance period, e.g. Library · Book returns.
+class ClearanceItem {
+  final String id;
+  final String office; // who processes it, e.g. "Library"
+  final String title;
+  final String instructions; // what the student has to do
+  final ClearanceStatus status;
+  final String? reason; // why staff returned it or put it on hold
+  final bool evidenceRequired;
+
+  const ClearanceItem({
+    required this.id,
+    required this.office,
+    required this.title,
+    required this.instructions,
+    required this.status,
+    this.reason,
+    this.evidenceRequired = false,
+  });
+}
+
+/// An active clearance period with the student's requirements.
+class ClearancePeriod {
+  final String name; // e.g. "1st Semester Clearance"
+  final DateTime deadline;
+  final List<ClearanceItem> items;
+
+  const ClearancePeriod({required this.name, required this.deadline, required this.items});
+
+  /// Not applicable items don't count toward the total.
+  List<ClearanceItem> get applicable =>
+      items.where((i) => i.status != ClearanceStatus.notApplicable).toList();
+
+  int get cleared => items.where((i) => i.status == ClearanceStatus.cleared).length;
+}
+
+/// A finished clearance from an earlier period.
+class PastClearance {
+  final String name;
+  final DateTime completedOn;
+
+  const PastClearance({required this.name, required this.completedOn});
+}
+
+/// Everything on the student's Clearance screen.
+class ClearanceView {
+  final ClearancePeriod? active; // null → Clearance Unavailable
+  final List<PastClearance> past;
+
+  const ClearanceView({required this.active, required this.past});
+}
+
 /// A student's progress in the active clearance period (spec §7.5).
 class ClearanceSummary {
   final String periodName; // e.g. "1st Semester Clearance"
@@ -218,6 +283,42 @@ class ClearanceOffice {
   final int pendingCount;
 
   const ClearanceOffice({required this.name, required this.pendingCount});
+}
+
+/// What staff may see about a student: identification only (spec §12).
+class ClearanceStudent {
+  final String id;
+  final String name;
+  final String maskedId;
+  final String section;
+  final String? photoAsset;
+  final String qrToken; // random mock token; lets the mock scanner simulate a scan
+
+  const ClearanceStudent({
+    required this.id,
+    required this.name,
+    required this.maskedId,
+    required this.section,
+    this.photoAsset,
+    required this.qrToken,
+  });
+}
+
+/// One student's requirements for the staff member's office.
+class ClearanceCase {
+  final ClearanceStudent student;
+  final List<ClearanceItem> items; // only this office's requirements
+
+  const ClearanceCase({required this.student, required this.items});
+}
+
+/// The staff verification desk (spec §9.3).
+class ClearanceDesk {
+  final String office;
+  final String periodName;
+  final List<ClearanceCase> pending; // students with something In review
+
+  const ClearanceDesk({required this.office, required this.periodName, required this.pending});
 }
 
 /// The first problem with an event form, or null when it can be saved.

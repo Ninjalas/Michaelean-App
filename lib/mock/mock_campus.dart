@@ -233,17 +233,105 @@ const mockOrganizations = [
   ),
 ];
 
-/// Active clearance period per user id; missing means no active period.
-ClearanceSummary? mockClearanceFor(String userId, DateTime now) =>
-    userId == mockStudent.id
-        ? ClearanceSummary(
-            periodName: '1st Semester Clearance',
-            deadline: DateTime(now.year, now.month, now.day + 38),
-            cleared: 3,
-            total: 6,
-            needsCorrection: 1, // the Library item on Home's Pending Tasks
-          )
-        : null;
+/// MOCK clearance requirements for the active period. Offices, wording, and
+/// which requirements apply are invented sample data, not school policy.
+const mockClearanceItems = [
+  ClearanceItem(
+    id: 'lib',
+    office: 'Library',
+    title: 'Book returns and fines',
+    instructions: 'Return borrowed books and upload a photo of your fine receipt, if any.',
+    status: ClearanceStatus.notStarted,
+    evidenceRequired: true,
+  ),
+  ClearanceItem(
+    id: 'acc',
+    office: 'Accounting',
+    title: 'Balance settlement',
+    instructions: 'Settle your remaining balance at the cashier.',
+    status: ClearanceStatus.notStarted,
+  ),
+  ClearanceItem(
+    id: 'reg',
+    office: "Registrar's Office",
+    title: 'Records update',
+    instructions: 'Check that your personal records are complete.',
+    status: ClearanceStatus.notStarted,
+  ),
+  ClearanceItem(
+    id: 'osa',
+    office: 'Office of Student Affairs',
+    title: 'ID validation',
+    instructions: 'Have your school ID validated for next semester.',
+    status: ClearanceStatus.notStarted,
+  ),
+  ClearanceItem(
+    id: 'gdc',
+    office: 'Guidance Office',
+    title: 'Exit survey',
+    instructions: 'Answer the short semester exit survey at the Guidance Office.',
+    status: ClearanceStatus.notStarted,
+  ),
+  ClearanceItem(
+    id: 'dcs-lab',
+    office: _dcs,
+    title: 'Laboratory equipment return',
+    instructions: 'Return borrowed lab equipment to the laboratory custodian.',
+    status: ClearanceStatus.notStarted,
+  ),
+  ClearanceItem(
+    id: 'dcs-adviser',
+    office: _dcs,
+    title: 'Adviser sign-off',
+    instructions: 'Ask your class adviser to confirm your semester requirements.',
+    status: ClearanceStatus.notStarted,
+  ),
+  ClearanceItem(
+    id: 'pub',
+    office: 'Student Publication',
+    title: 'Staff writer clearance',
+    instructions: 'Only for members of the student publication staff.',
+    status: ClearanceStatus.notStarted,
+  ),
+];
 
-/// Clearance office per staff user id. The mock teacher has none.
-const mockClearanceOffices = <String, ClearanceOffice>{};
+/// Starting statuses: student id → requirement id → (status, reason).
+/// Anything missing is Not started.
+Map<String, Map<String, (ClearanceStatus, String?)>> mockClearanceStatuses() => {
+      mockStudent.id: {
+        'lib': (
+          ClearanceStatus.needsCorrection,
+          'Receipt photo is unreadable. Resubmit a clearer copy.'
+        ),
+        'acc': (ClearanceStatus.cleared, null),
+        'reg': (ClearanceStatus.cleared, null),
+        'osa': (ClearanceStatus.cleared, null),
+        'gdc': (ClearanceStatus.actionRequired, null),
+        'dcs-lab': (ClearanceStatus.inReview, null),
+        'pub': (ClearanceStatus.notApplicable, null),
+      },
+      'stu-BSCS3A3': {'dcs-lab': (ClearanceStatus.inReview, null)},
+      'stu-BSCS3A7': {'dcs-lab': (ClearanceStatus.cleared, null)},
+      'stu-BSCS3B2': {
+        'dcs-lab': (ClearanceStatus.inReview, null),
+        'dcs-adviser': (ClearanceStatus.inReview, null),
+      },
+    };
+
+/// The active clearance period; null outside one. Students only.
+({String name, DateTime deadline})? mockClearancePeriod(DateTime now) => (
+      name: '1st Semester Clearance',
+      deadline: DateTime(now.year, now.month, now.day + 38),
+    );
+
+/// Finished clearances per student.
+final mockPastClearances = {
+  mockStudent.id: [
+    PastClearance(name: '2nd Semester Clearance', completedOn: DateTime(2026, 5, 20)),
+    PastClearance(name: '1st Semester Clearance', completedOn: DateTime(2025, 12, 12)),
+  ],
+};
+
+/// Clearance office per staff user id. Mock assumption: Mark processes the
+/// Department of Computer Studies requirements.
+final mockClearanceOffices = <String, String>{mockTeacher.id: _dcs};

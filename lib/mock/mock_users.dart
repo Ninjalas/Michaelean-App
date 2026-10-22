@@ -42,8 +42,13 @@ const mockTeacher = UserProfile(
     IdentityTag('Department of Computer Studies', TagKind.department),
   ],
   // Assigned classes only: whether teachers can edit other classes is an
-  // open decision (CLAUDE.md, open decision 1).
-  permissions: {Permission.manageAssignedClasses, Permission.manageEvents},
+  // open decision (CLAUDE.md, open decision 1). Clearance: mock assumption,
+  // he processes the department's requirements (see mockClearanceOffices).
+  permissions: {
+    Permission.manageAssignedClasses,
+    Permission.manageEvents,
+    Permission.processClearance,
+  },
 );
 
 /// Recorded event participation per user. Roles come from the event record.

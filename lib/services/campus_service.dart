@@ -109,11 +109,36 @@ abstract class CampusService {
   /// member: memberships are confirmed by administrators (spec §5).
   Future<void> requestToJoin(UserProfile user, String orgId);
 
-  /// The active clearance period; null when there is none.
+  /// The active clearance period's progress; null when there is none.
   Future<ClearanceSummary?> loadClearance(UserProfile user);
+
+  /// The student's Clearance screen (spec §7.5): the active period, if any,
+  /// and past clearances.
+  Future<ClearanceView> loadClearanceView(UserProfile user);
+
+  /// The student says they did a requirement: it goes In review. It never
+  /// clears anything; staff decide.
+  Future<void> markSubmitted(UserProfile student, String itemId);
 
   /// The clearance office the user processes; null when not assigned.
   Future<ClearanceOffice?> loadClearanceOffice(UserProfile user);
+
+  /// The staff verification desk (spec §9.3); null without permission or
+  /// outside an active period.
+  Future<ClearanceDesk?> loadClearanceDesk(UserProfile user);
+
+  /// Finds the student for a scanned code; null when unknown. Scanning only
+  /// identifies the student; it never approves anything.
+  Future<String?> findStudentByQr(UserProfile user, String qrToken);
+
+  /// One student's requirements for the staff member's office; null if
+  /// unavailable.
+  Future<ClearanceCase?> loadClearanceCase(UserProfile user, String studentId);
+
+  /// Records Cleared, Needs Correction, or On Hold on one requirement of the
+  /// staff member's office. A reason is required unless Cleared.
+  Future<void> recordOutcome(UserProfile user, String studentId, String itemId,
+      ClearanceStatus outcome, {String? reason});
 }
 
 class MockCampusService implements CampusService {
@@ -667,17 +692,168 @@ class MockCampusService implements CampusService {
     }
   }
 
+  // ---------- Clearance (in memory, this preview only) ----------
+
+  final _clearance = mockClearanceStatuses();
+
+  /// The student's requirements with their current statuses.
+  List<ClearanceItem> _itemsOf(String studentId) => [
+        for (final t in mockClearanceItems)
+          if (_clearance[studentId]?[t.id] case final s?)
+            ClearanceItem(
+              id: t.id,
+              office: t.office,
+              title: t.title,
+              instructions: t.instructions,
+              status: s.$1,
+              reason: s.$2,
+              evidenceRequired: t.evidenceRequired,
+            )
+          else
+            t,
+      ];
+
+  /// The office a staff member may process; null without permission.
+  String? _officeOf(UserProfile user) =>
+      user.can(Permission.processClearance) ? mockClearanceOffices[user.id] : null;
+
+  ClearanceStudent? _clearanceStudent(String id) {
+    for (final MapEntry(key: section, value: roster) in mockRosters.entries) {
+      for (final s in roster) {
+        if (s.id == id) {
+          return ClearanceStudent(
+              id: s.id,
+              name: s.name,
+              maskedId: s.maskedId,
+              section: section,
+              photoAsset: s.photoAsset,
+              qrToken: s.qrToken);
+        }
+      }
+    }
+    return null;
+  }
+
   @override
   Future<ClearanceSummary?> loadClearance(UserProfile user) async {
+    final view = await loadClearanceView(user);
+    final p = view.active;
+    if (p == null) return null;
+    return ClearanceSummary(
+      periodName: p.name,
+      deadline: p.deadline,
+      cleared: p.cleared,
+      total: p.applicable.length,
+      needsCorrection:
+          p.items.where((i) => i.status == ClearanceStatus.needsCorrection).length,
+    );
+  }
+
+  @override
+  Future<ClearanceView> loadClearanceView(UserProfile user) async {
     await _wait();
-    return mockClearanceFor(user.id, clock());
+    final period = mockClearancePeriod(clock());
+    final isStudent = user.role == UserRole.student;
+    return ClearanceView(
+      active: period == null || !isStudent
+          ? null
+          : ClearancePeriod(name: period.name, deadline: period.deadline, items: _itemsOf(user.id)),
+      past: mockPastClearances[user.id] ?? const [],
+    );
+  }
+
+  @override
+  Future<void> markSubmitted(UserProfile student, String itemId) async {
+    await _wait();
+    if (student.role != UserRole.student || mockClearancePeriod(clock()) == null) {
+      throw StateError('There is no active clearance period.');
+    }
+    final item = _itemsOf(student.id).where((i) => i.id == itemId).firstOrNull;
+    if (item == null) throw StateError('This requirement no longer exists.');
+    const open = {
+      ClearanceStatus.notStarted,
+      ClearanceStatus.actionRequired,
+      ClearanceStatus.needsCorrection,
+    };
+    if (!open.contains(item.status)) throw StateError('There is nothing to submit for this.');
+    // Submitting only sends it for review; it never clears anything.
+    _clearance.putIfAbsent(student.id, () => {})[itemId] = (ClearanceStatus.inReview, null);
   }
 
   @override
   Future<ClearanceOffice?> loadClearanceOffice(UserProfile user) async {
+    final desk = await loadClearanceDesk(user);
+    return desk == null
+        ? null
+        : ClearanceOffice(name: desk.office, pendingCount: desk.pending.length);
+  }
+
+  @override
+  Future<ClearanceDesk?> loadClearanceDesk(UserProfile user) async {
     await _wait();
-    if (!user.can(Permission.processClearance)) return null;
-    return mockClearanceOffices[user.id];
+    final office = _officeOf(user);
+    final period = mockClearancePeriod(clock());
+    if (office == null || period == null) return null;
+    final pending = <ClearanceCase>[];
+    for (final id in _clearance.keys) {
+      final items = _itemsOf(id).where((i) => i.office == office).toList();
+      final student = _clearanceStudent(id);
+      if (student != null && items.any((i) => i.status == ClearanceStatus.inReview)) {
+        pending.add(ClearanceCase(student: student, items: items));
+      }
+    }
+    pending.sort((a, b) => a.student.name.compareTo(b.student.name));
+    return ClearanceDesk(office: office, periodName: period.name, pending: pending);
+  }
+
+  @override
+  Future<String?> findStudentByQr(UserProfile user, String qrToken) async {
+    await _wait();
+    if (_officeOf(user) == null) throw StateError("You aren't assigned to a clearance area.");
+    for (final roster in mockRosters.values) {
+      for (final s in roster) {
+        if (s.qrToken == qrToken) return s.id;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<ClearanceCase?> loadClearanceCase(UserProfile user, String studentId) async {
+    await _wait();
+    final office = _officeOf(user);
+    final student = _clearanceStudent(studentId);
+    if (office == null || student == null || mockClearancePeriod(clock()) == null) return null;
+    return ClearanceCase(
+      student: student,
+      items: _itemsOf(studentId).where((i) => i.office == office).toList(),
+    );
+  }
+
+  @override
+  Future<void> recordOutcome(UserProfile user, String studentId, String itemId,
+      ClearanceStatus outcome, {String? reason}) async {
+    await _wait();
+    final office = _officeOf(user);
+    if (office == null) throw StateError("You aren't assigned to a clearance area.");
+    if (mockClearancePeriod(clock()) == null) throw StateError('There is no active clearance period.');
+    final item = _itemsOf(studentId).where((i) => i.id == itemId).firstOrNull;
+    if (item == null || _clearanceStudent(studentId) == null) {
+      throw StateError('This requirement no longer exists.');
+    }
+    // Staff process only their own office's requirements (spec §7.5).
+    if (item.office != office) throw StateError("This requirement isn't yours to process.");
+    const outcomes = {
+      ClearanceStatus.cleared,
+      ClearanceStatus.needsCorrection,
+      ClearanceStatus.onHold,
+    };
+    if (!outcomes.contains(outcome)) throw ArgumentError('Pick Cleared, Needs Correction, or On Hold.');
+    final why = reason?.trim() ?? '';
+    if (outcome != ClearanceStatus.cleared && why.isEmpty) {
+      throw ArgumentError('Give a reason so the student knows what to fix.');
+    }
+    _clearance.putIfAbsent(studentId, () => {})[itemId] = (outcome, why.isEmpty ? null : why);
   }
 }
 

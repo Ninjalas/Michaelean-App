@@ -14,12 +14,16 @@ import 'screens/shared/profile_screen.dart';
 import 'screens/shared/qr_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
 import 'screens/student/class_screen.dart';
+import 'screens/student/clearance_item_screen.dart';
+import 'screens/student/clearance_screen.dart';
 import 'screens/student/organization_screen.dart';
 import 'screens/student/organizations_screen.dart';
 import 'screens/teacher/attendance_review_screen.dart';
 import 'screens/teacher/attendance_scan_screen.dart';
 import 'screens/teacher/class_detail_screen.dart';
 import 'screens/teacher/classes_screen.dart';
+import 'screens/teacher/clearance_case_screen.dart';
+import 'screens/teacher/clearance_desk_screen.dart';
 import 'screens/teacher/edit_session_screen.dart';
 import 'screens/teacher/event_form_screen.dart';
 import 'screens/teacher/event_invite_screen.dart';
@@ -151,6 +155,34 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     ),
                   ],
                 ),
+                // Clearance (spec §7.5) and staff verification (spec §9.3).
+                GoRoute(
+                  path: 'clearance',
+                  builder: (context, state) => ClearanceScreen(campusService: campusService),
+                  routes: [
+                    GoRoute(
+                      path: ':itemId',
+                      builder: (context, state) => ClearanceItemScreen(
+                        campusService: campusService,
+                        itemId: state.pathParameters['itemId']!,
+                      ),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'verify',
+                  builder: (context, state) => ClearanceDeskScreen(campusService: campusService),
+                  routes: [
+                    GoRoute(
+                      path: ':studentId',
+                      parentNavigatorKey: rootKey, // form with its button at the bottom
+                      builder: (context, state) => ClearanceCaseScreen(
+                        campusService: campusService,
+                        studentId: state.pathParameters['studentId']!,
+                      ),
+                    ),
+                  ],
+                ),
                 // Organizations (spec §7.4). An event opened from an
                 // organization is pushed on top, so Back returns to it.
                 GoRoute(
@@ -220,12 +252,6 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       ],
                     ),
                   ],
-                ),
-                GoRoute(
-                  path: 'soon',
-                  builder: (context, state) => ComingSoonScreen(
-                    title: state.uri.queryParameters['what'] ?? 'Coming soon',
-                  ),
                 ),
               ],
             ),

@@ -78,12 +78,12 @@ What's behind each tab right now:
 |---|---|
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
 | Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
-| Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Class, Events, and Organizations open their real screens; Clearance opens a "Coming soon" page until Phase 9. |
+| Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Every `See all ›` opens its real screen. |
 | Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and event history; Edit Profile (About only, saved in this preview); grouped Settings with the preview role switch and Log Out. |
 | Class (students), Classes + class page + attendance scanner (teachers) | **New (built in Phase 6).** Weekly schedule, attendance from finalized records, mock scanner with the attendance rules, review and finalize, single-session changes. |
 | Events (students: Discover / My events / event detail; teachers: Upcoming / Past / Drafts, create, edit, invite, registrations, cancel) | **New (built in Phase 7).** Registration, invitations, publishing, and cancelling change this preview only and say so. |
 | Organizations directory and organization page (students) | **New (built in Phase 8).** Three groups, tabbed organization page, honest "Request to join". |
-| Clearance | **Not built yet** ("Coming soon" placeholders). Phase 9. |
+| Clearance (students) and Clearance Verification (teachers with the `processClearance` permission) | **New (built in Phase 9).** Progress, requirement details, honest resubmit; mock QR scan, outcome with reason, honest save. |
 
 ---
 
@@ -153,8 +153,8 @@ On 2026-10-21 a full design review found the first build looked thin and didn't 
 | 6 | Class: student Class screen + teacher class management with attendance scan | §7.1, §9.1 | ✅ **Done** |
 | 7 | Events: discovery, detail, teacher management | §7.3, §9.2 | ✅ **Done** |
 | 8 | Organizations: directory and tabbed organization page | §7.4 | ✅ **Done** |
-| 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | ⏳ **Next** |
-| 10 | Frontend testing: navigation, responsive layouts, empty/error states, validation, role UI, permissions, QR, motion | all | To do |
+| 9 | Clearance: student clearance and teacher verification | §7.5, §9.3 | ✅ **Done** |
+| 10 | Frontend testing: navigation, responsive layouts, empty/error states, validation, role UI, permissions, QR, motion | all | ⏳ **Next** |
 | 11 | Later integration (only when requested): auth, backend, hosting, PWA | §4, §13 | Later |
 
 ### The phases in order
@@ -277,15 +277,25 @@ Each phase is one piece of work, reviewed by the group before the next one start
 - **Mock data** (`mock/mock_campus.dart`): five organizations with kind (society/club), department, About text, meetings, and officers (invented names; Mark is listed as CSS adviser). Only CSS has a real logo and cover.
 - **Not done:** officer tools (posting news, managing the schedule). The spec allows only authorized officers to manage content, and no mock account is an officer yet, so this waits until someone decides who the mock officer is.
 
-#### Phase 9: Clearance (student clearance + teacher verification)
+#### Phase 9: Clearance (student clearance + teacher verification) ✅ Done
 
-**Spec:** §7.5, §9.3. **Goal:** seasonal clearance (Semester, Graduation, Document request, …).
+**Spec:** §7.5, §9.3. **Goal:** seasonal clearance and its verification.
 
-- **Student, during an active period:** period name and deadline, a big progress bar or ring (`3 / 6 cleared`), one row per office (Library, Accounting, …) with a status pill. Tapping a row shows what to do, the reason if it was returned, and a resubmit path. **Past clearances** at the bottom.
-- **Student, outside a period:** a calm `Clearance Unavailable` empty state; history stays visible.
-- **Statuses:** Not started, Action required, In review, Needs correction, Cleared, On hold, Not applicable (Action required vs Needs correction is open decision 8).
-- **Teacher/staff verification:** assigned office, pending requirements, **Scan Student QR**, student details, pick a requirement, record **Cleared / Needs Correction / On Hold** with a reason, confirm. Mock only.
-- **Rules:** a QR scan or upload never approves clearance automatically; staff process only the requirements they're authorized for.
+- **Student Clearance** (`screens/student/clearance_screen.dart`, route `/life/clearance`, from the hub, Home's "Cleared" stat, and Home's clearance tasks):
+  - During a period: period name and deadline, a big `3 / 7 cleared` with a progress bar, then one row per requirement (office icon, office, requirement, status pill). **Not applicable** items don't count toward the total.
+  - Outside a period: the calm `Clearance Unavailable` state (shared `ClearanceUnavailable` widget).
+  - **Past Clearances** at the bottom either way.
+- **Requirement detail** (`clearance_item_screen.dart`, `/life/clearance/:itemId`): what to do, whether evidence is needed, the **reason** if the office returned it or put it on hold, and a status note. For Not started / Action required / Needs correction there is **I've Done This** or **Resubmit for Review**, which only moves it to **In review** and says "Nothing was uploaded, and it isn't cleared until the office reviews it."
+- **Clearance Verification** for staff (`screens/teacher/clearance_desk_screen.dart`, `/life/verify`): the assigned office, the period, the pending students (name, masked ID, section, what's waiting), and **Scan Student QR**, a mock scanner labeled "no camera is used" (**Simulate scan** reads the first pending student's mock code; **Unknown code** matches nobody). Scanning only finds the student.
+- **Verify Requirement** (`clearance_case_screen.dart`, `/life/verify/:studentId`): student identification (photo or initials, name, masked ID, section), this office's requirements to pick from, the outcome (**Cleared / Needs Correction / On Hold**), a reason (required unless Cleared), and a confirmation dialog. Saved "in this preview only. Not an official clearance record."
+- **Statuses** (shared `clearancePill` in `widgets/clearance_widgets.dart`): Not started, Action required, In review, Needs correction, Cleared, On hold, Not applicable.
+- **Rules** (enforced in `CampusService`): a QR scan or a student's submission never clears anything; only staff with the `processClearance` permission, and only for **their own office's** requirements; a reason is required for Needs Correction and On Hold; processing needs an active period.
+- **Home agrees:** the "Cleared" stat and the student's clearance tasks (e.g. "Library clearance · Needs correction") now come from the same clearance data, and the tasks open the requirement.
+- **Mock assumptions (easy to change):**
+  - Mark (the mock teacher) has `processClearance` for the **Department of Computer Studies** requirements (`mockClearanceOffices` in `mock/mock_campus.dart`, permission in `mock/mock_users.dart`).
+  - Open decision 8 is still open; the screens use the proposed meanings (Action required = first-time task; Needs correction = returned with a reason).
+  - Requirements, offices, and past clearances are invented sample data.
+- **Not done:** evidence upload (needs a file-picker package), a real camera scanner, and deadlines (overdue doesn't change any status, as the spec requires).
 
 #### Phase 10: Frontend testing
 
@@ -313,6 +323,14 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Rebuild Phase 9: Clearance.**
+  - New screens: student Clearance, requirement detail, staff Clearance Verification (with a mock QR scanner), and Verify Requirement.
+  - `CampusService` gained `loadClearanceView`, `markSubmitted`, `loadClearanceDesk`, `findStudentByQr`, `loadClearanceCase`, and `recordOutcome`; `loadClearance` and `loadClearanceOffice` are now counted from the requirements.
+  - Models: `ClearanceStatus`, `ClearanceItem`, `ClearancePeriod`, `PastClearance`, `ClearanceView`, `ClearanceStudent`, `ClearanceCase`, `ClearanceDesk`.
+  - Mock data: eight sample requirements with every status, past clearances, pending department items for a few roster students; **Mark now has `processClearance`** for the department (mock assumption, chosen by the group owner).
+  - Home: the "Cleared" stat and clearance tasks come from the clearance data; tasks open the requirement.
+  - Shared `clearance_widgets.dart` (status pill, office icon, Clearance Unavailable). Every hub `See all` now opens a real screen, so the hub's "Coming soon" route was removed.
+  - Tests: submitting never clears, scans only find students, office-only processing, reason required, counts update; widget tests for the student resubmit flow and the staff scan → outcome → confirmation flow.
 - **Rebuild Phase 8: Organizations.**
   - New screens: Organizations directory (three groups) and the tabbed organization page (About, Schedule, Events, News, Officers).
   - `CampusService` gained `loadOrganizationDirectory`, `loadOrganization`, and `requestToJoin`; organization news comes from the same mock posts as Home.
@@ -397,9 +415,10 @@ lib/
   screens/
     shared/          screens both roles use (opening, sign-in preview, Home, hubs, Events, event detail,
                      Profile, sheets)
-    student/         student-only screens (Class, Organizations directory, organization page)
+    student/         student-only screens (Class, Organizations, organization page, Clearance,
+                     clearance requirement)
     teacher/         teacher-only screens (Classes, class page, scanner, review, change session,
-                     event form, invite students, event registrations)
+                     event form, invite students, event registrations, clearance verification)
   models/            plain data classes: UserProfile, IdentityTag, Permission, feed items,
                      EventRecord, campus data (CampusEvent, Organization, clearance)
   mock/              CLEARLY LABELED sample data (mock_users.dart, mock_home.dart, mock_campus.dart,
@@ -501,14 +520,15 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-63 tests currently pass (one Home test fails between midnight and 1 AM; see Known issues). They cover:
+69 tests currently pass (one Home test fails between midnight and 1 AM; see Known issues). They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
 - **Home data:** the student sees their department/society posts only, urgent posts first, the student's own next class with its teacher, the teacher's classes for today only, teacher sections, the attendance task appears only for an unfinalized session, next-class logic, no post in two sections.
-- **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens its page with Back; Michaelean Life shows classes, managed events with drafts, and locks Clearance without permission; a load failure shows Retry.
+- **Hubs:** Student Life shows class, events, organizations, and clearance previews, and `See all` opens its page with Back; Michaelean Life shows classes, managed events with drafts, and the teacher's clearance office; a load failure shows Retry.
 - **Class and attendance:** an enrolled scan is Present once and a repeat counts once; unknown or other-section codes aren't marked; scans before the start or after the end are rejected (the preview tool skips only the clock); finalizing closes the session and only finalized sessions count; teachers manage only their assigned classes; class page roster and recent sessions; single-session changes are validated and move only that session; finalizing removes Home's task; the Class screen's day strip and Show QR; the full scan → review → finalize flow (scanner and review really close); the session form's validation and honest confirmation; another teacher's class is refused.
 - **Events:** registering works once and never for full, closed, or ineligible events; My events lists upcoming then past registrations; a draft is hidden from students, publishing and editing keep one event and mark time changes; only managers edit, see names, invite, or cancel; the service re-checks form rules; inviting a section registers its students; a cancelled event leaves Discover but stays in My events. Widget tests: discover → My Orgs filter → register → My events; a full event can't be registered; create → publish → invite a section → registration count; editing someone else's event is refused.
+- **Clearance:** progress counts skip Not applicable; submitting only sends for review; a QR scan only finds the student; staff process only their office's requirements and must give a reason unless Cleared; widget tests for the student resubmit flow and the staff scan → outcome → confirmation flow.
 - **Organizations:** directory groups (another department's society is never a school-wide club), members-only events and posts hidden from non-members, other departments' societies unavailable, a join request never makes a member; widget tests for the directory, tabs, event → Back → organization, and the join request.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
 - **Profile:** identity, masked ID, counted stats, tags, and event history for students; Classes I Teach and hosted count for teachers; no QR on Profile; Edit Profile enables Save only after a change and confirms "preview only"; Settings items, Back closes it, Log Out ends the preview; switching role in Settings refreshes Home, the hub, and Profile.
@@ -553,7 +573,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 ## How to continue the work
 
 1. **Pull the latest `main`**, then run `flutter pub get`, `flutter analyze`, and `flutter test`. They should all be clean before you start.
-2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 9 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
+2. **Pick the next phase** from the [progress table](#rebuild-plan-and-progress) (Phase 10 is next). Agree in the group who does what. Work on **one phase at a time** and avoid two people editing the same files at once.
 3. **Work on a branch**, e.g. `git checkout -b phase-3-home`.
 4. **Read the spec sections** for that phase, plus §2 (design) and §12 (permissions and privacy).
 5. **Build it**, reusing the shared widgets and theme tokens. Keep mock data in `lib/mock/` and go through the services.
