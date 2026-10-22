@@ -40,6 +40,12 @@ const studentRoutes = [
   '/profile',
   '/profile/settings',
   '/profile/edit',
+  '/profile/event/past-iris',
+  '/profile/personal',
+  '/profile/security',
+  '/profile/notifications',
+  '/profile/help',
+  '/profile/about',
 ];
 
 List<String> teacherRoutes() {
@@ -58,9 +64,12 @@ List<String> teacherRoutes() {
     '/life/events/ev2/edit',
     '/life/events/ev2/invite',
     '/life/events/ev2/registrations',
+    '/life/events/ev2/checkin',
     '/life/verify',
     '/life/verify/mock-student-1',
     '/profile',
+    '/profile/event/past-webdev',
+    '/profile/personal',
   ];
 }
 
@@ -112,11 +121,14 @@ void main() {
         final where = RegExp(r'lib/[\w/]+\.dart:\d+').firstMatch(details.toString())?[0];
         problems.add('$path: ${details.exceptionAsString().split('\n').first} ($where)');
       };
-      for (path in role == 'Student' ? studentRoutes : teacherRoutes()) {
-        await visit(tester, path);
-        await scrollThrough(tester);
+      try {
+        for (path in role == 'Student' ? studentRoutes : teacherRoutes()) {
+          await visit(tester, path);
+          await scrollThrough(tester);
+        }
+      } finally {
+        FlutterError.onError = original; // restore even if a step failed
       }
-      FlutterError.onError = original;
       expect(problems, isEmpty);
     });
 

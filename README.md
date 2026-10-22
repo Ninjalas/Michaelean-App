@@ -79,7 +79,7 @@ What's behind each tab right now:
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
 | Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
 | Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Every `See all ›` opens its real screen. |
-| Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and event history; Edit Profile (About only, saved in this preview); grouped Settings with the preview role switch and Log Out. |
+| Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and Event History (each record opens its event); Edit Profile (About only, saved in this preview); grouped Settings with five pages (Personal Information, Account & Security, Notifications, Help & Support, About), the preview role switch, and Log Out. |
 | Class (students), Classes + class page + attendance scanner (teachers) | **New (built in Phase 6).** Weekly schedule, attendance from finalized records, mock scanner with the attendance rules, review and finalize, single-session changes. |
 | Events (students: Discover / My events / event detail; teachers: Upcoming / Past / Drafts, create, edit, invite, registrations, cancel) | **New (built in Phase 7).** Registration, invitations, publishing, and cancelling change this preview only and say so. |
 | Organizations directory and organization page (students) | **New (built in Phase 8).** Three groups, tabbed organization page, honest "Request to join". |
@@ -311,7 +311,7 @@ Each phase is one piece of work, reviewed by the group before the next one start
   - Overflows with large text: Home's header, the Up next date pill, the Class day strip (now grows with the text size), Edit Profile's title, the event form's time fields, the event page's attendees row.
   - The attendance scanner spun forever when loading failed (an unhandled error); it now says it couldn't load.
   - Change Session, Edit Event, Invite Students, and Verify Requirement said "you can't…" when loading failed, which blames permissions; they now say "Couldn't load…". The post page now shows an error when loading fails.
-- **No more dead ends:** Home's "Event attendance" stat opens the event history on Profile; the "Event requirements" and "Review schedule change" tasks open Events and the class page; the clearance and attendance notifications open their screens. The only "Coming soon" pages left are Settings items that need real accounts (Personal Information, Account & Security, Notifications, Help & Support, About) and the detail of a past event record.
+- **No more dead ends:** Home's "Event attendance" stat opens the event history on Profile; the "Event requirements" and "Review schedule change" tasks open Events and the class page; the clearance and attendance notifications open their screens. (Settings items were built afterwards; see Recent changes.)
 - **Fixed the midnight test:** the notifications test now uses a fixed noon clock, so it passes at any hour.
 - **Web app identity:** the installed app is named **Michaelean**, uses navy and white, and its icons and favicon are made from the SMCL emblem (whole emblem on white; the maskable icon has extra margin for phones that crop icons into shapes).
 - **Already covered by earlier phases' tests:** Back closing sheets and pages, tabs keeping their state, form validation (event form, session change, Edit Profile, clearance outcome), role-specific UI and permission locks, the QR as a mock token only, and reduced motion on the intro.
@@ -331,6 +331,21 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Settings pages** (spec §11). Every Settings item now opens a real page (routes under `/profile/…`):
+  - **Personal Information** (`personal_info_screen.dart`): read-only name, role, program/faculty, **masked** ID, school email, and official tags, marked as coming from school records ("contact the Registrar to correct"). The two sample accounts got clearly fake emails (`@smcl.example`).
+  - **Account & Security** (`account_security_screen.dart`): an honest status page: Microsoft 365 sign-in, **not connected in this preview**, the current preview session, and what the QR holds, with **Show my QR**. Passwords and two-step verification belong to Microsoft 365.
+  - **Notifications** (`notification_settings_screen.dart`): a switch per type (Announcements, School news, Organizations, Schedule changes, Attendance, Clearance), **saved on this device** (`services/notification_prefs.dart`). Switched-off types are hidden from the bell; **urgent ones always show**; the bell says how many are hidden, with a **Change** link. If storage is slow or blocked, the app waits at most 2 seconds and treats everything as on. No real notifications are sent.
+  - **Help & Support** (`help_screen.dart`): five short FAQ answers (QR, class attendance, registration vs attendance, clearance statuses, "preview only") and sample office contacts (`mockSupportContacts`, through `CampusService.loadSupportContacts`).
+  - **About Michaelean** (`about_screen.dart`): emblem, version 0.1.0 · Prototype, what the app is, its prototype status, and **Open-source licenses** (Flutter's license page). The Inter font license is now bundled and registered in `main.dart`, as its license requires.
+  - New shared `widgets/inset_list.dart` (`InsetGroup`, `InsetRow`, `InsetField`), taken from the Settings sheet. The Profile tab's "Coming soon" route was removed; only Home keeps one as a safety fallback.
+  - Tests: one per page, the bell filter with an urgent exception, and the screen audit now covers all five pages.
+- **Event history and event check-in.**
+  - **Event History opens the event page.** Each record now links to its event (`eventId`); the sample history's events were added as past events (Git seminar, Start-up pitching talk, Iris dataset workshop, Web development bootcamp). The page shows **"Your record: Attended · Participant"** and the first button reads Attended (or Ended) instead of a disabled Register. Opened from Profile, it stays in the Profile tab (`/profile/event/:eventId`).
+  - **One source of event history.** History moved from `UserService` to `CampusService.loadEventHistory`, so Profile, Home, My events, and check-in agree. My events' Past list includes recorded events with an `Attended` pill; "registered but no attendance recorded" is said plainly.
+  - **Home's event stats are counted:** Events completed = records; Event attendance % = recorded ÷ past events you registered for or attended (the sample student: 3 of 4 = 75 %). The fixed sample numbers were removed.
+  - **Event check-in for managers** (`screens/teacher/event_checkin_screen.dart`, `/life/events/:eventId/checkin`, from the event's More › Take attendance): mock scanner like the class one; only registered students are marked; a repeat counts once; open from 30 minutes before the start until the end (with the "Open anyway" preview tool). **Finalize** adds an Attended · Participant record to each scanned student's Event History, in this preview only. The manager's event page shows "Attendance finalized · N attended".
+  - **Share** copies the event's name, date, time, and venue as text ("Event details copied."). No link yet, since the app isn't online.
+  - Tests: history → event with record, check-in rules and finalize, counted Home stats, Share; the screen audit now also visits the check-in screen and history event pages.
 - **Rebuild Phase 10: Frontend testing.**
   - New `test/screens_audit_test.dart`: every screen of both roles on a small phone with large text, against the tap-target and label guidelines, and with failing services.
   - Fixed everything it found (see Phase 10 above): 48 px segmented pills, scrolling sign-in and scanner, seven large-text overflows, the scanner's unhandled load error, and honest "Couldn't load" messages on four forms and the post page.
@@ -509,6 +524,7 @@ The look follows **Luma** (an events app for iPhone) closely in layout and feel,
 | `StatsRow` | Compact row of tappable stats with navy numbers (Home) |
 | `UpNextCard` | Solid navy "Up next" class card, optional Start attendance button, empty state |
 | `BackHeader` | Top of a pushed page: round back button, title, optional action (e.g. `Show QR`) |
+| `InsetGroup`, `InsetRow`, `InsetField` | Luma's grouped rounded lists (Settings and its pages): tappable rows and read-only label/value rows |
 
 ---
 
@@ -534,7 +550,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-75 tests currently pass, at any time of day. They cover:
+86 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
@@ -546,6 +562,8 @@ flutter test
 - **Clearance:** progress counts skip Not applicable; submitting only sends for review; a QR scan only finds the student; staff process only their office's requirements and must give a reason unless Cleared; widget tests for the student resubmit flow and the staff scan → outcome → confirmation flow.
 - **Organizations:** directory groups (another department's society is never a school-wide club), members-only events and posts hidden from non-members, other departments' societies unavailable, a join request never makes a member; widget tests for the directory, tabs, event → Back → organization, and the join request.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
+- **Event history and check-in:** each history record opens its event (even one the user can't see in Discover) with "Your record"; check-in marks only registered students, counts a repeat once, respects the event's hours (preview tool aside), and finalizing adds Attended records to Event History exactly once; Home's event stats are counted from records; Share copies the event details.
+- **Settings pages:** Personal Information is read-only with the ID masked; Account & Security says nothing is connected and opens the QR; switching a notification type off hides it from the bell while urgent ones stay; Help answers questions and lists offices; About shows the version and the licenses page.
 - **Profile:** identity, masked ID, counted stats, tags, and event history for students; Classes I Teach and hosted count for teachers; no QR on Profile; Edit Profile enables Save only after a change and confirms "preview only"; Settings items, Back closes it, Log Out ends the preview; switching role in Settings refreshes Home, the hub, and Profile.
 
 When you rebuild a screen, update its tests and add tests for new logic, especially permissions, status rules, and "no fake success" behavior.

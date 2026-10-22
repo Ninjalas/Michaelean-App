@@ -157,7 +157,10 @@ void main() {
 
     test('My events: upcoming registrations, then past ones', () async {
       final mine = await fresh().loadEvents(mockStudent, EventList.mine);
-      expect(mine.map((d) => d.event.id), ['ev3', 'ev8']);
+      // Upcoming, then past newest first; past events with a record count too.
+      expect(mine.map((d) => d.event.id),
+          ['ev3', 'ev8', 'past-git', 'past-startup', 'past-iris']);
+      expect(mine.firstWhere((d) => d.event.id == 'ev8').record, isNull); // registered only
     });
 
     test('drafts, publishing, and editing the same event', () async {
@@ -327,6 +330,44 @@ void main() {
       expect(await statusOf(s, 'dcs-lab'), ClearanceStatus.cleared);
       expect((await s.loadClearance(mockStudent))!.cleared, 4);
       expect((await s.loadClearanceDesk(mockTeacher))!.pending, hasLength(2));
+    });
+  });
+
+  group('event history and check-in', () {
+    MockCampusService fresh() => MockCampusService(delay: Duration.zero, clock: () => morning);
+
+    test('each history record opens its event, with the record', () async {
+      final s = fresh();
+      final history = await s.loadEventHistory(mockStudent);
+      expect(history.map((r) => r.eventId), ['past-git', 'past-startup', 'past-iris']);
+      final d = (await s.loadEvent(mockStudent, 'past-iris'))!;
+      expect(d.record!.status.label, 'Attended');
+      // Not a CSS member, but the record still opens the event.
+      final t = (await s.loadEvent(mockTeacher, 'past-git'))!;
+      expect(t.record!.role.label, 'Organizer');
+    });
+
+    test('check-in marks registered students once, then finalizing adds records', () async {
+      final s = fresh();
+      await s.inviteSections(mockTeacher, 'ev2', ['BSCS 3A']); // registers the mock student
+      expect((await s.recordEventScan(mockTeacher, 'ev2', mockStudent.qrToken)).outcome,
+          ScanOutcome.notOpenYet); // three days away
+      Future<ScanOutcome> scan(String token) async =>
+          (await s.recordEventScan(mockTeacher, 'ev2', token, ignoreClock: true)).outcome;
+      expect(await scan('MOCK-UNKNOWN'), ScanOutcome.notEnrolled);
+      expect(await scan('MOCK-BSCS3B1'), ScanOutcome.notEnrolled); // not registered
+      expect(await scan(mockStudent.qrToken), ScanOutcome.present);
+      expect(await scan(mockStudent.qrToken), ScanOutcome.duplicate);
+      expect(() => s.recordEventScan(mockStudent, 'ev2', mockStudent.qrToken), throwsStateError);
+
+      expect(await s.finalizeEventAttendance(mockTeacher, 'ev2'), 1);
+      final history = await s.loadEventHistory(mockStudent);
+      expect(history.first.eventId, 'ev2');
+      expect(history.first.status.label, 'Attended');
+      expect(await scan(mockStudent.qrToken), ScanOutcome.closed);
+      expect(() => s.finalizeEventAttendance(mockTeacher, 'ev2'), throwsStateError);
+      final d = (await s.loadEvent(mockTeacher, 'ev2'))!;
+      expect((d.attendanceFinalized, d.attendedCount), (true, 1));
     });
   });
 }

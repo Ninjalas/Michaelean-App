@@ -1,3 +1,5 @@
+import 'attendance.dart';
+import 'event_record.dart';
 import 'feed.dart';
 
 /// Draft and published are separate states (spec §9.2). Only published
@@ -84,6 +86,13 @@ class EventDetail {
   /// null when registration is open to them.
   final String? closedReason;
 
+  /// The user's official attendance record for this event, if any.
+  final EventRecord? record;
+
+  /// For managers: whether attendance was finalized, and how many attended.
+  final bool attendanceFinalized;
+  final int attendedCount;
+
   const EventDetail({
     required this.event,
     required this.registered,
@@ -91,6 +100,9 @@ class EventDetail {
     required this.going,
     required this.canManage,
     this.closedReason,
+    this.record,
+    this.attendanceFinalized = false,
+    this.attendedCount = 0,
   });
 }
 
@@ -99,6 +111,41 @@ enum EventList {
   discover, // published upcoming events the student is eligible for
   mine, // events the student registered for, upcoming and past
   managed, // every event the user may manage: upcoming, past, drafts
+}
+
+/// Event check-in for its managers: who registered and who was scanned.
+class EventCheckIn {
+  final CampusEvent event;
+  final List<RosterStudent> registrants; // registered students the app knows
+  final Set<String> present; // scanned student ids
+  final bool finalized;
+
+  const EventCheckIn({
+    required this.event,
+    required this.registrants,
+    required this.present,
+    required this.finalized,
+  });
+
+  List<RosterStudent> get unchecked =>
+      registrants.where((s) => !present.contains(s.id)).toList();
+}
+
+/// A campus office to contact for help (Help & Support).
+class SupportContact {
+  final String office;
+  final String helpsWith;
+  final String place;
+  final String hours;
+  final String contact;
+
+  const SupportContact({
+    required this.office,
+    required this.helpsWith,
+    required this.place,
+    required this.hours,
+    required this.contact,
+  });
 }
 
 /// A registered student, as the event's managers see them.

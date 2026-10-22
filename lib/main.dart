@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show LicenseEntryWithLineBreaks, LicenseRegistry;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:go_router/go_router.dart';
 
 import 'router.dart';
@@ -9,6 +11,11 @@ import 'services/user_service.dart';
 import 'theme/app_theme.dart';
 
 void main() {
+  // The bundled fonts' license must ship with the app (About › Open-source licenses).
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(
+        ['Inter', 'Inter Display'], await rootBundle.loadString('assets/fonts/Inter-OFL.txt'));
+  });
   // One campus service for the whole app, so Home and the Class screens
   // share the same (preview-only) attendance state.
   final campus = MockCampusService();

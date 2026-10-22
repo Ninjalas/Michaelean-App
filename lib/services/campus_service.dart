@@ -1,8 +1,10 @@
 import '../mock/mock_campus.dart';
 import '../mock/mock_classes.dart';
 import '../mock/mock_home.dart' show mockPosts;
+import '../mock/mock_users.dart' show mockEventHistory;
 import '../models/attendance.dart';
 import '../models/campus.dart';
+import '../models/event_record.dart';
 import '../models/feed.dart';
 import '../models/user_profile.dart';
 
@@ -94,6 +96,22 @@ abstract class CampusService {
   /// (spec §7.3). Returns how many students were newly registered.
   Future<int> inviteSections(UserProfile user, String eventId, List<String> sections);
 
+  /// The user's official event records, newest first (Profile's Event
+  /// History). Registration alone never appears here.
+  Future<List<EventRecord>> loadEventHistory(UserProfile user);
+
+  /// Event check-in for its managers; null for anyone else.
+  Future<EventCheckIn?> loadEventCheckIn(UserProfile user, String eventId);
+
+  /// One scanned code at event check-in. Only registered students are
+  /// marked; a repeat counts once. [ignoreClock] is a preview tool.
+  Future<ScanResult> recordEventScan(UserProfile user, String eventId, String qrToken,
+      {bool ignoreClock = false});
+
+  /// Closes check-in: every scanned student gets an Attended record in their
+  /// Event History. Returns how many records were added.
+  Future<int> finalizeEventAttendance(UserProfile user, String eventId);
+
   /// Organizations the user is a confirmed member of.
   Future<List<Organization>> loadMyOrganizations(UserProfile user);
 
@@ -122,6 +140,9 @@ abstract class CampusService {
 
   /// The clearance office the user processes; null when not assigned.
   Future<ClearanceOffice?> loadClearanceOffice(UserProfile user);
+
+  /// Offices to contact for help (Help & Support).
+  Future<List<SupportContact>> loadSupportContacts();
 
   /// The staff verification desk (spec §9.3); null without permission or
   /// outside an active period.
@@ -367,6 +388,15 @@ class MockCampusService implements CampusService {
   late final _events = {for (final e in mockEvents(clock())) e.id: e};
   final _registered = mockRegistrations();
   final _invited = <String, Set<String>>{}; // event id → invited student ids
+  final _history = {for (final e in mockEventHistory.entries) e.key: [...e.value]};
+  final _eventPresent = <String, Set<String>>{}; // event id → scanned student ids
+  final _eventFinalized = {...mockFinalizedEvents};
+
+  EventRecord? _recordOf(String userId, String eventId) =>
+      _history[userId]?.where((r) => r.eventId == eventId).firstOrNull;
+
+  int _attendedCount(String eventId) =>
+      _history.values.expand((list) => list).where((r) => r.eventId == eventId).length;
   var _newEvents = 0;
 
   bool _eligible(UserProfile user, CampusEvent e) =>
@@ -407,6 +437,9 @@ class MockCampusService implements CampusService {
       going: going,
       canManage: _manages(user, e),
       closedReason: closed,
+      record: _recordOf(user.id, e.id),
+      attendanceFinalized: _eventFinalized.contains(e.id),
+      attendedCount: _attendedCount(e.id),
     );
   }
 
@@ -440,8 +473,9 @@ class MockCampusService implements CampusService {
           EventList.discover =>
             e.status == EventStatus.published && e.start.isAfter(now) && _eligible(user, e),
           // Kept even if the student left the organization (spec §7.3).
-          EventList.mine =>
-            e.status != EventStatus.draft && (_registered[e.id]?.contains(user.id) ?? false),
+          EventList.mine => e.status != EventStatus.draft &&
+              ((_registered[e.id]?.contains(user.id) ?? false) ||
+                  _recordOf(user.id, e.id) != null),
           EventList.managed => _manages(user, e),
         });
     final upcoming = events.where((e) => e.end.isAfter(now)).toList()
@@ -458,6 +492,7 @@ class MockCampusService implements CampusService {
     if (e == null) return null;
     final registered = _registered[e.id]?.contains(user.id) ?? false;
     final visible = _manages(user, e) ||
+        _recordOf(user.id, e.id) != null ||
         (e.status != EventStatus.draft && (registered || _eligible(user, e)));
     return visible ? _detail(user, e) : null;
   }
@@ -624,6 +659,84 @@ class MockCampusService implements CampusService {
     return mockOrganizations.where((o) => memberOf.contains(o.name)).toList();
   }
 
+  // ---------- Event history and check-in ----------
+
+  @override
+  Future<List<EventRecord>> loadEventHistory(UserProfile user) async {
+    await _wait();
+    return [...?_history[user.id]]..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  @override
+  Future<EventCheckIn?> loadEventCheckIn(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null || !_manages(user, e)) return null;
+    final registrants = [
+      for (final id in _registered[eventId] ?? const <String>{})
+        ?_rosterStudent(id),
+    ]..sort((a, b) => a.name.compareTo(b.name));
+    return EventCheckIn(
+      event: e,
+      registrants: registrants,
+      present: {...?_eventPresent[eventId]},
+      finalized: _eventFinalized.contains(eventId),
+    );
+  }
+
+  @override
+  Future<ScanResult> recordEventScan(UserProfile user, String eventId, String qrToken,
+      {bool ignoreClock = false}) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null || !_manages(user, e)) throw StateError("You can't take attendance here.");
+    if (_eventFinalized.contains(eventId) || e.status != EventStatus.published) {
+      return const ScanResult(ScanOutcome.closed);
+    }
+    final now = clock();
+    // Check-in opens 30 minutes before the start and closes at the end.
+    if (!ignoreClock) {
+      if (now.isBefore(e.start.subtract(const Duration(minutes: 30)))) {
+        return const ScanResult(ScanOutcome.notOpenYet);
+      }
+      if (!now.isBefore(e.end)) return const ScanResult(ScanOutcome.closed);
+    }
+    final student = mockRosters.values
+        .expand((roster) => roster)
+        .where((s) => s.qrToken == qrToken)
+        .firstOrNull;
+    // Only registered students are marked (registration, then attendance).
+    if (student == null || !(_registered[eventId]?.contains(student.id) ?? false)) {
+      return const ScanResult(ScanOutcome.notEnrolled);
+    }
+    final present = _eventPresent.putIfAbsent(eventId, () => {});
+    return ScanResult(
+        present.add(student.id) ? ScanOutcome.present : ScanOutcome.duplicate, student);
+  }
+
+  @override
+  Future<int> finalizeEventAttendance(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _events[eventId];
+    if (e == null || !_manages(user, e)) throw StateError("You can't take attendance here.");
+    if (!_eventFinalized.add(eventId)) throw StateError('Attendance is already finalized.');
+    var added = 0;
+    for (final id in _eventPresent[eventId] ?? const <String>{}) {
+      if (_recordOf(id, eventId) != null) continue;
+      _history.putIfAbsent(id, () => []).add(EventRecord(
+            id: 'rec-$eventId-$id',
+            eventId: eventId,
+            eventName: e.title,
+            date: e.start,
+            imageAsset: e.coverAsset,
+            status: ParticipationStatus.attended,
+            role: EventRole.participant,
+          ));
+      added++;
+    }
+    return added;
+  }
+
   // ---------- Organizations ----------
 
   final _joinRequests = <String, Set<String>>{}; // org id → user ids
@@ -690,6 +803,12 @@ class MockCampusService implements CampusService {
     if (!_joinRequests.putIfAbsent(orgId, () => {}).add(user.id)) {
       throw StateError('You already asked to join.');
     }
+  }
+
+  @override
+  Future<List<SupportContact>> loadSupportContacts() async {
+    await _wait();
+    return mockSupportContacts;
   }
 
   // ---------- Clearance (in memory, this preview only) ----------

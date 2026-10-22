@@ -290,6 +290,7 @@ StatusPill? eventPill(EventDetail d, DateTime now) {
   final e = d.event;
   if (e.status == EventStatus.cancelled) return const StatusPill('Cancelled', tone: PillTone.red);
   if (e.status == EventStatus.draft) return const StatusPill('Draft');
+  if (d.record != null) return StatusPill(d.record!.status.label, tone: PillTone.green);
   if (d.registered) {
     if (!e.end.isAfter(now)) return const StatusPill('Registered');
     return d.invited

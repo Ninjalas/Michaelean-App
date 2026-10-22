@@ -5,10 +5,11 @@ import '../../models/user_profile.dart';
 import '../../services/session.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/inset_list.dart';
 import '../../widgets/segmented_pills.dart';
 
 /// Settings pop-up content (spec §11), shared by both roles: grouped,
-/// rounded inset lists in Luma's style. Unbuilt items open placeholders.
+/// rounded inset lists in Luma's style. Each item opens its own page.
 class SettingsSheet extends StatefulWidget {
   final UserService userService;
 
@@ -21,10 +22,10 @@ class SettingsSheet extends StatefulWidget {
 class _SettingsSheetState extends State<SettingsSheet> {
   bool _switching = false;
 
-  void _openSoon(String what) {
+  void _open(String path) {
     final router = GoRouter.of(context);
     router.pop(); // close the pop-up first
-    router.push(Uri(path: '/profile/soon', queryParameters: {'what': what}).toString());
+    router.push(path);
   }
 
   /// Preview tool only: swaps the sample account. Not sign-in, not security.
@@ -53,25 +54,25 @@ class _SettingsSheetState extends State<SettingsSheet> {
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.screen, AppSpacing.xs, AppSpacing.screen, AppSpacing.lg),
       children: [
-        _Group([
-          _Row('Personal Information', Icons.person_outline_rounded,
-              onTap: () => _openSoon('Personal Information')),
-          _Row('Account & Security', Icons.lock_outline_rounded,
-              onTap: () => _openSoon('Account & Security')),
-          _Row('Notifications', Icons.notifications_none_rounded,
-              onTap: () => _openSoon('Notifications')),
+        InsetGroup([
+          InsetRow('Personal Information', Icons.person_outline_rounded,
+              onTap: () => _open('/profile/personal')),
+          InsetRow('Account & Security', Icons.lock_outline_rounded,
+              onTap: () => _open('/profile/security')),
+          InsetRow('Notifications', Icons.notifications_none_rounded,
+              onTap: () => _open('/profile/notifications')),
         ]),
         const SizedBox(height: AppSpacing.md),
-        _Group([
-          _Row('Help & Support', Icons.help_outline_rounded,
-              onTap: () => _openSoon('Help & Support')),
-          _Row('About Michaelean', Icons.info_outline_rounded,
-              onTap: () => _openSoon('About Michaelean')),
+        InsetGroup([
+          InsetRow('Help & Support', Icons.help_outline_rounded,
+              onTap: () => _open('/profile/help')),
+          InsetRow('About Michaelean', Icons.info_outline_rounded,
+              onTap: () => _open('/profile/about')),
         ]),
         const SizedBox(height: AppSpacing.lg),
         Text('Preview tools', style: text.labelMedium?.copyWith(color: AppColors.muted)),
         const SizedBox(height: AppSpacing.sm),
-        _Group([
+        InsetGroup([
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
@@ -93,82 +94,13 @@ class _SettingsSheetState extends State<SettingsSheet> {
           ),
         ]),
         const SizedBox(height: AppSpacing.md),
-        _Group([
-          _Row('Log Out', Icons.logout_rounded,
+        InsetGroup([
+          InsetRow('Log Out', Icons.logout_rounded,
               color: AppColors.red,
               subtitle: 'Ends the preview and returns to sign-in',
               onTap: _logOut),
         ]),
       ],
-    );
-  }
-}
-
-/// A rounded, soft-gray group of rows with white dividers (iOS-style inset list).
-class _Group extends StatelessWidget {
-  final List<Widget> children;
-
-  const _Group(this.children);
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.fill,
-      borderRadius: BorderRadius.circular(AppRadius.large),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0)
-              const Divider(height: 1.5, thickness: 1.5, indent: 52, color: AppColors.white),
-            children[i],
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color color;
-  final String? subtitle;
-
-  const _Row(this.label, this.icon,
-      {required this.onTap, this.color = AppColors.ink, this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 52),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(width: AppSpacing.md + 2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(label, style: text.bodyLarge?.copyWith(color: color)),
-                    if (subtitle != null)
-                      Text(subtitle!, style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                  ],
-                ),
-              ),
-              if (color == AppColors.ink)
-                const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

@@ -112,6 +112,57 @@ List<CampusEvent> mockEvents(DateTime now) {
       venue: 'Main Grounds',
       description: 'Sample description.',
     ),
+    // Earlier events behind the sample Event History (mock_users.dart).
+    // Fixed dates: they happened before this preview.
+    CampusEvent(
+      id: 'past-git',
+      title: 'Commit. Push. Collaborate. Git seminar',
+      host: _css,
+      hostLogo: _cssLogo,
+      start: DateTime(2026, 1, 30, 13),
+      end: DateTime(2026, 1, 30, 16),
+      venue: 'Saint Theodore Hall · Lab 2',
+      coverAsset: 'assets/images/events/css_commitevent.jpg',
+      audience: _css,
+      description: 'Sample description. A hands-on seminar on committing, pushing, and '
+          'working together on a shared repository.',
+    ),
+    CampusEvent(
+      id: 'past-startup',
+      title: 'Start-up pitching talk',
+      host: _css,
+      hostLogo: _cssLogo,
+      start: DateTime(2025, 11, 14, 14),
+      end: DateTime(2025, 11, 14, 17),
+      venue: 'Milagros Limaco Hall',
+      coverAsset: 'assets/images/events/css_startupevent.jpg',
+      audience: _css,
+      description: 'Sample description. Student teams pitched start-up ideas to a panel.',
+    ),
+    CampusEvent(
+      id: 'past-iris',
+      title: 'Machine learning with the Iris dataset',
+      host: _css,
+      hostLogo: _cssLogo,
+      start: DateTime(2025, 9, 26, 13),
+      end: DateTime(2025, 9, 26, 16),
+      venue: 'Saint Theodore Hall · Lab 1',
+      coverAsset: 'assets/images/events/css_unpackingevent.jpg',
+      audience: _css,
+      description: 'Sample description. A first look at machine learning with a classic '
+          'dataset.',
+    ),
+    CampusEvent(
+      id: 'past-webdev',
+      title: 'Web development bootcamp',
+      host: _dcs,
+      start: DateTime(2025, 8, 22, 9),
+      end: DateTime(2025, 8, 22, 16),
+      venue: 'Saint Theodore Hall · Lab 2',
+      audience: _dcs,
+      managerIds: {mockTeacher.id},
+      description: 'Sample description. A one-day bootcamp on building websites.',
+    ),
     CampusEvent(
       id: 'ev9',
       title: 'CS Week Opening Talk',
@@ -131,7 +182,12 @@ List<CampusEvent> mockEvents(DateTime now) {
 /// a listed roster student.
 const mockOtherRegistrations = {
   'ev1': 87, 'ev3': 240, 'ev4': 31, 'ev5': 60, 'ev6': 40, 'ev8': 52,
+  'past-git': 64, 'past-startup': 118, 'past-iris': 45,
 };
+
+/// Events whose attendance was already finalized before this preview (their
+/// records are the sample Event History).
+const mockFinalizedEvents = {'past-git', 'past-startup', 'past-iris', 'past-webdev'};
 
 /// Registrations at start: event id → student ids. The mock student is
 /// registered for the opening ceremony and a past cleanup day.
@@ -335,3 +391,36 @@ final mockPastClearances = {
 /// Clearance office per staff user id. Mock assumption: Mark processes the
 /// Department of Computer Studies requirements.
 final mockClearanceOffices = <String, String>{mockTeacher.id: _dcs};
+
+/// MOCK office contacts for Help & Support. Rooms, hours, and local numbers
+/// are invented; the real directory will come from the school.
+const mockSupportContacts = [
+  SupportContact(
+    office: "Registrar's Office",
+    helpsWith: 'Personal information, IDs, records',
+    place: 'Pura Limaco Hall I · Ground floor',
+    hours: 'Mon–Fri, 8:00 AM – 5:00 PM',
+    contact: 'Local 101 (sample)',
+  ),
+  SupportContact(
+    office: 'Office of Student Affairs',
+    helpsWith: 'Events, organizations, school IDs',
+    place: 'Milagros Limaco Hall · 102',
+    hours: 'Mon–Sat, 8:00 AM – 5:00 PM',
+    contact: 'Local 120 (sample)',
+  ),
+  SupportContact(
+    office: 'Guidance Office',
+    helpsWith: 'Counseling, exit surveys',
+    place: 'Pura Limaco Hall I · 110',
+    hours: 'Mon–Fri, 8:00 AM – 5:00 PM',
+    contact: 'Local 130 (sample)',
+  ),
+  SupportContact(
+    office: 'IT Help Desk',
+    helpsWith: 'Microsoft 365 account, the Michaelean app',
+    place: 'Saint Theodore Hall · Lab 3',
+    hours: 'Mon–Fri, 8:00 AM – 6:00 PM',
+    contact: 'Local 150 (sample)',
+  ),
+];

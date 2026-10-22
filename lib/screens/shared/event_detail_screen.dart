@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 
 import '../../models/campus.dart';
@@ -70,8 +71,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  void _share() => ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Sharing isn't available in this preview.")));
+  /// Copies the event's name, date, time, and venue as plain text. No link:
+  /// the app isn't online yet.
+  Future<void> _share(CampusEvent e) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(ClipboardData(
+      text: '${e.title}\n${_when(e)}\n${e.venue}\n(Shared from the Michaelean prototype)',
+    ));
+    messenger.showSnackBar(const SnackBar(content: Text('Event details copied.')));
+  }
+
+  /// "Friday, 23 October · 3:00 PM – 5:00 PM", with the year when it isn't this year.
+  String _when(CampusEvent e) {
+    final day = e.start.year == DateTime.now().year
+        ? '${weekdayName(e.start)}, ${formatDayMonth(e.start)}'
+        : '${weekdayName(e.start)}, ${formatDate(e.start)}';
+    return '$day · ${formatTime(e.start)} – ${formatTime(e.end)}';
+  }
 
   Future<void> _cancelEvent() async {
     final user = SessionScope.of(context).user!;
@@ -107,6 +123,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     final user = SessionScope.of(context).user!;
     final items = <(IconData, String, VoidCallback, bool)>[
       if (d.canManage) ...[
+        if (e.status == EventStatus.published && !d.attendanceFinalized)
+          (Icons.qr_code_scanner_rounded, 'Take attendance',
+              () => context.push('/life/events/${e.id}/checkin'), false),
         (Icons.people_outline_rounded, 'View registrations',
             () => context.push('/life/events/${e.id}/registrations'), false),
         if (e.status != EventStatus.cancelled && upcoming)
@@ -214,11 +233,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             _Action(Icons.more_horiz_rounded, 'More', () => _more(d)),
           ]
         : [
-            d.registered
+            d.record != null
+                ? _Action(Icons.verified_outlined, d.record!.status.label, null)
+                : d.registered
                 ? const _Action(Icons.check_circle_outline_rounded, 'Registered', null)
+                : !e.end.isAfter(now)
+                ? const _Action(Icons.event_busy_outlined, 'Ended', null)
                 : _Action(Icons.how_to_reg_outlined, _busy ? 'Registering…' : 'Register',
                     d.closedReason != null || _busy ? null : _register),
-            _Action(Icons.ios_share_rounded, 'Share', _share),
+            _Action(Icons.ios_share_rounded, 'Share', () => _share(e)),
             _Action(Icons.more_horiz_rounded, 'More', () => _more(d)),
           ];
 
@@ -245,13 +268,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
         Text(e.title, style: text.headlineSmall),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          '${weekdayName(e.start)}, ${formatDayMonth(e.start)} · '
-          '${formatTime(e.start)} – ${formatTime(e.end)}',
-          style: muted,
-        ),
+        Text(_when(e), style: muted),
         const SizedBox(height: AppSpacing.sm),
-        if (d.registered && e.status == EventStatus.published)
+        // The official record, when there is one; registration isn't attendance.
+        if (d.record != null)
+          _statusLine(Icons.verified_rounded,
+              'Your record: ${d.record!.status.label} · ${d.record!.role.label}')
+        else if (d.registered && !e.end.isAfter(now) && !d.canManage)
+          Text('You registered, but no attendance was recorded.', style: muted)
+        else if (d.registered && e.status == EventStatus.published)
           Row(
             children: [
               const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.green),
@@ -266,6 +291,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           )
         else if (d.closedReason != null && !d.canManage)
           Text(d.closedReason!, style: muted),
+        if (d.canManage && e.status == EventStatus.published && !upcoming) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            d.attendanceFinalized
+                ? 'Attendance finalized · ${d.attendedCount} attended'
+                : 'Attendance not finalized yet. Use More › Take attendance.',
+            style: muted,
+          ),
+        ],
         if (e.updateNote != null && e.status == EventStatus.published) ...[
           const SizedBox(height: AppSpacing.md),
           Container(
@@ -365,6 +399,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       ],
     );
   }
+
+  Widget _statusLine(IconData icon, String s) => Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.green),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(s,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.green)),
+          ),
+        ],
+      );
 
   Widget _label(String s) => Padding(
         padding: const EdgeInsets.only(top: AppSpacing.section, bottom: AppSpacing.sm),

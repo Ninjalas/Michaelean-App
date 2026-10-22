@@ -81,6 +81,7 @@ class AppNotification {
   final NotificationKind kind;
   final String? postId; // opens this post
   final String? route; // or opens this screen; neither → "Coming soon"
+  final bool urgent; // always shown, even when its kind is switched off
 
   const AppNotification({
     required this.id,
@@ -89,6 +90,7 @@ class AppNotification {
     this.kind = NotificationKind.announcement,
     this.postId,
     this.route,
+    this.urgent = false,
   });
 }
 

@@ -188,16 +188,6 @@ const mockTasks = [
   ),
 ];
 
-/// Home's student stats. Class attendance is not here: it is counted from
-/// finalized attendance records (see CampusService.loadMyAttendance).
-const mockAttendance = AttendanceSummary(
-  classPercent: 0, // replaced by the counted value
-  eventPercent: 80,
-  eventsCompleted: 5,
-  requirementsCleared: 0, // replaced by the counted clearance values
-  requirementsTotal: 0,
-);
-
 const mockTeacherTasks = [
   PendingTask(
     id: 't3',
@@ -241,6 +231,7 @@ List<AppNotification> mockNotifications(DateTime now) => [
         title: "Computer Science Society: Venue change for Friday's meeting",
         time: now.subtract(const Duration(hours: 1)),
         postId: 'o1',
+        urgent: true, // the post is marked URGENT
       ),
       AppNotification(
         id: 'm2',

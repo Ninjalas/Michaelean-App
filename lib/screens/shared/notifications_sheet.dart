@@ -3,12 +3,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/feed.dart';
 import '../../services/home_service.dart';
+import '../../services/notification_prefs.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 
 /// Recent notifications, shown inside the shared pop-up and grouped into
 /// Today / Earlier (spec §6). Opening one only navigates; it changes no record.
+/// Types switched off in Settings are hidden, except urgent ones.
 class NotificationsSheet extends StatefulWidget {
   final HomeService homeService;
 
@@ -20,11 +22,28 @@ class NotificationsSheet extends StatefulWidget {
 
 class _NotificationsSheetState extends State<NotificationsSheet> {
   Future<List<AppNotification>>? _items;
+  int _hidden = 0; // switched off in Settings
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _items ??= widget.homeService.loadNotifications(SessionScope.of(context).user!);
+    _items ??= _load();
+  }
+
+  Future<List<AppNotification>> _load() async {
+    final (all, muted) = await (
+      widget.homeService.loadNotifications(SessionScope.of(context).user!),
+      NotificationPrefs.muted(),
+    ).wait;
+    final shown = all.where((n) => n.urgent || !muted.contains(n.kind)).toList();
+    _hidden = all.length - shown.length;
+    return shown;
+  }
+
+  void _openSettings() {
+    final router = GoRouter.of(context);
+    router.pop(); // close the pop-up first
+    router.go('/profile/notifications');
   }
 
   void _open(AppNotification n) {
@@ -55,9 +74,16 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
           );
         }
         if (items.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(AppSpacing.screen),
-            child: Text('No notifications yet.'),
+          return Padding(
+            padding: const EdgeInsets.all(AppSpacing.screen),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('No notifications yet.'),
+                if (_hidden > 0) _hiddenNote(),
+              ],
+            ),
           );
         }
         bool isToday(DateTime t) =>
@@ -71,11 +97,30 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
           children: [
             if (today.isNotEmpty) ..._group('Today', today, now),
             if (earlier.isNotEmpty) ..._group('Earlier', earlier, now),
+            if (_hidden > 0) _hiddenNote(),
           ],
         );
       },
     );
   }
+
+  Widget _hiddenNote() => Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.md),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$_hidden hidden by your notification settings.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.muted),
+              ),
+            ),
+            TextButton(onPressed: _openSettings, child: const Text('Change')),
+          ],
+        ),
+      );
 
   List<Widget> _group(String label, List<AppNotification> items, DateTime now) {
     final text = Theme.of(context).textTheme;

@@ -67,16 +67,22 @@ class MockHomeService implements HomeService {
     if (user.role == UserRole.student) {
       final records = await campus.loadMyAttendance(user);
       final present = records.where((r) => r.mark == AttendanceMark.present).length;
-      final a = mockAttendance;
       // Clearance stat and tasks come from the Clearance screen's data.
       final clearance = (await campus.loadClearanceView(user)).active;
+      // Event stats come from official records (registration isn't attendance):
+      // attended ÷ past events the student registered for or attended.
+      final history = await campus.loadEventHistory(user);
+      final pastMine = (await campus.loadEvents(user, EventList.mine))
+          .where((d) => !d.event.end.isAfter(now))
+          .toList();
+      final attendedPast = pastMine.where((d) => d.record != null).length;
       const studentTodo = {ClearanceStatus.needsCorrection, ClearanceStatus.actionRequired};
       return HomeFeed(
         attendance: AttendanceSummary(
           // Finalized records only (spec §7.2).
           classPercent: records.isEmpty ? 0 : (present * 100 / records.length).round(),
-          eventPercent: a.eventPercent,
-          eventsCompleted: a.eventsCompleted,
+          eventPercent: pastMine.isEmpty ? 0 : (attendedPast * 100 / pastMine.length).round(),
+          eventsCompleted: history.length,
           requirementsCleared: clearance?.cleared ?? 0,
           requirementsTotal: clearance?.applicable.length ?? 0,
         ),

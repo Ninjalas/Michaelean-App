@@ -33,6 +33,7 @@ flutter:
     - assets/images/events/css_commitevent.jpg
     - assets/images/events/css_startupevent.jpg
     - assets/images/events/css_unpackingevent.jpg
+    - assets/fonts/Inter-OFL.txt # shown in About › Open-source licenses
 
   fonts:
     - family: Inter

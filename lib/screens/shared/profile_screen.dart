@@ -53,13 +53,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<_ProfileData> _load(UserProfile user) async {
     if (user.role == UserRole.student) {
       final (history, orgs) = await (
-        widget.userService.loadEventHistory(user),
+        widget.campusService.loadEventHistory(user),
         widget.campusService.loadMyOrganizations(user),
       ).wait;
       return _ProfileData(history: history, orgCount: orgs.length);
     }
     final (history, classes) = await (
-      widget.userService.loadEventHistory(user),
+      widget.campusService.loadEventHistory(user),
       widget.campusService.loadClasses(user),
     ).wait;
     // The schedule repeats a class on several days; list each class once.
@@ -70,9 +70,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ];
     return _ProfileData(history: history, teaching: teaching);
   }
-
-  void _openSoon(String what) => context
-      .push(Uri(path: '/profile/soon', queryParameters: {'what': what}).toString());
 
   @override
   Widget build(BuildContext context) {
@@ -168,12 +165,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     for (final e in data.history)
                       ContentRow(
                         title: e.eventName,
-                        meta: '${formatDate(e.date)} · ${_roleLabel(e.role)}',
+                        meta: '${formatDate(e.date)} · ${e.role.label}',
                         metaIcon: Icons.calendar_today_outlined,
                         imageAsset: e.imageAsset,
                         placeholderIcon: Icons.event_outlined,
-                        pill: StatusPill(_statusLabel(e.status), tone: PillTone.green),
-                        onTap: () => _openSoon(e.eventName),
+                        pill: StatusPill(e.status.label, tone: PillTone.green),
+                        onTap: () => context.push('/profile/event/${e.eventId}'),
                       ),
                   ]),
               ],
@@ -241,15 +238,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TagKind.officer => PillTone.red,
       };
 
-  String _statusLabel(ParticipationStatus s) => switch (s) {
-        ParticipationStatus.attended => 'Attended',
-        ParticipationStatus.participated => 'Participated',
-      };
-
-  String _roleLabel(EventRole r) => switch (r) {
-        EventRole.participant => 'Participant',
-        EventRole.organizer => 'Organizer',
-        EventRole.host => 'Host',
-        EventRole.volunteer => 'Volunteer',
-      };
 }

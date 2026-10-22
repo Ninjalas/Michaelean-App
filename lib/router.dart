@@ -1,14 +1,19 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import 'screens/shared/about_screen.dart';
+import 'screens/shared/account_security_screen.dart';
 import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/edit_profile_screen.dart';
 import 'screens/shared/event_detail_screen.dart';
 import 'screens/shared/events_screen.dart';
+import 'screens/shared/help_screen.dart';
 import 'screens/shared/home_screen.dart';
 import 'screens/shared/life_hub_screen.dart';
+import 'screens/shared/notification_settings_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
+import 'screens/shared/personal_info_screen.dart';
 import 'screens/shared/opening_screen.dart';
 import 'screens/shared/profile_screen.dart';
 import 'screens/shared/qr_sheet.dart';
@@ -25,6 +30,7 @@ import 'screens/teacher/classes_screen.dart';
 import 'screens/teacher/clearance_case_screen.dart';
 import 'screens/teacher/clearance_desk_screen.dart';
 import 'screens/teacher/edit_session_screen.dart';
+import 'screens/teacher/event_checkin_screen.dart';
 import 'screens/teacher/event_form_screen.dart';
 import 'screens/teacher/event_invite_screen.dart';
 import 'screens/teacher/event_registrations_screen.dart';
@@ -243,6 +249,14 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                           ),
                         ),
                         GoRoute(
+                          path: 'checkin',
+                          parentNavigatorKey: rootKey, // full-screen scanner
+                          builder: (context, state) => EventCheckInScreen(
+                            campusService: campusService,
+                            eventId: state.pathParameters['eventId']!,
+                          ),
+                        ),
+                        GoRoute(
                           path: 'registrations',
                           builder: (context, state) => EventRegistrationsScreen(
                             campusService: campusService,
@@ -271,17 +285,31 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     child: SettingsSheet(userService: userService),
                   ),
                 ),
+                // An event from Event History, opened inside the Profile tab.
+                GoRoute(
+                  path: 'event/:eventId',
+                  builder: (context, state) => EventDetailScreen(
+                    campusService: campusService,
+                    eventId: state.pathParameters['eventId']!,
+                  ),
+                ),
                 GoRoute(
                   path: 'edit',
                   parentNavigatorKey: rootKey, // full page over the nav bar (Save sits at the bottom)
                   builder: (context, state) => const EditProfileScreen(),
                 ),
+                // Settings pages (spec §11).
                 GoRoute(
-                  path: 'soon',
-                  builder: (context, state) => ComingSoonScreen(
-                    title: state.uri.queryParameters['what'] ?? 'Coming soon',
-                  ),
-                ),
+                    path: 'personal', builder: (context, state) => const PersonalInfoScreen()),
+                GoRoute(
+                    path: 'security', builder: (context, state) => const AccountSecurityScreen()),
+                GoRoute(
+                    path: 'notifications',
+                    builder: (context, state) => const NotificationSettingsScreen()),
+                GoRoute(
+                    path: 'help',
+                    builder: (context, state) => HelpScreen(campusService: campusService)),
+                GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
               ],
             ),
           ]),

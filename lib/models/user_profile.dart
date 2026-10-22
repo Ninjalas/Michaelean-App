@@ -27,6 +27,7 @@ class UserProfile {
   final String lastName;
   final String designation; // e.g. "BS Computer Science · 3rd Year"
   final String maskedId; // never store or show the full ID in the prototype
+  final String email; // school account email (sample addresses in the prototype)
   final String qrToken; // random mock token, never personal data
   final String? photoAsset; // null → show initials
   final String? about; // optional short bio the user can edit
@@ -40,6 +41,7 @@ class UserProfile {
     required this.lastName,
     required this.designation,
     required this.maskedId,
+    required this.email,
     required this.qrToken,
     this.photoAsset,
     this.about,
@@ -58,6 +60,7 @@ class UserProfile {
         lastName: lastName,
         designation: designation,
         maskedId: maskedId,
+        email: email,
         qrToken: qrToken,
         photoAsset: photoAsset,
         about: about,
