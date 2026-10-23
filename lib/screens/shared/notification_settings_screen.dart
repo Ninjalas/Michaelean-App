@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/feed.dart';
 import '../../services/notification_prefs.dart';
+import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/inset_list.dart';
@@ -38,8 +39,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   Future<void> _set(NotificationKind kind, bool on) async {
     final messenger = ScaffoldMessenger.of(context);
+    final session = SessionScope.of(context);
     setState(() => on ? _muted!.remove(kind) : _muted!.add(kind));
-    if (!await NotificationPrefs.set(kind, on)) {
+    if (await NotificationPrefs.set(kind, on)) {
+      session.refresh(); // the bell's dot counts only shown types
+    } else {
       // Say so, and put the switch back: it wasn't saved.
       if (mounted) setState(() => on ? _muted!.add(kind) : _muted!.remove(kind));
       messenger.showSnackBar(

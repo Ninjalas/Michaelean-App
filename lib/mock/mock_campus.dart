@@ -230,13 +230,8 @@ const mockOrganizations = [
           when: 'Every Wednesday · 4:30 PM',
           place: 'Saint Theodore Hall · Lab 2'),
     ],
-    officers: [
-      OrgOfficer(name: 'Andrea Bautista', position: 'President'),
-      OrgOfficer(name: 'Carlo Mendoza', position: 'Vice President'),
-      OrgOfficer(name: 'Erika Lim', position: 'Secretary'),
-      OrgOfficer(name: 'Mark Villanueva', position: 'Adviser',
-          photoAsset: 'assets/images/profiles/Sir_Georgio.png'),
-    ],
+    // Officers come from its member list (mockClubMembers) and advisers.
+    adviserIds: [mockTeacherId],
   ),
   Organization(
     id: 'org2',
@@ -278,6 +273,18 @@ const mockOrganizations = [
           place: 'Chapel Hall'),
     ],
   ),
+  Organization(
+    id: 'org6',
+    name: 'SMCL Robotics Club',
+    memberCount: 6,
+    about: 'Sample description. Students who build and program robots, and '
+        'join inter-school robotics challenges.',
+    meetings: [
+      OrgMeeting(title: 'Build session', when: 'Every Thursday · 4:00 PM',
+          place: 'Saint Theodore Hall · Lab 2'),
+    ],
+    adviserIds: [mockTeacherId],
+  ),
   // Another department's society: never listed as a school-wide club.
   Organization(
     id: 'org5',
@@ -288,6 +295,38 @@ const mockOrganizations = [
     about: 'Sample description.',
   ),
 ];
+
+/// MOCK club member lists for the clubs that have an adviser in this
+/// preview: student id → officer position (null for a plain member). Names
+/// come from the sample class rosters. Mark advises both clubs (mock
+/// assumption, decided 2026-10-23). Other clubs keep using membership tags.
+const mockClubMembers = <String, Map<String, String?>>{
+  'org1': {
+    'mock-student-1': null, // Nicolas
+    'stu-BSCS3A1': 'President', // Andrea Bautista
+    'stu-BSCS3A2': 'Vice President', // Carlo Mendoza
+    'stu-BSCS3A5': 'Secretary', // Erika Lim
+    'stu-BSCS3A6': null,
+    'stu-BSCS3A9': null,
+    'stu-BSCS2A1': null,
+    'stu-BSCS2A2': null,
+    'stu-BSCS3B1': null,
+  },
+  'org6': {
+    'stu-BSCS3A4': 'President', // Diego Ramos
+    'stu-BSCS3A10': null,
+    'stu-BSCS2A6': null,
+    'stu-BSCS2A7': null,
+    'stu-BSCS3B2': null,
+    'stu-BSCS3B12': null,
+  },
+};
+
+/// MOCK students waiting for an answer to "Request to join", oldest first.
+const mockJoinRequests = <String, List<String>>{
+  'org1': ['stu-BSCS3B3', 'stu-BSCS2A10'],
+  'org6': ['stu-BSCS3A11', 'stu-BSCS3B4', 'stu-BSCS2A9'],
+};
 
 /// MOCK clearance requirements for the active period. Offices, wording, and
 /// which requirements apply are invented sample data, not school policy.

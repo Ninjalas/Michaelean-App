@@ -27,19 +27,25 @@ import 'screens/teacher/attendance_review_screen.dart';
 import 'screens/teacher/attendance_scan_screen.dart';
 import 'screens/teacher/class_detail_screen.dart';
 import 'screens/teacher/classes_screen.dart';
+import 'screens/teacher/club_add_member_screen.dart';
+import 'screens/teacher/club_info_screen.dart';
+import 'screens/teacher/club_manage_screen.dart';
 import 'screens/teacher/clearance_case_screen.dart';
 import 'screens/teacher/clearance_desk_screen.dart';
+import 'screens/teacher/create_menu.dart';
 import 'screens/teacher/edit_session_screen.dart';
 import 'screens/teacher/event_checkin_screen.dart';
 import 'screens/teacher/event_form_screen.dart';
 import 'screens/teacher/event_invite_screen.dart';
 import 'screens/teacher/event_registrations_screen.dart';
+import 'screens/teacher/post_form_screen.dart';
 import 'screens/shared/post_detail_screen.dart';
 import 'screens/shared/preview_screen.dart';
 import 'services/campus_service.dart';
 import 'services/home_service.dart';
 import 'services/session.dart';
 import 'services/user_service.dart';
+import 'models/feed.dart';
 import 'widgets/app_sheet.dart';
 
 /// All app routes. The app opens on the opening intro, then the sign-in
@@ -107,6 +113,35 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                   builder: (context, state) => PostDetailScreen(
                     postId: state.pathParameters['id']!,
                     homeService: homeService,
+                  ),
+                  routes: [
+                    GoRoute(
+                      path: 'edit',
+                      parentNavigatorKey: rootKey,
+                      builder: (context, state) => PostFormScreen(
+                        homeService: homeService,
+                        campusService: campusService,
+                        postId: state.pathParameters['id']!,
+                      ),
+                    ),
+                  ],
+                ),
+                // The + menu and the post form cover the nav bar too.
+                GoRoute(
+                  path: 'create',
+                  parentNavigatorKey: rootKey,
+                  pageBuilder: (context, state) => CreateMenuPage(
+                    key: state.pageKey,
+                    bottom: state.extra as double? ?? 100, // no extra after a browser reload
+                  ),
+                ),
+                GoRoute(
+                  path: 'compose/:kind',
+                  parentNavigatorKey: rootKey,
+                  builder: (context, state) => PostFormScreen(
+                    homeService: homeService,
+                    campusService: campusService,
+                    kind: PostKind.values.asNameMap()[state.pathParameters['kind']],
                   ),
                 ),
                 GoRoute(
@@ -192,6 +227,49 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                 // Organizations (spec §7.4). An event opened from an
                 // organization is pushed on top, so Back returns to it.
                 GoRoute(
+                  // Manage club, for the club's adviser (decided 2026-10-23).
+                  path: 'clubs/:orgId',
+                  builder: (context, state) => ClubManageScreen(
+                    campusService: campusService,
+                    homeService: homeService,
+                    orgId: state.pathParameters['orgId']!,
+                  ),
+                  routes: [
+                    GoRoute(
+                      path: 'add',
+                      builder: (context, state) => ClubAddMemberScreen(
+                        campusService: campusService,
+                        orgId: state.pathParameters['orgId']!,
+                      ),
+                    ),
+                    GoRoute(
+                      path: 'info',
+                      parentNavigatorKey: rootKey,
+                      builder: (context, state) => ClubInfoScreen(
+                        campusService: campusService,
+                        orgId: state.pathParameters['orgId']!,
+                      ),
+                    ),
+                    GoRoute(
+                      path: 'post',
+                      parentNavigatorKey: rootKey,
+                      builder: (context, state) => PostFormScreen(
+                        homeService: homeService,
+                        campusService: campusService,
+                        orgId: state.pathParameters['orgId']!,
+                      ),
+                    ),
+                    GoRoute(
+                      path: 'event',
+                      parentNavigatorKey: rootKey,
+                      builder: (context, state) => EventFormScreen(
+                        campusService: campusService,
+                        hostOrgId: state.pathParameters['orgId']!,
+                      ),
+                    ),
+                  ],
+                ),
+                GoRoute(
                   path: 'organizations',
                   builder: (context, state) =>
                       OrganizationsScreen(campusService: campusService),
@@ -200,11 +278,24 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       path: ':orgId',
                       builder: (context, state) => OrganizationScreen(
                         campusService: campusService,
+                        homeService: homeService,
                         orgId: state.pathParameters['orgId']!,
                       ),
                       routes: [
                         GoRoute(
                           path: 'post/:postId',
+                          routes: [
+                            // A club post its adviser wrote in this preview.
+                            GoRoute(
+                              path: 'edit',
+                              parentNavigatorKey: rootKey,
+                              builder: (context, state) => PostFormScreen(
+                                homeService: homeService,
+                                campusService: campusService,
+                                postId: state.pathParameters['postId']!,
+                              ),
+                            ),
+                          ],
                           builder: (context, state) => PostDetailScreen(
                             postId: state.pathParameters['postId']!,
                             homeService: homeService,

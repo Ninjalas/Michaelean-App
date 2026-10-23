@@ -1,15 +1,53 @@
+import 'dart:async';
+
+import '../mock/mock_campus.dart' show mockEventCovers;
 import '../mock/mock_home.dart';
 import '../models/attendance.dart';
 import '../models/campus.dart';
 import '../models/feed.dart';
 import '../models/user_profile.dart';
 import 'campus_service.dart';
+import 'notification_prefs.dart';
 
 /// Where Home content comes from. Screens use this, not mock data directly.
 abstract class HomeService {
   Future<HomeFeed> loadHome(UserProfile user);
   Future<Post?> findPost(String id);
   Future<List<AppNotification>> loadNotifications(UserProfile user);
+
+  /// Marks these notifications read for [user].
+  Future<void> markNotificationsRead(UserProfile user, Iterable<String> ids);
+
+  /// Unread notifications the bell shows (switched-off types don't count).
+  Future<int> countUnread(UserProfile user);
+
+  /// Sample photos a post can use as its cover.
+  List<String> get postCovers;
+
+  /// Posts to the campus feed, or edits [postId] (the user's own post). Needs
+  /// [Permission.postToCampusFeed], or for a club post ([orgId]) being that
+  /// club's adviser. Preview only. [audience] is a tag label and [classId] a
+  /// class; both null → everyone.
+  Future<Post> savePost(
+    UserProfile user, {
+    String? postId,
+    String? orgId,
+    required PostKind kind,
+    required String title,
+    required String body,
+    String? audience,
+    String? classId,
+    required String sentTo,
+    bool urgent = false,
+    String? imageAsset,
+  });
+
+  /// Deletes the user's own post.
+  Future<void> deletePost(UserProfile user, String postId);
+
+  /// Posts made for a club in this preview that [user] may see (its advisers
+  /// see them all), newest first.
+  Future<List<Post>> loadClubPosts(UserProfile user, String orgId);
 }
 
 /// The class happening now or next; null when nothing is scheduled ahead.
@@ -43,26 +81,31 @@ class MockHomeService implements HomeService {
     if (fail) throw Exception('Mock load failure');
 
     final now = clock();
-    final myTags = user.tags.map((t) => t.label).toSet();
-    final visible = mockPosts(now)
-        .where((p) => p.audience == null || myTags.contains(p.audience))
+    final classes = await campus.loadClasses(user);
+    final canSee = _audienceOf(user, classes);
+    final visible = _allPosts(now)
+        .where((p) => p.authorId == user.id || canSee(p))
         .toList()
       ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
     List<Post> ofKind(PostKind k) => visible.where((p) => p.kind == k).toList();
+    // Urgent announcements first; each part stays newest first.
+    final announcements = [
+      ...ofKind(PostKind.announcement).where((p) => p.urgent),
+      ...ofKind(PostKind.announcement).where((p) => !p.urgent),
+    ];
 
     final news = ofKind(PostKind.schoolNews);
     final personal = visible.where((p) => const {
           PostKind.departmentNews,
           PostKind.organizationNews,
           PostKind.eventUpdate,
+          PostKind.campusUpdate,
         }.contains(p.kind));
     // Urgent first (pinned), then the rest; each part stays newest first.
     final campusFeed = [
       ...personal.where((p) => p.urgent),
       ...personal.where((p) => !p.urgent),
     ];
-
-    final classes = await campus.loadClasses(user);
 
     if (user.role == UserRole.student) {
       final records = await campus.loadMyAttendance(user);
@@ -101,11 +144,10 @@ class MockHomeService implements HomeService {
               ),
           ...mockTasks,
         ],
-        announcements: ofKind(PostKind.announcement),
+        announcements: announcements,
         featuredNews: news.isEmpty ? null : news.first,
         moreNews: news.skip(1).toList(),
         campusFeed: campusFeed,
-        notifications: mockNotifications(now),
       );
     }
 
@@ -131,11 +173,10 @@ class MockHomeService implements HomeService {
           ),
         ...mockTeacherTasks,
       ],
-      announcements: ofKind(PostKind.announcement),
+      announcements: announcements,
       featuredNews: news.isEmpty ? null : news.first,
       moreNews: news.skip(1).toList(),
       campusFeed: campusFeed,
-      notifications: mockTeacherNotifications(now),
     );
   }
 
@@ -143,19 +184,161 @@ class MockHomeService implements HomeService {
   Future<List<AppNotification>> loadNotifications(UserProfile user) async {
     await Future.delayed(delay);
     if (fail) throw Exception('Mock load failure');
-    return user.role == UserRole.student
-        ? mockNotifications(clock())
-        : mockTeacherNotifications(clock());
+    final canSee = _audienceOf(user, await campus.loadClasses(user));
+    final all = [
+      ...user.role == UserRole.student
+          ? mockNotifications(clock())
+          : mockTeacherNotifications(clock()),
+      // Urgent announcements and club posts made in this preview notify their
+      // audience (not the author). Deleting the post or switching Urgent off
+      // removes it.
+      for (final p in _posted)
+        if (p.urgent && p.authorId != user.id && canSee(p))
+          AppNotification(
+            // A new id per version, so an edit shows as unread again.
+            id: 'post-${p.id}-v${_postVersions[p.id] ?? 0}',
+            kind: p.orgId != null ? NotificationKind.organization : NotificationKind.announcement,
+            title: '${p.edited ? 'Updated' : 'Urgent'}: '
+                '${p.orgId != null ? '${p.source}: ' : ''}${p.title}',
+            time: _notifiedAt[p.id] ?? p.publishedAt,
+            postId: p.id,
+            urgent: true,
+          ),
+      // Accepted, declined, added, or removed by a club adviser.
+      ...await campus.loadMembershipNotices(user),
+    ]..sort((a, b) => b.time.compareTo(a.time));
+    final read = await _readFor(user.id);
+    return [for (final n in all) n.read || read.contains(n.id) ? n.markedRead() : n];
+  }
+
+  /// Read notification ids per user: loaded once from this device, then kept here.
+  final _read = <String, Future<Set<String>>>{};
+
+  Future<Set<String>> _readFor(String userId) =>
+      _read[userId] ??= NotificationPrefs.readIds(userId);
+
+  @override
+  Future<void> markNotificationsRead(UserProfile user, Iterable<String> ids) async {
+    final read = await _readFor(user.id);
+    read.addAll(ids);
+    // Saving is best effort; if storage is blocked, it stays read until reload.
+    unawaited(NotificationPrefs.saveReadIds(user.id, read));
+  }
+
+  @override
+  Future<int> countUnread(UserProfile user) async {
+    final (all, muted) = await (loadNotifications(user), NotificationPrefs.muted()).wait;
+    return all.where((n) => !n.read && NotificationPrefs.shows(n, muted)).length;
   }
 
   @override
   Future<Post?> findPost(String id) async {
     await Future.delayed(delay);
     if (fail) throw Exception('Mock load failure');
-    for (final p in mockPosts(clock())) {
+    for (final p in _allPosts(clock())) {
       if (p.id == id) return p;
     }
     return null;
+  }
+
+  /// Posts made in this preview, newest first. Kept in memory only.
+  final _posted = <Post>[];
+  int _nextPostId = 0;
+  final _postVersions = <String, int>{}; // edits per post
+  final _notifiedAt = <String, DateTime>{}; // last post or edit, for its notification
+
+  /// Whether [user] is in a post's audience: its tag (department, organization)
+  /// and its class, when it has them.
+  bool Function(Post) _audienceOf(UserProfile user, List<ClassSession> classes) {
+    final myTags = user.tags.map((t) => t.label).toSet();
+    final myClasses = classes.map((c) => c.classId).toSet();
+    return (p) =>
+        (p.audience == null || myTags.contains(p.audience)) &&
+        (p.classId == null || myClasses.contains(p.classId));
+  }
+
+  List<Post> _allPosts(DateTime now) => [..._posted, ...mockPosts(now)];
+
+  @override
+  List<String> get postCovers => mockEventCovers;
+
+  @override
+  Future<Post> savePost(
+    UserProfile user, {
+    String? postId,
+    String? orgId,
+    required PostKind kind,
+    required String title,
+    required String body,
+    String? audience,
+    String? classId,
+    required String sentTo,
+    bool urgent = false,
+    String? imageAsset,
+  }) async {
+    await Future.delayed(delay);
+    if (fail) throw Exception('Mock save failure');
+    // A club post needs the club's adviser; anything else the posting permission.
+    final club = orgId == null
+        ? null
+        : (await campus.loadAdvisedClubs(user)).where((c) => c.org.id == orgId).firstOrNull?.org;
+    if (orgId != null && club == null) throw StateError("You don't advise this club.");
+    if (club == null && !user.can(Permission.postToCampusFeed)) {
+      throw StateError("You don't have permission to post.");
+    }
+    if (title.trim().isEmpty || body.trim().isEmpty) {
+      throw ArgumentError('Add a title and a message.');
+    }
+    final i = postId == null ? -1 : _posted.indexWhere((p) => p.id == postId);
+    if (postId != null && (i < 0 || _posted[i].authorId != user.id)) {
+      throw StateError('You can only edit your own posts.');
+    }
+    final post = Post(
+      id: postId ?? 'mine-${++_nextPostId}',
+      kind: club != null ? PostKind.organizationNews : kind,
+      title: title.trim(),
+      body: body.trim(),
+      source: club?.name ?? user.fullName,
+      sourceImage: club != null ? club.logoAsset : user.photoAsset,
+      orgId: club?.id,
+      imageAsset: imageAsset,
+      publishedAt: i < 0 ? clock() : _posted[i].publishedAt,
+      urgent: urgent,
+      audience: audience,
+      classId: classId,
+      authorId: user.id,
+      sentTo: sentTo,
+      edited: i >= 0,
+    );
+    if (i < 0) {
+      _posted.insert(0, post);
+    } else {
+      _posted[i] = post;
+      _postVersions[post.id] = (_postVersions[post.id] ?? 0) + 1;
+    }
+    _notifiedAt[post.id] = clock();
+    return post;
+  }
+
+  @override
+  Future<List<Post>> loadClubPosts(UserProfile user, String orgId) async {
+    await Future.delayed(delay);
+    if (fail) throw Exception('Mock load failure');
+    final advises = (await campus.loadAdvisedClubs(user)).any((c) => c.org.id == orgId);
+    final canSee = _audienceOf(user, await campus.loadClasses(user));
+    return [
+      for (final p in _posted)
+        if (p.orgId == orgId && (advises || p.authorId == user.id || canSee(p))) p,
+    ];
+  }
+
+  @override
+  Future<void> deletePost(UserProfile user, String postId) async {
+    await Future.delayed(delay);
+    if (fail) throw Exception('Mock save failure');
+    final i = _posted.indexWhere((p) => p.id == postId && p.authorId == user.id);
+    if (i < 0) throw StateError('You can only delete your own posts.');
+    _posted.removeAt(i);
   }
 }
 

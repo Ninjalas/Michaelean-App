@@ -28,8 +28,10 @@ const mockStudent = UserProfile(
   ],
 );
 
+const mockTeacherId = 'mock-teacher-1';
+
 const mockTeacher = UserProfile(
-  id: 'mock-teacher-1',
+  id: mockTeacherId,
   role: UserRole.teacher,
   firstName: 'Mark',
   lastName: 'Villanueva',
@@ -50,6 +52,8 @@ const mockTeacher = UserProfile(
     Permission.manageAssignedClasses,
     Permission.manageEvents,
     Permission.processClearance,
+    // Mock assumption (decided 2026-10-23): he may post to the campus feed.
+    Permission.postToCampusFeed,
   },
 );
 

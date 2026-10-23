@@ -20,7 +20,7 @@ void main() {
   // share the same (preview-only) attendance state.
   final campus = MockCampusService();
   runApp(MichaeleanApp(
-    userService: MockUserService(),
+    userService: MockUserService(campus: campus),
     homeService: MockHomeService(campus: campus),
     campusService: campus,
   ));

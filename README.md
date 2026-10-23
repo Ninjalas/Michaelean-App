@@ -77,7 +77,7 @@ What's behind each tab right now:
 | Screen | State |
 |---|---|
 | Opening intro, Sign-in preview | **New design (rebuilt).** |
-| Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Stats and Start attendance open "Coming soon" pages until their phases are built. |
+| Home (both roles), notifications sheet, QR sheet | **New design (rebuilt).** Stats row, navy Up next card, pending tasks, today's classes (teachers), announcements, School News, campus feed. Teachers with the `postToCampusFeed` permission get a **+ button** to post announcements, School News, and campus updates (preview only), and can edit or delete their own posts. |
 | Student Life / Michaelean Life | **New design (rebuilt).** Live previews of Class, Events, Organizations, and Clearance (students) or Classes, Events You Manage, and Clearance (teachers). Every `See all ›` opens its real screen. |
 | Profile, Edit Profile, Settings sheet | **New design (rebuilt).** Luma-style profile with inline stats, tags, About, Classes I Teach (teachers), and Event History (each record opens its event); Edit Profile (About only, saved in this preview); grouped Settings with five pages (Personal Information, Account & Security, Notifications, Help & Support, About), the preview role switch, and Log Out. |
 | Class (students), Classes + class page + attendance scanner (teachers) | **New (built in Phase 6).** Weekly schedule, attendance from finalized records, mock scanner with the attendance rules, review and finalize, single-session changes. |
@@ -112,7 +112,7 @@ Everyone gets labels like `[Saint Michael's College of Laguna] [SBMIT] [Departme
 
 ### Student features
 
-- **Home (§6):** what's next for me today, then what's happening on campus. Header with greeting and date; a row of 4 stats (class attendance %, event attendance %, events completed, requirements `3/6 cleared`); a navy **Up next** class card; pending tasks; announcements; School News (one big story + smaller rows); a campus feed (urgent org posts pinned with `URGENT`). The bell opens notifications grouped **Today / Earlier**.
+- **Home (§6):** what's next for me today, then what's happening on campus. Header with greeting and date; a row of 4 stats (class attendance %, event attendance %, events completed, requirements `3/6 cleared`); a navy **Up next** class card; pending tasks; announcements; School News (one big story + smaller rows); a campus feed (urgent org posts pinned with `URGENT`). The bell opens notifications grouped **Today / Earlier**; its red dot shows only while something you can see there is unread.
 - **Student Life hub (§7):** live previews of Class, Events, Organizations, Clearance, each with `See all ›`.
 - **Class (§7.1–7.2):** `Show QR`, a Mon–Sat day strip with that day's classes, and attendance (overall %, per subject, recent sessions). Attendance only counts when an authorized teacher scans and finalizes the session.
 - **Events (§7.3):** **Discover | My events**; filter pills (All / School-wide / Department / My Orgs); events grouped by date. Luma-style **event detail** (cover photo, Register/Share/More, Venue with map, Host, Attendees, About). Registration ≠ attendance.
@@ -331,6 +331,50 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Teachers get role tags** (feature refinement). A teacher's tags now show what the school assigned them, as a new tag kind, **Role** (green pill; "Assigned role" in Personal Information):
+  - **`<Club> Adviser`** for each club they advise, e.g. `[Computer Science Society Adviser]` `[SMCL Robotics Club Adviser]`.
+  - **`<Office> Clearance Staff`** when they process clearance, e.g. `[Department of Computer Studies Clearance Staff]`.
+  - They're built from the assignments each time a preview account loads (`CampusService.withAffiliations`, renamed from `withMemberships`), so they follow any change. Like all tags, they're labels: permissions still come from `Permission` and assignments, never from a tag.
+  - Classes taught and event managing don't get tags (decided: Profile already lists Classes I Teach).
+  - Tests: Mark gets exactly these three tags and no duplicates, students get none, and his Profile shows them. The screen audit now loads real tags, so long ones are checked on a small phone.
+
+- **Club advisers can manage their clubs** (feature refinement, decided 2026-10-23). This changes spec §7.4, which said administrators manage memberships.
+  - **Who:** a teacher **assigned** as a club's adviser (`Organization.adviserIds`), not anyone labeled Teacher. Mark advises the **Computer Science Society** and a new sample **SMCL Robotics Club** (`org6`).
+  - **Michaelean Life › Clubs You Advise** lists them with how many students are waiting. Tapping one opens **Manage club** (`/life/clubs/<id>`, `screens/teacher/club_manage_screen.dart`) with tabs:
+    - **Members:** search, **Add member** (searches the sample students; `club_add_member_screen.dart`), a menu per member to **Set position** (President, Vice President, Secretary, Treasurer, Auditor, PRO, or none) or **Remove from club** (asks first, optional reason), and **Copy list** (names, positions, sections, masked IDs).
+    - **Requests:** students who tapped "Request to Join", oldest first, with **Accept** / **Decline** (optional reason).
+    - **Posts:** **New club post** reuses the post form in club mode: posted *as the club*, to **its members** or **everyone**, with Urgent (notifies who can see it). Edit and delete from the post page.
+    - **Events:** **New club event** reuses the event form; the club is the host, members-only by default.
+    - **Info:** About and the meeting schedule, edited in `club_info_screen.dart`.
+  - **Students:** accepting or adding someone makes them a member right away (Member badge, My Organizations, members-only posts and events). Removing undoes it. They get a bell notice ("Your request to join … was accepted", "…declined. Reason: …", "You were added to / removed from …"), in this preview only. An officer position also adds an "<Club> Officer" tag.
+  - **How membership works now:** clubs with an adviser have a member list (`mockClubMembers`, `mockJoinRequests` in `mock_campus.dart`; names come from the sample class rosters). It's the source of truth for those clubs; a student's organization tags are rebuilt from it when their preview account loads (`CampusService.withMemberships`, called by `MockUserService(campus: …)`). Clubs without an adviser still use tags. The officers on a club page now come from member positions plus the adviser.
+  - Every adviser action is checked in the service: anyone who doesn't advise that club gets "You don't advise this club."
+  - Tests: `test/clubs_test.dart` (who advises what; only the adviser can act; accept, decline with reason, remove, positions and officer tags, add and search, club info, members-only and urgent club posts, club events; the screens for listing, accepting, removing, adding, and a student seeing the decision). The screen audit covers all the new pages.
+
+- **Urgent announcements notify students** (feature refinement). When a teacher posts an announcement marked **Urgent**, everyone who can see it (everyone, the department, or the class, but not the author) gets it in their **bell**, titled `Urgent: <title>`, unread and shown even if they switched announcements off. Only urgent announcements notify; other posts just appear on Home.
+  - **Editing** the post updates the notification (`Updated: <title>`) and makes it **unread again**. Switching Urgent off or **deleting** the post removes it.
+  - It's built from the posts in `MockHomeService.loadNotifications`; each edit gives the notification a new id, which is how it becomes unread again. Nothing is really sent: the form, the confirmation, and the post page say the notification exists in this preview only.
+  - To try it: post an urgent announcement as Mark, then Settings → Preview as **Student**, and open the bell.
+  - Tests: a student's bell shows a teacher's urgent post and opens it; a service test covers the audience, the author, edit (unread again), Urgent off, and delete.
+
+- **Teachers can post from Home** (feature refinement, decided 2026-10-23). A navy **+ button** (a floating action button) sits bottom-right on Home, above the bottom bar:
+  - **Who sees it:** users with the new `Permission.postToCampusFeed` (Mark has it in `mock_users.dart`). Students never see it. The service refuses posts from anyone without it, so hiding the button isn't the only check.
+  - **Tapping it** opens a *speed dial* (`screens/teacher/create_menu.dart`): the page dims, the + turns into an ×, and three options fan out: **Announcement**, **School News**, **Campus update**. Back, the ×, or a tap on the dimmed page closes it. It's a router page (`/home/create`), like the other pop-ups, so the Android/browser Back gesture works.
+  - **The form** (`screens/teacher/post_form_screen.dart`, `/home/compose/<kind>`): title, message, **who sees it** (everyone at SMCL, your department, or one of your classes; School News always goes to everyone), an **urgent** switch for announcements (shown first with an `URGENT` label), and a sample **cover photo** for School News. A live **preview** shows the row as it will appear on Home. Posting says "Posted in this preview only. Not sent to anyone."
+  - **Who receives it:** a department post only shows for people with that department tag; a class post only for students in that class (and the teacher). The author always sees their own posts.
+  - **Your own posts:** the post page shows "Posted to: …", the preview-only note, and **Edit** (`/home/post/<id>/edit`, then marked **Edited**) and **Delete** (asks first). Sample posts can't be edited.
+  - **Model and service:** `Post` gained `authorId`, `classId`, `sentTo`, `edited`, and `PostKind.campusUpdate`. `HomeService` gained `savePost`, `deletePost`, and `postCovers`. Posts live in memory and reset on reload.
+  - **Also decided that day** (recorded in `CLAUDE.md`): teachers edit only their own classes, change one class meeting at a time, and all teachers can see event attendee lists. The last one isn't built yet; today only the event's manager can open its registrations.
+  - Tests: `test/campus_posts_test.dart` (no + for students; menu opens and Back closes it; post an urgent class announcement; edit and delete; who sees which post and who may post). The screen audit covers the menu and the three forms.
+
+- **Unread notifications** (feature refinement). The bell's red dot now means "you have unread notifications", not just "there are notifications":
+  - Each notification is **unread** (bold title, small red dot on its row) or **read**. Opening one marks it read; **Mark all as read** at the top of the pop-up marks the rest. When nothing is unread, the bell has no dot and its label is plain "Notifications" (otherwise e.g. "Notifications, 2 unread" for screen readers).
+  - Read state is **saved on this device, per user** (`notify.read.<userId>` in `services/notification_prefs.dart`), so it survives reloads. If storage is blocked, it stays read until the page is reloaded.
+  - Types switched off in Settings don't count toward the dot; urgent ones always do. Changing a switch refreshes the dot.
+  - Sample start state: today's notifications are unread, yesterday's recap (`m4`) starts read (`read: true` in `mock_home.dart`).
+  - `HomeService` gained `markNotificationsRead` and `countUnread`; `HomeFeed.notifications` was removed (the bell asks the service instead).
+  - Tests: `test/flutter_test_config.dart` gives every test a fresh, empty fake device storage (with the one-time QR tip already seen). New test: the dot clears as notifications are read, and stays cleared after reopening the app.
+
 - **Settings pages** (spec §11). Every Settings item now opens a real page (routes under `/profile/…`):
   - **Personal Information** (`personal_info_screen.dart`): read-only name, role, program/faculty, **masked** ID, school email, and official tags, marked as coming from school records ("contact the Registrar to correct"). The two sample accounts got clearly fake emails (`@smcl.example`).
   - **Account & Security** (`account_security_screen.dart`): an honest status page: Microsoft 365 sign-in, **not connected in this preview**, the current preview session, and what the QR holds, with **Show my QR**. Passwords and two-step verification belong to Microsoft 365.
@@ -519,7 +563,7 @@ The look follows **Luma** (an events app for iPhone) closely in layout and feel,
 | `SegmentedPills` | Pill segmented control (Student/Teacher, Discover/My events, …) |
 | `AppSheetPage` | Rounded bottom sheet as a router page: grab handle, round X, dimmed background, Back closes it |
 | `FloatingNavBar` | The floating pill bottom navigation |
-| `RoundIconButton` | Floating white circle button (bell, back), optional red dot |
+| `RoundIconButton` | Floating white circle button (bell, back), optional red dot (the bell: unread notifications) |
 | `UserAvatar` | Round photo or initials |
 | `StatsRow` | Compact row of tappable stats with navy numbers (Home) |
 | `UpNextCard` | Solid navy "Up next" class card, optional Start attendance button, empty state |
@@ -550,7 +594,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-86 tests currently pass, at any time of day. They cover:
+111 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
@@ -563,6 +607,8 @@ flutter test
 - **Organizations:** directory groups (another department's society is never a school-wide club), members-only events and posts hidden from non-members, other departments' societies unavailable, a join request never makes a member; widget tests for the directory, tabs, event → Back → organization, and the join request.
 - **Campus data:** students see only published events they're eligible for, soonest first; managed events are only the teacher's own (drafts included, none without permission); organizations come from membership tags; clearance per user; no clearance office without permission.
 - **Event history and check-in:** each history record opens its event (even one the user can't see in Discover) with "Your record"; check-in marks only registered students, counts a repeat once, respects the event's hours (preview tool aside), and finalizing adds Attended records to Event History exactly once; Home's event stats are counted from records; Share copies the event details.
+- **Clubs:** only a club's adviser can manage it; accepting, declining, adding, and removing update membership, tags, and the student's bell; officer positions show on the club page; club posts reach members only when chosen.
+- **Campus posts:** urgent announcements reach only their audience's bell, come back unread after an edit, and disappear when deleted or no longer urgent; only permitted users get the + button; the menu opens and Back closes it; posting is honest and shows on Home; you can edit and delete only your own posts; department and class posts reach only their audience.
 - **Settings pages:** Personal Information is read-only with the ID masked; Account & Security says nothing is connected and opens the QR; switching a notification type off hides it from the bell while urgent ones stay; Help answers questions and lists offices; About shows the version and the licenses page.
 - **Profile:** identity, masked ID, counted stats, tags, and event history for students; Classes I Teach and hosted count for teachers; no QR on Profile; Edit Profile enables Save only after a change and confirms "preview only"; Settings items, Back closes it, Log Out ends the preview; switching role in Settings refreshes Home, the hub, and Profile.
 
@@ -574,10 +620,10 @@ When you rebuild a screen, update its tests and add tests for new logic, especia
 
 Don't silently invent answers to these. Ask the group (or the school) and record the decision in `docs/spec.md`.
 
-1. Can teachers edit only their assigned classes, or can authorized teachers edit others?
+1. ~~Class editing scope.~~ **Decided 2026-10-23:** teachers edit only their own assigned classes (for now).
 2. Is departmental society membership automatic or application-based?
-3. Can teachers change single sessions, recurring schedules, or both? Which changes need approval or notification?
-4. Visibility rules for event histories and attendee lists.
+3. ~~Single sessions or schedules.~~ **Decided 2026-10-23:** one class meeting at a time (for now). Which changes need approval or notification is still open.
+4. Visibility of event histories (still open). **Attendee lists, decided 2026-10-23:** all teachers can see them (not built yet).
 5. Which student/faculty info comes from the Microsoft directory vs. another official source?
 6. Backend, database, and authorization architecture (later).
 7. Which free hosting service, and the Flutter web/PWA configuration.
@@ -593,7 +639,10 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 - **PWA name, colors, and icons are set** (Michaelean, navy/white, icons from the SMCL emblem in `web/icons/` and `web/favicon.png`). Hosting is still open decision 7. To remake the icons after changing the emblem, center the whole emblem on white (about 86 % of the square; 66 % for the maskable ones).
 - **Changing the profile photo isn't built.** It needs a file-picker package; Edit Profile says so instead of showing a button that does nothing.
 - **Event covers are placeholders.** CSS events reuse the society's cover image; other events show a navy-tint tile. The form's cover picker offers the bundled photos (`mockEventCovers` in `lib/mock/mock_campus.dart`). Replace them with real SMCL event photos when the group has them; a real photo upload needs a file-picker package.
+- **Posts made with the + button reset on reload**, like event changes. So do club changes (members, requests, positions, info).
+- **Member counts changed for the two advised clubs.** CSS showed "248 members" from a made-up number; it now counts its sample member list (9). Other clubs still show their sample counts.
 - **Event changes reset on reload.** Registrations, new events, edits, invitations, and cancellations live in memory for this preview only.
+- **The first-time QR tip covers the + button** for its 8 seconds on a teacher's very first visit. Close the tip, or wait.
 - **A snackbar can briefly cover the bottom button** of the next form (for example, right after Publish, on Invite Students). It goes away after about 4 seconds.
 - **Long-press needs a real hold.** Hold the mouse button (or your finger) on Student Life / Michaelean Life for about half a second. Automated widget tests cover it.
 - **On narrow phones the quick-QR tip wraps to two lines.** It's readable; shorten the wording if the group prefers one line.

@@ -8,6 +8,7 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/content_row.dart';
+import '../teacher/create_menu.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stats_row.dart';
@@ -30,6 +31,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _scroll = ScrollController();
   Future<HomeFeed>? _feed;
+  int _unread = 0; // unread notifications the bell shows
   String? _loadedFor; // Session.dataKey the feed belongs to
   bool _collapsed = false;
 
@@ -51,7 +53,22 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user != null && SessionScope.of(context).dataKey != _loadedFor) {
       _loadedFor = SessionScope.of(context).dataKey;
       _feed = _load();
+      _loadUnread();
     }
+  }
+
+  Future<void> _loadUnread() async {
+    try {
+      final n = await widget.homeService.countUnread(SessionScope.of(context).user!);
+      if (mounted) setState(() => _unread = n);
+    } catch (_) {
+      // No dot rather than a wrong one; the pop-up shows the load error.
+    }
+  }
+
+  Future<void> _openNotifications() async {
+    await context.push('/home/notifications');
+    if (mounted) _loadUnread(); // some were read
   }
 
   Future<HomeFeed> _load() =>
@@ -73,7 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = SessionScope.of(context).user;
     // Preview just ended; the router is about to leave this screen.
     if (user == null) return const SizedBox.shrink();
-    return FutureBuilder<HomeFeed>(
+    // Permission, not the Teacher label, decides who may post (spec §12).
+    final canPost = user.can(Permission.postToCampusFeed);
+    // With extendBody, the bottom padding includes the floating nav bar.
+    final fabBottom = MediaQuery.paddingOf(context).bottom + AppSpacing.md;
+    final feedView = FutureBuilder<HomeFeed>(
       future: _feed,
       builder: (context, snap) {
         final feed = snap.data;
@@ -82,8 +103,9 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers: [
             _header(user, feed),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, 0, AppSpacing.screen, 120), // room for nav bar
+              // Room for the nav bar (and the + button above it).
+              padding: EdgeInsets.fromLTRB(
+                  AppSpacing.screen, 0, AppSpacing.screen, canPost ? 192 : 120),
               sliver: SliverList.list(children: [
                 _greeting(user),
                 if (snap.hasError)
@@ -99,6 +121,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+    if (!canPost) return feedView;
+    return Stack(
+      children: [
+        feedView,
+        Positioned(
+          right: AppSpacing.screen,
+          bottom: fabBottom,
+          child: CreatePostButton(bottom: fabBottom),
+        ),
+      ],
     );
   }
 
@@ -154,9 +187,9 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.only(right: AppSpacing.screen),
           child: RoundIconButton(
             icon: Icons.notifications_none_rounded,
-            tooltip: 'Notifications',
-            showDot: (feed?.notifications.isNotEmpty) ?? false,
-            onPressed: () => context.push('/home/notifications'),
+            tooltip: _unread == 0 ? 'Notifications' : 'Notifications, $_unread unread',
+            showDot: _unread > 0,
+            onPressed: _openNotifications,
           ),
         ),
       ],
@@ -275,6 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: p.title,
               meta: formatTimeAgo(p.publishedAt, now),
               metaIcon: Icons.schedule_rounded,
+              pill: p.urgent ? const StatusPill('URGENT', tone: PillTone.red) : null,
               onTap: () => _openPost(p),
             ),
         ]),

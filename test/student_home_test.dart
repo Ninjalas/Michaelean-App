@@ -25,6 +25,9 @@ Future<void> openHome(WidgetTester tester,
   await tester.pumpAndSettle();
 }
 
+/// The bell; its tooltip also says how many are unread.
+final bell = find.byTooltip(RegExp('^Notifications'));
+
 Future<void> openStudentHome(WidgetTester tester, {bool fail = false}) =>
     openHome(tester, fail: fail);
 
@@ -32,7 +35,7 @@ void main() {
   testWidgets('bell opens notifications; X closes it', (tester) async {
     await openStudentHome(tester);
 
-    await tester.tap(find.byTooltip('Notifications'));
+    await tester.tap(bell);
     await tester.pumpAndSettle();
     expect(find.text('Notifications'), findsOneWidget);
 
@@ -43,7 +46,7 @@ void main() {
 
   testWidgets('system Back closes the notifications pop-up', (tester) async {
     await openStudentHome(tester);
-    await tester.tap(find.byTooltip('Notifications'));
+    await tester.tap(bell);
     await tester.pumpAndSettle();
 
     await tester.binding.handlePopRoute(); // Android / browser Back
@@ -55,7 +58,7 @@ void main() {
   testWidgets('a notification opens its post; Back returns Home', (tester) async {
     await openStudentHome(tester);
 
-    await tester.tap(find.byTooltip('Notifications'));
+    await tester.tap(bell);
     await tester.pumpAndSettle();
     await tester.tap(find.text('New announcement: Midterm examination schedule posted'));
     await tester.pumpAndSettle();
@@ -64,6 +67,37 @@ void main() {
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     expect(find.textContaining(', Nicolas'), findsOneWidget);
+  });
+
+  testWidgets('the bell dot shows only while something is unread', (tester) async {
+    await openStudentHome(tester); // a fresh device (flutter_test_config.dart)
+    // Today's three start unread; yesterday's recap was already read.
+    expect(find.byTooltip('Notifications, 3 unread'), findsOneWidget);
+
+    // Opening one marks it read.
+    await tester.tap(bell);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New announcement: Midterm examination schedule posted'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Notifications, 2 unread'), findsOneWidget);
+
+    // Still read after the app is closed and opened again.
+    await tester.pumpWidget(const SizedBox());
+    await openStudentHome(tester);
+    expect(find.byTooltip('Notifications, 2 unread'), findsOneWidget);
+
+    // Mark all as read clears the dot.
+    await tester.tap(bell);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark all as read'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark all as read'), findsNothing);
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Notifications'), findsOneWidget);
+    expect(find.byTooltip(RegExp('unread')), findsNothing);
   });
 
   testWidgets('stats row is always visible; a stat opens its detail', (tester) async {
@@ -109,7 +143,7 @@ void main() {
     // Noon today, so "1 hour ago" is today even right after midnight.
     final now = DateTime.now();
     await openHome(tester, clock: () => DateTime(now.year, now.month, now.day, 12));
-    await tester.tap(find.byTooltip('Notifications'));
+    await tester.tap(bell);
     await tester.pumpAndSettle();
     Finder inSheet(String text) =>
         find.descendant(of: find.byType(NotificationsSheet), matching: find.text(text));

@@ -12,12 +12,19 @@ import '../../widgets/back_header.dart';
 /// Create or edit an event (spec §9.2): one scrolling page in Luma's form
 /// style, with Save draft and Publish at the bottom. Editing a published
 /// event saves the same event. Nothing is really published, and no one is
-/// notified; the confirmation says so.
+/// notified; the confirmation says so. With [hostOrgId], a new event hosted
+/// by a club the user advises.
 class EventFormScreen extends StatefulWidget {
   final CampusService campusService;
   final String? eventId; // null → a new event
+  final String? hostOrgId;
 
-  const EventFormScreen({super.key, required this.campusService, this.eventId});
+  const EventFormScreen({
+    super.key,
+    required this.campusService,
+    this.eventId,
+    this.hostOrgId,
+  });
 
   @override
   State<EventFormScreen> createState() => _EventFormScreenState();
@@ -37,6 +44,9 @@ class _EventFormScreenState extends State<EventFormScreen> {
   String? _cover;
   EventStatus? _status; // null → new
   int _registered = 0;
+  Organization? _club; // the hosting club, once checked
+  bool _clubChecked = false;
+  bool _clubFailed = false; // couldn't check, which isn't the same as "not adviser"
   bool _saving = false;
   String? _error;
 
@@ -50,6 +60,23 @@ class _EventFormScreenState extends State<EventFormScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (widget.hostOrgId != null && !_clubChecked && _club == null) {
+      widget.campusService.loadAdvisedClubs(SessionScope.of(context).user!).then((clubs) {
+        if (!mounted) return;
+        setState(() {
+          _club = clubs.where((c) => c.org.id == widget.hostOrgId).firstOrNull?.org;
+          _audience ??= _club?.name; // members only, unless changed
+          _clubChecked = true;
+        });
+      }, onError: (_) {
+        if (mounted) {
+          setState(() {
+            _clubChecked = true;
+            _clubFailed = true;
+          });
+        }
+      });
+    }
     if (widget.eventId == null || _load != null) return;
     _load = widget.campusService
         .loadEvent(SessionScope.of(context).user!, widget.eventId!)
@@ -138,6 +165,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
         capacity: _capacityValue,
         description: _description.text,
         coverAsset: _cover,
+        hostOrgId: widget.hostOrgId,
       );
     } catch (e) {
       // Never claim success when the save failed.
@@ -258,8 +286,23 @@ class _EventFormScreenState extends State<EventFormScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                BackHeader(isNew ? 'Create Event' : 'Edit Event'),
-                if (loading)
+                BackHeader(isNew
+                    ? widget.hostOrgId != null
+                        ? 'New Club Event'
+                        : 'Create Event'
+                    : 'Edit Event'),
+                if (widget.hostOrgId != null && !_clubChecked)
+                  const LinearProgressIndicator()
+                else if (widget.hostOrgId != null && _club == null)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.screen),
+                    child: Text(
+                        _clubFailed
+                            ? "Couldn't load this club."
+                            : "You aren't an adviser of this club.",
+                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                  )
+                else if (loading)
                   const LinearProgressIndicator()
                 else if (snap.hasError)
                   Padding(
@@ -293,7 +336,11 @@ class _EventFormScreenState extends State<EventFormScreen> {
     final audiences = <String?>[
       null,
       ...user.tags.where((t) => t.kind == TagKind.department).map((t) => t.label),
-      if (_audience != null && !user.tags.any((t) => t.label == _audience)) _audience,
+      if (_club != null) _club!.name,
+      if (_audience != null &&
+          _audience != _club?.name &&
+          !user.tags.any((t) => t.label == _audience))
+        _audience,
     ];
     final problem = _problem(publishing: true);
     return ListView(
@@ -380,7 +427,13 @@ class _EventFormScreenState extends State<EventFormScreen> {
             for (final a in audiences)
               DropdownMenuItem(
                 value: a,
-                child: Text(a ?? 'School-wide', overflow: TextOverflow.ellipsis),
+                child: Text(
+                    a == null
+                        ? 'School-wide'
+                        : a == _club?.name
+                            ? 'Members of $a'
+                            : a,
+                    overflow: TextOverflow.ellipsis),
               ),
           ],
           onChanged: (a) => setState(() => _audience = a),

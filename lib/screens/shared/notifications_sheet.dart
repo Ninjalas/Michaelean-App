@@ -9,8 +9,9 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 
 /// Recent notifications, shown inside the shared pop-up and grouped into
-/// Today / Earlier (spec §6). Opening one only navigates; it changes no record.
-/// Types switched off in Settings are hidden, except urgent ones.
+/// Today / Earlier (spec §6). Opening one marks it read and navigates; it
+/// changes no school record. Types switched off in Settings are hidden,
+/// except urgent ones.
 class NotificationsSheet extends StatefulWidget {
   final HomeService homeService;
 
@@ -35,7 +36,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
       widget.homeService.loadNotifications(SessionScope.of(context).user!),
       NotificationPrefs.muted(),
     ).wait;
-    final shown = all.where((n) => n.urgent || !muted.contains(n.kind)).toList();
+    final shown = all.where((n) => NotificationPrefs.shows(n, muted)).toList();
     _hidden = all.length - shown.length;
     return shown;
   }
@@ -46,8 +47,16 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
     router.go('/profile/notifications');
   }
 
-  void _open(AppNotification n) {
+  Future<void> _markAllRead(List<AppNotification> items) async {
+    await widget.homeService.markNotificationsRead(
+        SessionScope.of(context).user!, items.where((n) => !n.read).map((n) => n.id));
+    final read = [for (final n in items) n.markedRead()];
+    if (mounted) setState(() { _items = Future.value(read); });
+  }
+
+  Future<void> _open(AppNotification n) async {
     final router = GoRouter.of(context);
+    await widget.homeService.markNotificationsRead(SessionScope.of(context).user!, [n.id]);
     router.pop(); // close the pop-up first
     router.push(n.postId != null
         ? '/home/post/${n.postId}'
@@ -95,6 +104,12 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.lg),
           children: [
+            if (items.any((n) => !n.read))
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                    onPressed: () => _markAllRead(items), child: const Text('Mark all as read')),
+              ),
             if (today.isNotEmpty) ..._group('Today', today, now),
             if (earlier.isNotEmpty) ..._group('Earlier', earlier, now),
             if (_hidden > 0) _hiddenNote(),
@@ -156,11 +171,26 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(n.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: text.bodyLarge),
+                  style: n.read
+                      ? text.bodyLarge
+                      : text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(formatTimeAgo(n.time, now),
                 style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+            // Unread marker; the space stays so times line up either way.
+            Semantics(
+              label: n.read ? null : 'Unread',
+              child: Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(left: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: n.read ? Colors.transparent : AppColors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
           ],
         ),
       ),

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/campus.dart';
+import '../../models/feed.dart';
 import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
+import '../../services/home_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
@@ -15,12 +17,19 @@ import '../shared/events_screen.dart' show eventPill;
 
 /// One organization (spec §7.4): cover, logo, name, tags, and membership,
 /// then tabs About, Schedule, Events, News, Officers. Events open the shared
-/// event page, and Back returns here.
+/// event page, and Back returns here. News includes posts its adviser made
+/// in this preview; the adviser also gets a Manage club button.
 class OrganizationScreen extends StatefulWidget {
   final CampusService campusService;
+  final HomeService homeService;
   final String orgId;
 
-  const OrganizationScreen({super.key, required this.campusService, required this.orgId});
+  const OrganizationScreen({
+    super.key,
+    required this.campusService,
+    required this.homeService,
+    required this.orgId,
+  });
 
   @override
   State<OrganizationScreen> createState() => _OrganizationScreenState();
@@ -30,6 +39,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
   static const _tabs = ['About', 'Schedule', 'Events', 'News', 'Officers'];
 
   Future<OrganizationPage?>? _data;
+  Future<List<Post>>? _clubPosts; // made by its adviser in this preview
   String? _loadedFor;
   int _tab = 0;
   bool _busy = false;
@@ -41,6 +51,9 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
     if (session.user != null && session.dataKey != _loadedFor) {
       _loadedFor = session.dataKey;
       _data = widget.campusService.loadOrganization(session.user!, widget.orgId);
+      _clubPosts = widget.homeService.loadClubPosts(session.user!, widget.orgId)
+        // Shown in the News tab; until it's opened, a failure must not go uncaught.
+        ..ignore();
     }
   }
 
@@ -62,8 +75,8 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
     }
     session.refresh();
     messenger.showSnackBar(const SnackBar(
-      content: Text("Request saved in this preview only. Nothing was sent, and you're "
-          'not a member yet.'),
+      content: Text("Request saved in this preview only. You're not a member until "
+          'the club accepts it.'),
     ));
   }
 
@@ -158,13 +171,21 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
           if (p.requested) ...[
             const OutlinedButton(onPressed: null, child: Text('Request saved')),
             const SizedBox(height: AppSpacing.sm),
-            Text("You're not a member until the organization's administrators confirm it.",
+            Text("You're not a member until the club's adviser accepts your request.",
                 style: muted),
           ] else
             FilledButton(
               onPressed: _busy ? null : _requestToJoin,
               child: Text(_busy ? 'Sending…' : 'Request to Join'),
             ),
+        ],
+        if (p.advises) ...[
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton.icon(
+            onPressed: () => context.push('/life/clubs/${o.id}'),
+            icon: const Icon(Icons.manage_accounts_outlined),
+            label: const Text('Manage club'),
+          ),
         ],
         if (!p.isMember && p.membersOnlyHidden > 0) ...[
           const SizedBox(height: AppSpacing.md),
@@ -253,10 +274,25 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
   }
 
   List<Widget> _news(OrganizationPage p) {
-    if (p.news.isEmpty) return [_empty('No posts yet.')];
+    return [
+      FutureBuilder<List<Post>>(
+        future: _clubPosts,
+        builder: (context, snap) {
+          if (snap.hasError) return _empty("Couldn't load this club's posts.");
+          final news = [...?snap.data, ...p.news]
+            ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+          if (news.isEmpty) return _empty('No posts yet.');
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch, children: _newsRows(p, news));
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _newsRows(OrganizationPage p, List<Post> news) {
     final now = DateTime.now();
     return _divided([
-      for (final post in p.news)
+      for (final post in news)
         ContentRow(
           source: formatTimeAgo(post.publishedAt, now),
           title: post.title,

@@ -236,6 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TagKind.institution || TagKind.school || TagKind.department => PillTone.navy,
         TagKind.organization => PillTone.neutral,
         TagKind.officer => PillTone.red,
+        TagKind.role => PillTone.green,
       };
 
 }

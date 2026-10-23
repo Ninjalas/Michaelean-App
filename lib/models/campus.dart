@@ -200,6 +200,10 @@ class Organization {
   final List<OrgMeeting> meetings;
   final List<OrgOfficer> officers;
 
+  /// Teachers assigned as advisers. The assignment, not the Teacher label,
+  /// lets them manage the club (spec §12).
+  final List<String> adviserIds;
+
   const Organization({
     required this.id,
     required this.name,
@@ -211,8 +215,82 @@ class Organization {
     this.about = '',
     this.meetings = const [],
     this.officers = const [],
+    this.adviserIds = const [],
+  });
+
+  Organization copyWith({
+    int? memberCount,
+    String? about,
+    List<OrgMeeting>? meetings,
+    List<OrgOfficer>? officers,
+  }) =>
+      Organization(
+        id: id,
+        name: name,
+        logoAsset: logoAsset,
+        coverAsset: coverAsset,
+        memberCount: memberCount ?? this.memberCount,
+        kind: kind,
+        department: department,
+        about: about ?? this.about,
+        meetings: meetings ?? this.meetings,
+        officers: officers ?? this.officers,
+        adviserIds: adviserIds,
+      );
+}
+
+/// A student on a club's member list (or asking to join), as its adviser
+/// sees it. The ID is masked.
+class OrgMember {
+  final String id;
+  final String name;
+  final String section; // e.g. "BSCS 3A"
+  final String maskedId;
+  final String? photoAsset;
+  final String? position; // officer position, e.g. "President"; null → member
+
+  const OrgMember({
+    required this.id,
+    required this.name,
+    required this.section,
+    required this.maskedId,
+    this.photoAsset,
+    this.position,
   });
 }
+
+/// A club the user advises, for the Michaelean Life list.
+class AdvisedClub {
+  final Organization org;
+  final int requests; // students waiting for an answer
+
+  const AdvisedClub({required this.org, required this.requests});
+}
+
+/// Everything the Manage club page shows to an adviser.
+class ClubAdmin {
+  final Organization org;
+  final List<OrgMember> members; // officers first, then by name
+  final List<OrgMember> requests; // oldest first
+  final List<CampusEvent> events; // events the club hosts, newest first
+
+  const ClubAdmin({
+    required this.org,
+    required this.members,
+    required this.requests,
+    required this.events,
+  });
+}
+
+/// Officer positions offered when an adviser assigns one.
+const officerPositions = [
+  'President',
+  'Vice President',
+  'Secretary',
+  'Treasurer',
+  'Auditor',
+  'Public Relations Officer',
+];
 
 /// The Organizations directory (spec §7.4), in its three groups.
 class OrgDirectory {
@@ -228,6 +306,7 @@ class OrganizationPage {
   final Organization org;
   final bool isMember; // a confirmed membership tag, never self-assigned
   final bool requested; // asked to join in this preview; still not a member
+  final bool advises; // the user is one of its advisers
   final List<EventDetail> events; // upcoming events the user may see
   final List<Post> news; // posts the user may see, newest first
   final int membersOnlyHidden; // events and posts hidden from non-members
@@ -236,6 +315,7 @@ class OrganizationPage {
     required this.org,
     required this.isMember,
     required this.requested,
+    this.advises = false,
     required this.events,
     required this.news,
     required this.membersOnlyHidden,

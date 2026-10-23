@@ -2,7 +2,10 @@ enum UserRole { student, teacher }
 
 /// What kind of identity label a tag is (spec §5). Used for styling only;
 /// a tag never grants permissions by itself.
-enum TagKind { institution, school, department, organization, officer }
+/// [role]: a duty the school assigned, e.g. "SMCL Robotics Club Adviser" or
+/// "Department of Computer Studies Clearance Staff". Like every tag, a label,
+/// not a permission.
+enum TagKind { institution, school, department, organization, officer, role }
 
 class IdentityTag {
   final String label;
@@ -18,6 +21,7 @@ enum Permission {
   manageEvents,
   processClearance,
   manageOrganizationContent,
+  postToCampusFeed, // announcements, school news, campus updates from Home's + button
 }
 
 class UserProfile {
@@ -54,6 +58,23 @@ class UserProfile {
   /// The same profile with new About text. About and the photo are the only
   /// things a user may edit (spec §10).
   UserProfile withAbout(String? about) => UserProfile(
+        id: id,
+        role: role,
+        firstName: firstName,
+        lastName: lastName,
+        designation: designation,
+        maskedId: maskedId,
+        email: email,
+        qrToken: qrToken,
+        photoAsset: photoAsset,
+        about: about,
+        tags: tags,
+        permissions: permissions,
+      );
+
+  /// The same profile with other identity tags, e.g. after a club adviser
+  /// accepted or removed a membership in this preview.
+  UserProfile withTags(List<IdentityTag> tags) => UserProfile(
         id: id,
         role: role,
         firstName: firstName,

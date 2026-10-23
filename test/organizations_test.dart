@@ -70,7 +70,7 @@ void main() {
 
     await tester.tap(find.text('Request to Join'));
     await tester.pumpAndSettle();
-    expect(find.textContaining("Nothing was sent, and you're not a member yet."), findsOneWidget);
+    expect(find.textContaining("You're not a member until the club accepts it."), findsOneWidget);
     expect(find.text('Request saved'), findsOneWidget);
     expect(find.text('Member'), findsNothing);
   });

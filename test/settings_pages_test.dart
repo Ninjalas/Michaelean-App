@@ -4,7 +4,6 @@ import 'package:michaelean_app/main.dart';
 import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> openSettingsItem(WidgetTester tester, String item) async {
   tester.view.physicalSize = const Size(390, 844);
@@ -28,8 +27,6 @@ Future<void> openSettingsItem(WidgetTester tester, String item) async {
 }
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
-
   testWidgets('Personal Information is read-only and keeps the ID masked', (tester) async {
     await openSettingsItem(tester, 'Personal Information');
     expect(find.text('2023-****-21'), findsOneWidget);
@@ -57,7 +54,7 @@ void main() {
 
     await tester.tap(find.text('Home'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Notifications'));
+    await tester.tap(find.byTooltip(RegExp('^Notifications')));
     await tester.pumpAndSettle();
     // The urgent venue-change notice still shows; the seminar recap is hidden.
     expect(find.textContaining('Venue change'), findsOneWidget);

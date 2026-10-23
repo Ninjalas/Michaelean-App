@@ -33,6 +33,7 @@ class _HubData {
   final List<Organization> organizations;
   final ClearanceSummary? clearance;
   final ClearanceOffice? office;
+  final List<AdvisedClub> clubs; // teachers: clubs they advise
 
   const _HubData({
     required this.classes,
@@ -40,6 +41,7 @@ class _HubData {
     this.organizations = const [],
     this.clearance,
     this.office,
+    this.clubs = const [],
   });
 }
 
@@ -70,12 +72,13 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       return _HubData(
           classes: classes, events: events, organizations: orgs, clearance: clearance);
     }
-    final (classes, events, office) = await (
+    final (classes, events, office, clubs) = await (
       s.loadClasses(user),
       s.loadManagedEvents(user),
       s.loadClearanceOffice(user),
+      s.loadAdvisedClubs(user),
     ).wait;
-    return _HubData(classes: classes, events: events, office: office);
+    return _HubData(classes: classes, events: events, office: office, clubs: clubs);
   }
 
   @override
@@ -242,6 +245,23 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
                 onTap: () => context.push('/life/events/${e.id}'),
               ),
           ]),
+      ],
+
+      // Only for teachers assigned as a club's adviser; not advising a club
+      // is normal, so there's no "locked" row.
+      if (d.clubs.isNotEmpty) ...[
+        _pad(const SectionHeader('Clubs You Advise')),
+        ..._divided(indent: OrgRow.textIndent, [
+          for (final c in d.clubs)
+            OrgRow(
+              org: c.org,
+              pill: c.requests > 0
+                  ? StatusPill('${c.requests} ${c.requests == 1 ? 'request' : 'requests'}',
+                      tone: PillTone.amber)
+                  : null,
+              onTap: () => context.push('/life/clubs/${c.org.id}'),
+            ),
+        ]),
       ],
 
       if (!user.can(Permission.processClearance))

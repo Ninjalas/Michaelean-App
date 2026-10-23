@@ -253,5 +253,6 @@ List<AppNotification> mockNotifications(DateTime now) => [
         title: 'Recap posted: hands-on Git and collaboration seminar',
         time: now.subtract(const Duration(days: 1)),
         postId: 'o2',
+        read: true, // seen yesterday
       ),
     ];

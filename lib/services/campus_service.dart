@@ -1,7 +1,7 @@
 import '../mock/mock_campus.dart';
 import '../mock/mock_classes.dart';
 import '../mock/mock_home.dart' show mockPosts;
-import '../mock/mock_users.dart' show mockEventHistory;
+import '../mock/mock_users.dart' show mockEventHistory, mockTeacher;
 import '../models/attendance.dart';
 import '../models/campus.dart';
 import '../models/event_record.dart';
@@ -82,6 +82,7 @@ abstract class CampusService {
     int? capacity,
     String description,
     String? coverAsset,
+    String? hostOrgId, // a new event hosted by a club the user advises
   });
 
   Future<void> cancelEvent(UserProfile user, String eventId);
@@ -124,8 +125,47 @@ abstract class CampusService {
   Future<OrganizationPage?> loadOrganization(UserProfile user, String orgId);
 
   /// Records a request to join in this preview. It never makes the user a
-  /// member: memberships are confirmed by administrators (spec §5).
+  /// member: the club's adviser answers it (decided 2026-10-23).
   Future<void> requestToJoin(UserProfile user, String orgId);
+
+  // Club advisers (decided 2026-10-23): a teacher assigned as a club's
+  // adviser manages its members, officers, info, posts, and events. Each
+  // method below refuses anyone who doesn't advise that club. Changes stay
+  // in this preview; notices to students appear only in this preview's bell.
+
+  /// Clubs the user advises, with how many students are waiting.
+  Future<List<AdvisedClub>> loadAdvisedClubs(UserProfile user);
+
+  /// The Manage club page; null when the user doesn't advise this club.
+  Future<ClubAdmin?> loadClubAdmin(UserProfile user, String orgId);
+
+  /// Accepts or declines a request to join; [reason] goes to the student.
+  Future<void> answerJoinRequest(UserProfile adviser, String orgId, String studentId,
+      {required bool accept, String? reason});
+
+  Future<void> addMember(UserProfile adviser, String orgId, String studentId);
+
+  Future<void> removeMember(UserProfile adviser, String orgId, String studentId,
+      {String? reason});
+
+  /// Gives a member an officer position, or none ([position] null).
+  Future<void> setOfficerPosition(
+      UserProfile adviser, String orgId, String studentId, String? position);
+
+  Future<void> updateClubInfo(UserProfile adviser, String orgId,
+      {required String about, required List<OrgMeeting> meetings});
+
+  /// Students who could be added: not members, not waiting; matched by name.
+  Future<List<OrgMember>> searchStudents(UserProfile adviser, String orgId, String query);
+
+  /// Membership news for the user's bell (accepted, declined, added, removed).
+  Future<List<AppNotification>> loadMembershipNotices(UserProfile user);
+
+  /// [user] with tags matching what they're associated with now: club
+  /// memberships and officer positions from the member lists, and assigned
+  /// roles (club adviser, clearance office). Applied each time a preview
+  /// account loads, so changes show up the next time.
+  UserProfile withAffiliations(UserProfile user);
 
   /// The active clearance period's progress; null when there is none.
   Future<ClearanceSummary?> loadClearance(UserProfile user);
@@ -533,9 +573,11 @@ class MockCampusService implements CampusService {
     int? capacity,
     String description = '',
     String? coverAsset,
+    String? hostOrgId,
   }) async {
     await _wait();
     if (!user.can(Permission.manageEvents)) throw StateError("You can't manage events.");
+    final club = hostOrgId == null ? null : _advised(user, hostOrgId);
     final old = eventId == null ? null : _events[eventId];
     if (eventId != null && (old == null || !_manages(user, old))) {
       throw StateError("You can't edit this event.");
@@ -559,14 +601,16 @@ class MockCampusService implements CampusService {
         (old.start != start || old.end != end || old.venue != venue.trim());
     final id = old?.id ?? 'new-${++_newEvents}';
     // Mock assumption: an event a teacher creates is hosted by their department.
+    // A club event is hosted by the club.
     final host = old?.host ??
+        club?.name ??
         user.tags.where((t) => t.kind == TagKind.department).firstOrNull?.label ??
         user.fullName;
     return _events[id] = CampusEvent(
       id: id,
       title: title.trim(),
       host: host,
-      hostLogo: old?.hostLogo,
+      hostLogo: old?.hostLogo ?? club?.logoAsset,
       start: start,
       end: end,
       venue: venue.trim(),
@@ -651,12 +695,7 @@ class MockCampusService implements CampusService {
   @override
   Future<List<Organization>> loadMyOrganizations(UserProfile user) async {
     await _wait();
-    // Confirmed memberships are the user's organization tags (spec §5).
-    final memberOf = user.tags
-        .where((t) => t.kind == TagKind.organization)
-        .map((t) => t.label)
-        .toSet();
-    return mockOrganizations.where((o) => memberOf.contains(o.name)).toList();
+    return _orgs.where((o) => _isMember(user, o)).toList();
   }
 
   // ---------- Event history and check-in ----------
@@ -739,10 +778,250 @@ class MockCampusService implements CampusService {
 
   // ---------- Organizations ----------
 
-  final _joinRequests = <String, Set<String>>{}; // org id → user ids
+  // Org id → user ids waiting, oldest first (a Set keeps insertion order).
+  final _joinRequests = {
+    for (final e in mockJoinRequests.entries) e.key: {...e.value},
+  };
 
+  /// Member lists of clubs with an adviser: org id → student id → position.
+  final _members = {
+    for (final e in mockClubMembers.entries) e.key: Map<String, String?>.of(e.value),
+  };
+  final _orgEdits = <String, Organization>{}; // About and meetings, as advisers edited them
+  final _notices = <String, List<AppNotification>>{}; // student id → membership news
+  var _noticeCount = 0;
+
+  /// Clubs with a member list use it; others use the user's membership tags.
   bool _isMember(UserProfile user, Organization o) =>
+      _members[o.id]?.containsKey(user.id) ??
       user.tags.any((t) => t.kind == TagKind.organization && t.label == o.name);
+
+  /// The organizations as they are now: edited info, and for clubs with a
+  /// member list, its count and officers (positions, then advisers).
+  List<Organization> get _orgs => [
+        for (final base in mockOrganizations)
+          if (_members[base.id] == null)
+            _orgEdits[base.id] ?? base
+          else
+            (_orgEdits[base.id] ?? base).copyWith(
+              memberCount: _members[base.id]!.length,
+              officers: [
+                for (final m in _memberList(base.id))
+                  if (m.position != null)
+                    OrgOfficer(name: m.name, position: m.position!, photoAsset: m.photoAsset),
+                for (final id in base.adviserIds)
+                  if (id == mockTeacher.id)
+                    OrgOfficer(
+                        name: mockTeacher.fullName,
+                        position: 'Adviser',
+                        photoAsset: mockTeacher.photoAsset),
+              ],
+            ),
+      ];
+
+  /// A sample student from the class rosters, as a club sees them.
+  OrgMember? _student(String id, {String? position}) {
+    for (final e in mockRosters.entries) {
+      for (final s in e.value) {
+        if (s.id == id) {
+          return OrgMember(
+            id: s.id,
+            name: s.name,
+            section: e.key,
+            maskedId: s.maskedId,
+            photoAsset: s.photoAsset,
+            position: position,
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Officers first (in [officerPositions] order), then members by name.
+  List<OrgMember> _memberList(String orgId) {
+    int rank(OrgMember m) {
+      if (m.position == null) return 999;
+      final i = officerPositions.indexOf(m.position!);
+      return i < 0 ? officerPositions.length : i;
+    }
+
+    return [
+      for (final e in (_members[orgId] ?? const <String, String?>{}).entries)
+        ?_student(e.key, position: e.value),
+    ]..sort((a, b) {
+        final r = rank(a).compareTo(rank(b));
+        return r != 0 ? r : a.name.compareTo(b.name);
+      });
+  }
+
+  /// The club, if [user] is one of its advisers.
+  Organization? _advisedOrNull(UserProfile user, String orgId) {
+    final o = _orgs.where((o) => o.id == orgId).firstOrNull;
+    return o != null && o.adviserIds.contains(user.id) && _members.containsKey(o.id) ? o : null;
+  }
+
+  Organization _advised(UserProfile user, String orgId) =>
+      _advisedOrNull(user, orgId) ?? (throw StateError("You don't advise this club."));
+
+  void _notify(String studentId, String orgId, String title) {
+    _notices.putIfAbsent(studentId, () => []).insert(
+          0,
+          AppNotification(
+            id: 'club-${++_noticeCount}',
+            kind: NotificationKind.organization,
+            title: title,
+            time: clock(),
+            route: '/life/organizations/$orgId',
+          ),
+        );
+  }
+
+  String _withReason(String text, String? reason) =>
+      reason == null || reason.trim().isEmpty ? text : '$text Reason: ${reason.trim()}';
+
+  @override
+  Future<List<AdvisedClub>> loadAdvisedClubs(UserProfile user) async {
+    await _wait();
+    return [
+      for (final o in _orgs)
+        if (_advisedOrNull(user, o.id) != null)
+          AdvisedClub(org: o, requests: _joinRequests[o.id]?.length ?? 0),
+    ];
+  }
+
+  @override
+  Future<ClubAdmin?> loadClubAdmin(UserProfile user, String orgId) async {
+    await _wait();
+    final o = _advisedOrNull(user, orgId);
+    if (o == null) return null;
+    return ClubAdmin(
+      org: o,
+      members: _memberList(o.id),
+      requests: [
+        for (final id in _joinRequests[o.id] ?? const <String>{})
+          ?_student(id),
+      ],
+      events: _events.values.where((e) => e.host == o.name).toList()
+        ..sort((a, b) => b.start.compareTo(a.start)),
+    );
+  }
+
+  @override
+  Future<void> answerJoinRequest(UserProfile adviser, String orgId, String studentId,
+      {required bool accept, String? reason}) async {
+    await _wait();
+    final o = _advised(adviser, orgId);
+    if (!(_joinRequests[orgId]?.remove(studentId) ?? false)) {
+      throw StateError('This request was already answered.');
+    }
+    if (accept) {
+      _members[orgId]![studentId] = null;
+      _notify(studentId, orgId, 'Your request to join ${o.name} was accepted.');
+    } else {
+      _notify(studentId, orgId,
+          _withReason('Your request to join ${o.name} was declined.', reason));
+    }
+  }
+
+  @override
+  Future<void> addMember(UserProfile adviser, String orgId, String studentId) async {
+    await _wait();
+    final o = _advised(adviser, orgId);
+    if (_student(studentId) == null) throw StateError('No such student.');
+    if (_members[orgId]!.containsKey(studentId)) throw StateError('Already a member.');
+    _joinRequests[orgId]?.remove(studentId);
+    _members[orgId]![studentId] = null;
+    _notify(studentId, orgId, 'You were added to ${o.name}.');
+  }
+
+  @override
+  Future<void> removeMember(UserProfile adviser, String orgId, String studentId,
+      {String? reason}) async {
+    await _wait();
+    final o = _advised(adviser, orgId);
+    if (!_members[orgId]!.containsKey(studentId)) throw StateError('Not a member.');
+    _members[orgId]!.remove(studentId);
+    _notify(studentId, orgId, _withReason('You were removed from ${o.name}.', reason));
+  }
+
+  @override
+  Future<void> setOfficerPosition(
+      UserProfile adviser, String orgId, String studentId, String? position) async {
+    await _wait();
+    _advised(adviser, orgId);
+    if (!_members[orgId]!.containsKey(studentId)) throw StateError('Not a member.');
+    _members[orgId]![studentId] =
+        position == null || position.trim().isEmpty ? null : position.trim();
+  }
+
+  @override
+  Future<void> updateClubInfo(UserProfile adviser, String orgId,
+      {required String about, required List<OrgMeeting> meetings}) async {
+    await _wait();
+    _advised(adviser, orgId);
+    if (meetings.any((m) => m.title.trim().isEmpty || m.when.trim().isEmpty)) {
+      throw ArgumentError('Each meeting needs a name and a time.');
+    }
+    final base = _orgEdits[orgId] ?? mockOrganizations.firstWhere((o) => o.id == orgId);
+    _orgEdits[orgId] = base.copyWith(about: about.trim(), meetings: [
+      for (final m in meetings)
+        OrgMeeting(title: m.title.trim(), when: m.when.trim(), place: m.place.trim()),
+    ]);
+  }
+
+  @override
+  Future<List<OrgMember>> searchStudents(
+      UserProfile adviser, String orgId, String query) async {
+    await _wait();
+    _advised(adviser, orgId);
+    final q = query.trim().toLowerCase();
+    final taken = {..._members[orgId]!.keys, ...?_joinRequests[orgId]};
+    return [
+      for (final roster in mockRosters.values)
+        for (final s in roster)
+          if (!taken.contains(s.id) && s.name.toLowerCase().contains(q)) ?_student(s.id),
+    ]..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  @override
+  Future<List<AppNotification>> loadMembershipNotices(UserProfile user) async {
+    await _wait();
+    return [...?_notices[user.id]];
+  }
+
+  @override
+  UserProfile withAffiliations(UserProfile user) {
+    // Clubs with a member list: their tags follow the list, in place.
+    final lists = {
+      for (final o in mockOrganizations)
+        o.name: ?_members[o.id],
+    };
+    bool member(String club) => lists[club]!.containsKey(user.id);
+    final kept = [
+      for (final t in user.tags)
+        if (t.kind == TagKind.organization && lists.containsKey(t.label))
+          ...[if (member(t.label)) t]
+        else if (t.kind == TagKind.officer &&
+            lists.keys.any((club) => t.label == '$club Officer'))
+          ...[]
+        else if (t.kind != TagKind.role) // rebuilt below from assignments
+          t,
+    ];
+    return user.withTags([
+      ...kept,
+      // Assigned roles, so a teacher's tags show what they're responsible for.
+      for (final o in _orgs)
+        if (o.adviserIds.contains(user.id)) IdentityTag('${o.name} Adviser', TagKind.role),
+      if (_officeOf(user) case final office?) IdentityTag('$office Clearance Staff', TagKind.role),
+      for (final e in lists.entries)
+        if (e.value.containsKey(user.id)) ...[
+          if (!kept.any((t) => t.kind == TagKind.organization && t.label == e.key))
+            IdentityTag(e.key, TagKind.organization),
+          if (e.value[user.id] != null) IdentityTag('${e.key} Officer', TagKind.officer),
+        ],
+    ]);
+  }
 
   bool _inDepartmentOf(UserProfile user, Organization o) =>
       o.department != null &&
@@ -756,19 +1035,19 @@ class MockCampusService implements CampusService {
   Future<OrgDirectory> loadOrganizationDirectory(UserProfile user) async {
     await _wait();
     return OrgDirectory(
-      society: mockOrganizations
+      society: _orgs
           .where((o) => o.kind == OrgKind.society && _inDepartmentOf(user, o))
           .toList(),
       // Other departments' societies are never listed as school-wide clubs.
-      clubs: mockOrganizations.where((o) => o.kind == OrgKind.club).toList(),
-      mine: mockOrganizations.where((o) => _isMember(user, o)).toList(),
+      clubs: _orgs.where((o) => o.kind == OrgKind.club).toList(),
+      mine: _orgs.where((o) => _isMember(user, o)).toList(),
     );
   }
 
   @override
   Future<OrganizationPage?> loadOrganization(UserProfile user, String orgId) async {
     await _wait();
-    final o = mockOrganizations.where((o) => o.id == orgId).firstOrNull;
+    final o = _orgs.where((o) => o.id == orgId).firstOrNull;
     if (o == null || !_canSee(user, o)) return null;
     final now = clock();
     final events = _events.values
@@ -787,6 +1066,7 @@ class MockCampusService implements CampusService {
       org: o,
       isMember: _isMember(user, o),
       requested: _joinRequests[o.id]?.contains(user.id) ?? false,
+      advises: _advisedOrNull(user, o.id) != null,
       events: [for (final e in visibleEvents) _detail(user, e)],
       news: visiblePosts,
       membersOnlyHidden:

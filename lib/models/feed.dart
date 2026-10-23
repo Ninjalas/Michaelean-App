@@ -5,6 +5,7 @@ enum PostKind {
   organizationNews,
   eventUpdate,
   scheduleChange,
+  campusUpdate, // a short update a teacher posts to the campus feed
 }
 
 class Post {
@@ -22,6 +23,19 @@ class Post {
   /// organization name). Null means everyone at the institution.
   final String? audience;
 
+  /// Only students of this class (and its teacher) see the post.
+  final String? classId;
+
+  /// Who posted it, for posts made in this preview; null for sample posts.
+  final String? authorId;
+
+  /// The club it was posted for, by its adviser; null for other posts.
+  final String? orgId;
+
+  /// Who it was posted to, in words (e.g. "Everyone at SMCL"); author posts only.
+  final String? sentTo;
+  final bool edited;
+
   const Post({
     required this.id,
     required this.kind,
@@ -33,6 +47,11 @@ class Post {
     required this.publishedAt,
     this.urgent = false,
     this.audience,
+    this.classId,
+    this.authorId,
+    this.orgId,
+    this.sentTo,
+    this.edited = false,
   });
 }
 
@@ -82,6 +101,7 @@ class AppNotification {
   final String? postId; // opens this post
   final String? route; // or opens this screen; neither → "Coming soon"
   final bool urgent; // always shown, even when its kind is switched off
+  final bool read; // opened (or marked read); unread ones light the bell's dot
 
   const AppNotification({
     required this.id,
@@ -91,7 +111,19 @@ class AppNotification {
     this.postId,
     this.route,
     this.urgent = false,
+    this.read = false,
   });
+
+  AppNotification markedRead() => AppNotification(
+        id: id,
+        title: title,
+        time: time,
+        kind: kind,
+        postId: postId,
+        route: route,
+        urgent: urgent,
+        read: true,
+      );
 }
 
 /// One meeting of a class on a specific day.
@@ -151,7 +183,6 @@ class HomeFeed {
   final Post? featuredNews;
   final List<Post> moreNews;
   final List<Post> campusFeed; // department, organization, and event updates
-  final List<AppNotification> notifications;
 
   const HomeFeed({
     this.attendance,
@@ -164,7 +195,6 @@ class HomeFeed {
     required this.featuredNews,
     required this.moreNews,
     required this.campusFeed,
-    required this.notifications,
   });
 
   bool get isEmpty =>

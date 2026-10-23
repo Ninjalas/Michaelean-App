@@ -34,6 +34,7 @@ const studentRoutes = [
   '/life/organizations/org1',
   '/life/organizations/org3',
   '/life/organizations/org1/post/o2',
+  '/life/organizations/org6',
   '/life/clearance',
   '/life/clearance/lib',
   '/life/clearance/dcs-lab',
@@ -52,6 +53,10 @@ List<String> teacherRoutes() {
   final session = _nextTuesdaySession();
   return [
     '/home',
+    '/home/create',
+    '/home/compose/announcement',
+    '/home/compose/schoolNews',
+    '/home/compose/campusUpdate',
     '/life',
     '/life/classes',
     '/life/classes/cs302-3a',
@@ -67,6 +72,12 @@ List<String> teacherRoutes() {
     '/life/events/ev2/checkin',
     '/life/verify',
     '/life/verify/mock-student-1',
+    '/life/clubs/org6',
+    '/life/clubs/org6/add',
+    '/life/clubs/org6/info',
+    '/life/clubs/org6/post',
+    '/life/clubs/org6/event',
+    '/life/organizations/org6',
     '/profile',
     '/profile/event/past-webdev',
     '/profile/personal',
@@ -76,7 +87,7 @@ List<String> teacherRoutes() {
 Future<void> signIn(WidgetTester tester, String role, {bool fail = false}) async {
   final campus = MockCampusService(delay: Duration.zero, fail: fail);
   await tester.pumpWidget(MichaeleanApp(
-    userService: MockUserService(),
+    userService: MockUserService(campus: campus),
     homeService: MockHomeService(delay: Duration.zero, fail: fail, campus: campus),
     campusService: campus,
   ));

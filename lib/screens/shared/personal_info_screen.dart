@@ -68,6 +68,7 @@ class PersonalInfoScreen extends StatelessWidget {
         TagKind.department => 'Department',
         TagKind.organization => 'Organization',
         TagKind.officer => 'Officer role',
+        TagKind.role => 'Assigned role',
       };
 
   static IconData _icon(TagKind k) => switch (k) {
@@ -76,5 +77,6 @@ class PersonalInfoScreen extends StatelessWidget {
         TagKind.department => Icons.apartment_outlined,
         TagKind.organization => Icons.groups_outlined,
         TagKind.officer => Icons.workspace_premium_outlined,
+        TagKind.role => Icons.verified_user_outlined,
       };
 }
