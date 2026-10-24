@@ -159,17 +159,22 @@ class _AttendanceReviewScreenState extends State<AttendanceReviewScreen> {
         else
           for (var i = 0; i < unchecked.length; i++) ...[
             if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
-              child: Row(
-                children: [
-                  UserAvatar(
-                      name: unchecked[i].name, imageAsset: unchecked[i].photoAsset, size: 40),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(unchecked[i].name, style: text.bodyLarge)),
-                  Text(unchecked[i].maskedId,
-                      style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                ],
+            // Opens the student's profile over this page (spec §10.1).
+            InkWell(
+              onTap: () => context.push(
+                  '/attendance/${widget.sessionId}/review/people/${unchecked[i].id}'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+                child: Row(
+                  children: [
+                    UserAvatar(
+                        name: unchecked[i].name, imageAsset: unchecked[i].photoAsset, size: 40),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: Text(unchecked[i].name, style: text.bodyLarge)),
+                    Text(unchecked[i].maskedId,
+                        style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                  ],
+                ),
               ),
             ),
           ],

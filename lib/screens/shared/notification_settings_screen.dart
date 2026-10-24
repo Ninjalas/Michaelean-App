@@ -25,6 +25,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     (NotificationKind.schedule, 'Schedule changes', Icons.event_note_outlined),
     (NotificationKind.attendance, 'Attendance', Icons.how_to_reg_outlined),
     (NotificationKind.clearance, 'Clearance', Icons.fact_check_outlined),
+    (NotificationKind.connection, 'Connections', Icons.person_add_alt_1_outlined),
   ];
 
   Set<NotificationKind>? _muted;

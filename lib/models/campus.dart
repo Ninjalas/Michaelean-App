@@ -1,4 +1,5 @@
 import 'attendance.dart';
+import 'people.dart';
 import 'event_record.dart';
 import 'feed.dart';
 
@@ -150,12 +151,14 @@ class SupportContact {
 
 /// A registered student, as the event's managers see them.
 class EventRegistrant {
+  final String id; // opens their profile
   final String name;
   final String maskedId;
   final String? photoAsset;
   final bool invited;
 
   const EventRegistrant({
+    required this.id,
     required this.name,
     required this.maskedId,
     this.photoAsset,
@@ -307,6 +310,9 @@ class OrganizationPage {
   final bool isMember; // a confirmed membership tag, never self-assigned
   final bool requested; // asked to join in this preview; still not a member
   final bool advises; // the user is one of its advisers
+
+  /// Its members, for clubs with a member list (spec §7.4); null otherwise.
+  final List<PersonSummary>? members;
   final List<EventDetail> events; // upcoming events the user may see
   final List<Post> news; // posts the user may see, newest first
   final int membersOnlyHidden; // events and posts hidden from non-members
@@ -316,6 +322,7 @@ class OrganizationPage {
     required this.isMember,
     required this.requested,
     this.advises = false,
+    this.members,
     required this.events,
     required this.news,
     required this.membersOnlyHidden,

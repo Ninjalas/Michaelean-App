@@ -36,10 +36,14 @@ void main() {
     expect(find.text('Dance Company Showcase'), findsNothing); // not a member
 
     await tester.scrollUntilVisible(find.text('1st Semester Clearance'), 200, scrollable: page);
+    expect(find.text('1 needs correction'), findsOneWidget);
+    // People sits between Organizations and Clearance: bring Organizations back.
+    await tester.scrollUntilVisible(find.bySemanticsLabel('See all Organizations'), -200,
+        scrollable: page);
+    await tester.pumpAndSettle();
     expect(find.text('Organizations'), findsOneWidget);
     expect(find.text('Computer Science Society'), findsOneWidget);
     expect(find.text('SMCL Chorale'), findsOneWidget);
-    expect(find.text('1 needs correction'), findsOneWidget);
 
     await tester.tap(find.bySemanticsLabel('See all Organizations'));
     await tester.pumpAndSettle();

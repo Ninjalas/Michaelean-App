@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/person_row.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
 import '../shared/events_screen.dart' show eventPill;
@@ -193,7 +194,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
         ],
         const SizedBox(height: AppSpacing.lg),
         DefaultTabController(
-          length: _tabs.length,
+          length: _tabs.length + (p.members != null ? 1 : 0),
           initialIndex: _tab,
           child: TabBar(
             isScrollable: true,
@@ -206,7 +207,10 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
             indicatorColor: AppColors.navy,
             dividerColor: AppColors.hairline,
             onTap: (i) => setState(() => _tab = i),
-            tabs: [for (final t in _tabs) Tab(text: t)],
+            tabs: [
+              for (final t in _tabs) Tab(text: t),
+              if (p.members != null) Tab(text: 'Members (${p.members!.length})'),
+            ],
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -215,7 +219,8 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
           1 => _schedule(o),
           2 => _events(p),
           3 => _news(p),
-          _ => _officers(o),
+          4 => _officers(o),
+          _ => _membersTab(p),
         },
       ],
     );
@@ -300,6 +305,20 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
           imageAsset: post.imageAsset,
           pill: post.urgent ? const StatusPill('URGENT', tone: PillTone.red) : null,
           onTap: () => context.push('/life/organizations/${p.org.id}/post/${post.id}'),
+        ),
+    ]);
+  }
+
+  /// Everyone in the club (spec §7.4); tapping one opens their profile.
+  List<Widget> _membersTab(OrganizationPage p) {
+    final members = p.members ?? const [];
+    if (members.isEmpty) return [_empty('No members listed.')];
+    return _divided(indent: PersonRow.textIndent, [
+      for (final m in members)
+        PersonRow(
+          person: m,
+          onTap: () => context.push('/life/people/${m.id}'),
+          trailing: connectAction(context, widget.campusService, m),
         ),
     ]);
   }

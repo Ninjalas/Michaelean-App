@@ -294,30 +294,34 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
       ];
 
   /// Avatar, name, and "section · masked ID", with something on the right.
+  /// Tapping opens the student's full profile (spec §10.1).
   Widget _person(OrgMember m, Widget trailing) {
     final text = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      child: Row(
-        children: [
-          UserAvatar(name: m.name, imageAsset: m.photoAsset, size: 44),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(m.name, style: text.titleMedium),
-                Text('${m.section} · ${m.maskedId}',
-                    style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                if (m.position != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  StatusPill(m.position!, tone: PillTone.navy),
+    return InkWell(
+      onTap: () => context.push('/life/people/${m.id}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Row(
+          children: [
+            UserAvatar(name: m.name, imageAsset: m.photoAsset, size: 44),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(m.name, style: text.titleMedium),
+                  Text('${m.section} · ${m.maskedId}',
+                      style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                  if (m.position != null) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    StatusPill(m.position!, tone: PillTone.navy),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          trailing,
-        ],
+            trailing,
+          ],
+        ),
       ),
     );
   }

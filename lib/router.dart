@@ -8,13 +8,17 @@ import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/edit_profile_screen.dart';
 import 'screens/shared/event_detail_screen.dart';
 import 'screens/shared/events_screen.dart';
+import 'screens/shared/going_screen.dart';
 import 'screens/shared/help_screen.dart';
 import 'screens/shared/home_screen.dart';
 import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notification_settings_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
+import 'screens/shared/people_screen.dart';
+import 'screens/shared/person_screen.dart';
 import 'screens/shared/personal_info_screen.dart';
 import 'screens/shared/opening_screen.dart';
+import 'screens/shared/privacy_screen.dart';
 import 'screens/shared/profile_screen.dart';
 import 'screens/shared/qr_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
@@ -95,6 +99,16 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               sessionId: state.pathParameters['sessionId']!,
               fromScanner: state.uri.queryParameters['from'] == 'scanner',
             ),
+            routes: [
+              // A student's profile, opened over the review (it sits above the tabs).
+              GoRoute(
+                path: 'people/:personId',
+                builder: (context, state) => PersonScreen(
+                  campusService: campusService,
+                  personId: state.pathParameters['personId']!,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -226,6 +240,20 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                 ),
                 // Organizations (spec §7.4). An event opened from an
                 // organization is pushed on top, so Back returns to it.
+                // People search, and other students' profiles (spec §10.1).
+                GoRoute(
+                  path: 'people',
+                  builder: (context, state) => PeopleScreen(campusService: campusService),
+                  routes: [
+                    GoRoute(
+                      path: ':personId',
+                      builder: (context, state) => PersonScreen(
+                        campusService: campusService,
+                        personId: state.pathParameters['personId']!,
+                      ),
+                    ),
+                  ],
+                ),
                 GoRoute(
                   // Manage club, for the club's adviser (decided 2026-10-23).
                   path: 'clubs/:orgId',
@@ -354,6 +382,14 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                             eventId: state.pathParameters['eventId']!,
                           ),
                         ),
+                        // Who's going (or went), spec §10.1.
+                        GoRoute(
+                          path: 'going',
+                          builder: (context, state) => GoingScreen(
+                            campusService: campusService,
+                            eventId: state.pathParameters['eventId']!,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -376,6 +412,18 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     child: SettingsSheet(userService: userService),
                   ),
                 ),
+                GoRoute(
+                  path: 'privacy',
+                  builder: (context, state) => PrivacyScreen(campusService: campusService),
+                ),
+                // Another student's profile (spec §10.1), from Connections.
+                GoRoute(
+                  path: 'people/:personId',
+                  builder: (context, state) => PersonScreen(
+                    campusService: campusService,
+                    personId: state.pathParameters['personId']!,
+                  ),
+                ),
                 // An event from Event History, opened inside the Profile tab.
                 GoRoute(
                   path: 'event/:eventId',
@@ -383,6 +431,15 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     campusService: campusService,
                     eventId: state.pathParameters['eventId']!,
                   ),
+                  routes: [
+                    GoRoute(
+                      path: 'going',
+                      builder: (context, state) => GoingScreen(
+                        campusService: campusService,
+                        eventId: state.pathParameters['eventId']!,
+                      ),
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'edit',

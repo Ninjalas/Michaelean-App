@@ -42,6 +42,12 @@ const studentRoutes = [
   '/profile/settings',
   '/profile/edit',
   '/profile/event/past-iris',
+  '/profile/people/stu-BSCS3A1', // a connection, everything Public
+  '/life/people/stu-BSCS3B3', // a stranger, parts hidden
+  '/life/people',
+  '/profile/privacy',
+  '/life/events/ev3/going',
+  '/profile/event/past-git/going',
   '/profile/personal',
   '/profile/security',
   '/profile/notifications',
@@ -80,6 +86,10 @@ List<String> teacherRoutes() {
     '/life/organizations/org6',
     '/profile',
     '/profile/event/past-webdev',
+    '/life/people/stu-BSCS3A5', // teachers see everything
+    '/life/people',
+    '/life/events/ev2/going',
+    '/attendance/$session/review/people/stu-BSCS3A1',
     '/profile/personal',
   ];
 }

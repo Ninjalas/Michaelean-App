@@ -59,6 +59,9 @@ class _SettingsSheetState extends State<SettingsSheet> {
               onTap: () => _open('/profile/personal')),
           InsetRow('Account & Security', Icons.lock_outline_rounded,
               onTap: () => _open('/profile/security')),
+          // Who sees your events and connections (spec §10.1); students only.
+          if (role == UserRole.student)
+            InsetRow('Privacy', Icons.shield_outlined, onTap: () => _open('/profile/privacy')),
           InsetRow('Notifications', Icons.notifications_none_rounded,
               onTap: () => _open('/profile/notifications')),
         ]),

@@ -111,8 +111,10 @@ void main() {
     await tester.tap(find.text('Invite Section'));
     await tester.pumpAndSettle();
     expect(find.textContaining('12 students registered in this preview only'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('12 registered'), 200);
-    expect(find.text('12 registered'), findsOneWidget);
+    // Teachers see everyone named: two names, then the other ten.
+    final going = find.textContaining('and 10 others are going');
+    await tester.scrollUntilVisible(going, 200);
+    expect(going, findsOneWidget);
   });
 
   testWidgets("a teacher can't edit an event they don't manage", (tester) async {

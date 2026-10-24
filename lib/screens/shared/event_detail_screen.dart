@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 
 import '../../models/campus.dart';
+import '../../models/people.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
@@ -10,9 +11,10 @@ import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
+import 'going_screen.dart';
 
 /// One event, Luma style (spec §7.3): cover, title, time, a row of actions,
-/// then Venue, Host, Attendees, Registration, and About. Students register
+/// then Venue, Host, Going (Went, once it ends), Registration, and About. Students register
 /// here; the event's managers get Edit, Invite, and More instead (spec §9.2).
 /// Everything changes this preview only.
 class EventDetailScreen extends StatefulWidget {
@@ -27,6 +29,7 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   Future<EventDetail?>? _data;
+  Future<EventAttendees?>? _attendees; // the faces row (spec §10.1)
   String? _loadedFor;
   bool _busy = false;
 
@@ -37,6 +40,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (session.user != null && session.dataKey != _loadedFor) {
       _loadedFor = session.dataKey;
       _data = widget.campusService.loadEvent(session.user!, widget.eventId);
+      _attendees = widget.campusService.loadEventAttendees(session.user!, widget.eventId)
+        ..ignore(); // shown below; a failure there says so in place
     }
   }
 
@@ -351,25 +356,42 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ],
         ),
 
-        _label('Attendees'),
-        Row(
-          children: [
-            const _AvatarStack(),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: Text('${d.going} registered', style: text.titleMedium)),
-            if (d.canManage)
-              Flexible(
-                child: TextButton(
-                  onPressed: () => context.push('/life/events/${e.id}/registrations'),
-                  child: const Text('View all ›', maxLines: 1, overflow: TextOverflow.ellipsis),
+        _label(e.end.isAfter(now) ? 'Going' : 'Went'),
+        // Who's going, as this viewer may see it; the full list is a tap away.
+        FutureBuilder<EventAttendees?>(
+          future: _attendees,
+          builder: (context, snap) {
+            final a = snap.data;
+            if (a == null) {
+              return Text(
+                  snap.hasError ? "Couldn't load who's going." : '${d.going} registered',
+                  style: muted);
+            }
+            return InkWell(
+              onTap: () => context.push('${GoRouterState.of(context).uri.path}/going'),
+              borderRadius: BorderRadius.circular(AppRadius.small),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Row(
+                  children: [
+                    FacesRow(people: a.shown),
+                    if (a.shown.isNotEmpty) const SizedBox(width: AppSpacing.md),
+                    Expanded(child: Text(goingLine(a), style: text.titleMedium)),
+                    const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                  ],
                 ),
               ),
-          ],
+            );
+          },
         ),
-        const SizedBox(height: AppSpacing.xs),
-        // Mock assumption for open decision 4: names are for managers only.
-        Text("Names are shown to the event's managers only.",
-            style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+        if (d.canManage)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => context.push('/life/events/${e.id}/registrations'),
+              child: const Text('Registrations ›'),
+            ),
+          ),
 
         if (e.deadline != null || e.capacity != null) ...[
           _label('Registration'),
@@ -454,41 +476,6 @@ class _Action extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Overlapping blank avatars. Names stay hidden until visibility rules are
-/// decided (open decision 4).
-class _AvatarStack extends StatelessWidget {
-  const _AvatarStack();
-
-  @override
-  Widget build(BuildContext context) {
-    const size = 32.0, step = 22.0;
-    return ExcludeSemantics(
-      child: SizedBox(
-        width: size + step * 2,
-        height: size,
-        child: Stack(
-          children: [
-            for (var i = 0; i < 3; i++)
-              Positioned(
-                left: i * step,
-                child: Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    color: AppColors.fill,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.white, width: 2),
-                  ),
-                  child: const Icon(Icons.person_rounded, size: 18, color: AppColors.muted),
-                ),
-              ),
-          ],
         ),
       ),
     );

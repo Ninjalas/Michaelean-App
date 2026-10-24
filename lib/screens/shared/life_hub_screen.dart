@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/campus.dart';
 import '../../models/feed.dart';
+import '../../models/people.dart';
 import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/home_service.dart';
@@ -12,6 +13,7 @@ import '../../utils/dates.dart';
 import '../../widgets/clearance_widgets.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/org_row.dart';
+import '../../widgets/person_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 
@@ -34,6 +36,7 @@ class _HubData {
   final ClearanceSummary? clearance;
   final ClearanceOffice? office;
   final List<AdvisedClub> clubs; // teachers: clubs they advise
+  final List<PersonSummary> suggestions; // students: people you may know
 
   const _HubData({
     required this.classes,
@@ -42,6 +45,7 @@ class _HubData {
     this.clearance,
     this.office,
     this.clubs = const [],
+    this.suggestions = const [],
   });
 }
 
@@ -63,14 +67,19 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
   Future<_HubData> _load(UserProfile user) async {
     final s = widget.campusService;
     if (user.role == UserRole.student) {
-      final (classes, events, orgs, clearance) = await (
+      final (classes, events, orgs, clearance, suggestions) = await (
         s.loadClasses(user),
         s.loadUpcomingEvents(user),
         s.loadMyOrganizations(user),
         s.loadClearance(user),
+        s.loadSuggestions(user),
       ).wait;
       return _HubData(
-          classes: classes, events: events, organizations: orgs, clearance: clearance);
+          classes: classes,
+          events: events,
+          organizations: orgs,
+          clearance: clearance,
+          suggestions: suggestions);
     }
     final (classes, events, office, clubs) = await (
       s.loadClasses(user),
@@ -159,6 +168,20 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
           for (final o in d.organizations)
             OrgRow(org: o, onTap: () => context.push('/life/organizations/${o.id}')),
         ], indent: OrgRow.textIndent),
+
+      // Connect (spec §10.1): a few people you may know; See all searches.
+      _pad(SectionHeader('People', onSeeAll: () => context.push('/life/people'))),
+      if (d.suggestions.isEmpty)
+        _pad(_muted('Find classmates and club mates in See all.'))
+      else
+        ..._divided([
+          for (final p in d.suggestions.take(3))
+            PersonRow(
+              person: p,
+              onTap: () => context.push('/life/people/${p.id}'),
+              trailing: connectAction(context, widget.campusService, p),
+            ),
+        ], indent: PersonRow.textIndent),
 
       _pad(SectionHeader('Clearance', onSeeAll: () => context.push('/life/clearance'))),
       _pad(d.clearance == null
@@ -263,6 +286,10 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
             ),
         ]),
       ],
+
+      // Any student's full profile (teachers see everything, spec §10.1).
+      _pad(SectionHeader('People', onSeeAll: () => context.push('/life/people'))),
+      _pad(_muted('Search any student to open their profile.')),
 
       if (!user.can(Permission.processClearance))
         ..._denied('Clearance', "You aren't assigned to a clearance area.")

@@ -181,7 +181,9 @@ List<CampusEvent> mockEvents(DateTime now) {
 /// Events the mock teacher manages have none: every registration on them is
 /// a listed roster student.
 const mockOtherRegistrations = {
-  'ev1': 87, 'ev3': 240, 'ev4': 31, 'ev5': 60, 'ev6': 40, 'ev8': 52,
+  // ev1, ev3, ev5: lowered by the sample people now registered by name
+  // (mockPeopleRegistrations), so the totals are unchanged.
+  'ev1': 83, 'ev3': 235, 'ev4': 31, 'ev5': 57, 'ev6': 40, 'ev8': 52,
   'past-git': 64, 'past-startup': 118, 'past-iris': 45,
 };
 

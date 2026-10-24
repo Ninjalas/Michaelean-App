@@ -37,6 +37,8 @@ void main() {
     await tester.pumpAndSettle();
     final row = find.text('Machine learning with the Iris dataset');
     await tester.scrollUntilVisible(row, 300, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(row); // to the top, clear of the nav bar
+    await tester.pumpAndSettle();
     await tester.tap(row);
     await tester.pumpAndSettle();
     expect(find.text('Your record: Attended · Participant'), findsOneWidget);

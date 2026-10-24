@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/event_record.dart';
 import '../../models/feed.dart';
+import '../../models/people.dart';
 import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
@@ -10,6 +11,7 @@ import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/person_row.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
@@ -30,14 +32,29 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileData {
   final List<EventRecord> history;
   final int orgCount; // students
+  final ConnectionsOverview? connections; // students (spec §10.1)
   final List<ClassSession> teaching; // teachers: one entry per class taught
 
-  const _ProfileData({required this.history, this.orgCount = 0, this.teaching = const []});
+  const _ProfileData({
+    required this.history,
+    this.orgCount = 0,
+    this.connections,
+    this.teaching = const [],
+  });
 }
+
+/// The pill tone for an identity tag; shared with other people's profiles.
+PillTone tagTone(TagKind k) => switch (k) {
+      TagKind.institution || TagKind.school || TagKind.department => PillTone.navy,
+      TagKind.organization => PillTone.neutral,
+      TagKind.officer => PillTone.red,
+      TagKind.role => PillTone.green,
+    };
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Future<_ProfileData>? _data;
   String? _loadedFor; // Session.dataKey the data belongs to
+  bool _busy = false; // answering or cancelling a request
 
   @override
   void didChangeDependencies() {
@@ -52,11 +69,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<_ProfileData> _load(UserProfile user) async {
     if (user.role == UserRole.student) {
-      final (history, orgs) = await (
+      final (history, orgs, connections) = await (
         widget.campusService.loadEventHistory(user),
         widget.campusService.loadMyOrganizations(user),
+        widget.campusService.loadConnections(user),
       ).wait;
-      return _ProfileData(history: history, orgCount: orgs.length);
+      return _ProfileData(history: history, orgCount: orgs.length, connections: connections);
     }
     final (history, classes) = await (
       widget.campusService.loadEventHistory(user),
@@ -118,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
-                children: [for (final t in user.tags) StatusPill(t.label, tone: _tone(t.kind))],
+                children: [for (final t in user.tags) StatusPill(t.label, tone: tagTone(t.kind))],
               ),
               const SizedBox(height: AppSpacing.lg),
               FilledButton(
@@ -141,6 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: LinearProgressIndicator(),
                 )
               else ...[
+                if (data.connections != null) ..._connections(data.connections!),
                 if (isTeacher) ...[
                   const SectionHeader('Classes I Teach'),
                   if (data.teaching.isEmpty)
@@ -232,11 +251,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-  PillTone _tone(TagKind k) => switch (k) {
-        TagKind.institution || TagKind.school || TagKind.department => PillTone.navy,
-        TagKind.organization => PillTone.neutral,
-        TagKind.officer => PillTone.red,
-        TagKind.role => PillTone.green,
-      };
+  /// Answers or cancels a request, then reloads and says what happened.
+  Future<void> _act(Future<void> Function(UserProfile me) action, String done) async {
+    final session = SessionScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await action(session.user!);
+    } on StateError catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Not done. ${e.message}')));
+      return;
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text("Not done. Couldn't reach the service.")));
+      return;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    session.refresh();
+    messenger.showSnackBar(SnackBar(content: Text(done)));
+  }
 
+  /// Connections (spec §10.1): requests to answer, connections, requests sent.
+  List<Widget> _connections(ConnectionsOverview c) {
+    final s = widget.campusService;
+    final label = Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.muted);
+    void open(PersonSummary p) => context.push('/profile/people/${p.id}');
+    Widget group(String title) => Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: Text(title, style: label),
+        );
+    return [
+      SectionHeader('Connections (${c.connections.length})'),
+      if (c.incoming.isNotEmpty) ...[
+        group('Requests (${c.incoming.length})'),
+        ..._divided(indent: PersonRow.textIndent, [
+          for (final p in c.incoming)
+            PersonRow(
+              person: p,
+              onTap: () => open(p),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Decline ${p.name}',
+                    onPressed: _busy
+                        ? null
+                        : () => _act((me) => s.answerConnectRequest(me, p.id, accept: false),
+                            "Request declined. They aren't told."),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                  IconButton.filled(
+                    tooltip: 'Accept ${p.name}',
+                    onPressed: _busy
+                        ? null
+                        : () => _act((me) => s.answerConnectRequest(me, p.id, accept: true),
+                            'Connected in this preview only.'),
+                    icon: const Icon(Icons.check_rounded),
+                  ),
+                ],
+              ),
+            ),
+        ]),
+        group('Your connections'),
+      ],
+      if (c.connections.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.sm),
+          child: _muted('No connections yet. Find people in Student Life.'),
+        )
+      else
+        ..._divided(indent: PersonRow.textIndent, [
+          for (final p in c.connections) PersonRow(person: p, onTap: () => open(p)),
+        ]),
+      if (c.sent.isNotEmpty) ...[
+        group('Sent'),
+        ..._divided(indent: PersonRow.textIndent, [
+          for (final p in c.sent)
+            PersonRow(
+              person: p,
+              onTap: () => open(p),
+              trailing: TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => _act((me) => s.cancelConnectRequest(me, p.id), 'Request cancelled.'),
+                child: const Text('Cancel'),
+              ),
+            ),
+        ]),
+      ],
+    ];
+  }
 }

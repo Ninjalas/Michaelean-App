@@ -93,6 +93,8 @@ void main() {
 
     final row = find.text('Robotics club meets today');
     await tester.scrollUntilVisible(row, 200, scrollable: find.byType(Scrollable).first);
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200)); // clear of the nav bar
+    await tester.pumpAndSettle();
     await tester.tap(row);
     await tester.pumpAndSettle();
     expect(find.text('Posted in this preview only. Nobody was notified.'), findsOneWidget);
@@ -170,7 +172,8 @@ void main() {
         urgent: true,
         sentTo: 'Everyone at SMCL'));
     await signIn(tester, 'Student', home: home);
-    expect(find.byTooltip('Notifications, 4 unread'), findsOneWidget); // 3 sample + this one
+    // 3 sample notices, 2 Connect requests, and this one.
+    expect(find.byTooltip('Notifications, 6 unread'), findsOneWidget);
 
     await tester.tap(find.byTooltip(RegExp('^Notifications')));
     await tester.pumpAndSettle();

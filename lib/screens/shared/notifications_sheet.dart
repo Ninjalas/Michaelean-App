@@ -204,5 +204,6 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
         NotificationKind.clearance => Icons.fact_check_outlined,
         NotificationKind.attendance => Icons.how_to_reg_outlined,
         NotificationKind.news => Icons.article_outlined,
+        NotificationKind.connection => Icons.person_add_alt_1_outlined,
       };
 }

@@ -21,9 +21,11 @@ Future<void> signInStudent(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(find.text('Student Life'));
   await tester.pumpAndSettle();
-  // Scroll until the section below is in view, so the link is clear of the nav bar.
-  await tester.scrollUntilVisible(find.text('1st Semester Clearance'), 200,
+  // Scroll the link to the top of the screen, clear of the nav bar.
+  await tester.scrollUntilVisible(find.text('People'), 200,
       scrollable: find.byType(Scrollable).first);
+  await tester.ensureVisible(find.bySemanticsLabel('See all Organizations'));
+  await tester.pumpAndSettle();
   await tester.tap(find.bySemanticsLabel('See all Organizations'));
   await tester.pumpAndSettle();
 }
@@ -46,6 +48,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('President'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Events')); // back along the tab row
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Events'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('CSS General Assembly'), 200,

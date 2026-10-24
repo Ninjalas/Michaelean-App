@@ -206,6 +206,8 @@ class MockHomeService implements HomeService {
           ),
       // Accepted, declined, added, or removed by a club adviser.
       ...await campus.loadMembershipNotices(user),
+      // Connect requests waiting, and requests accepted.
+      ...await campus.loadConnectNotices(user),
     ]..sort((a, b) => b.time.compareTo(a.time));
     final read = await _readFor(user.id);
     return [for (final n in all) n.read || read.contains(n.id) ? n.markedRead() : n];

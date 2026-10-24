@@ -92,17 +92,21 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         SectionHeader('Roster (${d.roster.length})'),
         for (var i = 0; i < d.roster.length; i++) ...[
           if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
-            child: Row(
-              children: [
-                UserAvatar(
-                    name: d.roster[i].name, imageAsset: d.roster[i].photoAsset, size: 40),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(child: Text(d.roster[i].name, style: text.bodyLarge)),
-                Text(d.roster[i].maskedId,
-                    style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-              ],
+          // Opens the student's full profile (teachers see everything, spec §10.1).
+          InkWell(
+            onTap: () => context.push('/life/people/${d.roster[i].id}'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+              child: Row(
+                children: [
+                  UserAvatar(
+                      name: d.roster[i].name, imageAsset: d.roster[i].photoAsset, size: 40),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(d.roster[i].name, style: text.bodyLarge)),
+                  Text(d.roster[i].maskedId,
+                      style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                ],
+              ),
             ),
           ),
         ],

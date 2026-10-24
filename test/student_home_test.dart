@@ -71,8 +71,9 @@ void main() {
 
   testWidgets('the bell dot shows only while something is unread', (tester) async {
     await openStudentHome(tester); // a fresh device (flutter_test_config.dart)
-    // Today's three start unread; yesterday's recap was already read.
-    expect(find.byTooltip('Notifications, 3 unread'), findsOneWidget);
+    // Today's three start unread, plus two Connect requests; yesterday's
+    // recap was already read.
+    expect(find.byTooltip('Notifications, 5 unread'), findsOneWidget);
 
     // Opening one marks it read.
     await tester.tap(bell);
@@ -81,12 +82,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Notifications, 2 unread'), findsOneWidget);
+    expect(find.byTooltip('Notifications, 4 unread'), findsOneWidget);
 
     // Still read after the app is closed and opened again.
     await tester.pumpWidget(const SizedBox());
     await openStudentHome(tester);
-    expect(find.byTooltip('Notifications, 2 unread'), findsOneWidget);
+    expect(find.byTooltip('Notifications, 4 unread'), findsOneWidget);
 
     // Mark all as read clears the dot.
     await tester.tap(bell);
@@ -113,7 +114,10 @@ void main() {
 
     await tester.tap(find.text('Events completed'));
     await tester.pumpAndSettle();
-    expect(find.text('Event History'), findsOneWidget); // event history on Profile
+    // Event history on Profile, below the Connections section.
+    await tester.scrollUntilVisible(find.text('Event History'), 200,
+        scrollable: find.byType(Scrollable).last);
+    expect(find.text('Event History'), findsOneWidget);
   });
 
   testWidgets('student Up next shows the class teacher, no attendance button', (tester) async {

@@ -91,7 +91,7 @@ class AttendanceSummary {
 }
 
 /// What a notification is about; picks its icon in the notifications sheet.
-enum NotificationKind { announcement, organization, schedule, clearance, attendance, news }
+enum NotificationKind { announcement, organization, schedule, clearance, attendance, news, connection }
 
 class AppNotification {
   final String id;

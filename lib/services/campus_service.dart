@@ -1,11 +1,13 @@
 import '../mock/mock_campus.dart';
 import '../mock/mock_classes.dart';
 import '../mock/mock_home.dart' show mockPosts;
-import '../mock/mock_users.dart' show mockEventHistory, mockTeacher;
+import '../mock/mock_people.dart';
+import '../mock/mock_users.dart' show mockEventHistory, mockStudent, mockTeacher;
 import '../models/attendance.dart';
 import '../models/campus.dart';
 import '../models/event_record.dart';
 import '../models/feed.dart';
+import '../models/people.dart';
 import '../models/user_profile.dart';
 
 /// Where class, event, organization, and clearance data comes from (spec §7,
@@ -160,6 +162,54 @@ abstract class CampusService {
 
   /// Membership news for the user's bell (accepted, declined, added, removed).
   Future<List<AppNotification>> loadMembershipNotices(UserProfile user);
+
+  // Connect (spec §10.1): students connect with students by request and
+  // acceptance. What a viewer may see of another student follows that
+  // student's privacy settings; every teacher sees everything. Changes stay
+  // in this preview; notices appear only in this preview's bell.
+
+  /// Another student's profile as [viewer] may see it; null if there's no
+  /// such student.
+  Future<PersonProfile?> loadPerson(UserProfile viewer, String personId);
+
+  /// The user's requests to answer, connections, and sent requests.
+  Future<ConnectionsOverview> loadConnections(UserProfile user);
+
+  /// Students whose name matches; blocked ones (either way) are left out.
+  Future<List<PersonSummary>> searchPeople(UserProfile viewer, String query);
+
+  /// "People you may know" for a student: mutual connections, the same
+  /// section, shared clubs. Empty for teachers.
+  Future<List<PersonSummary>> loadSuggestions(UserProfile viewer);
+
+  /// Sends a request; if they already asked, it connects right away.
+  Future<void> sendConnectRequest(UserProfile viewer, String personId);
+
+  Future<void> cancelConnectRequest(UserProfile viewer, String personId);
+
+  /// Declining is silent; accepting tells the sender.
+  Future<void> answerConnectRequest(UserProfile viewer, String fromId, {required bool accept});
+
+  /// Ends a connection silently.
+  Future<void> removeConnection(UserProfile viewer, String personId);
+
+  /// Hides each from the other and removes any connection or request.
+  Future<void> blockStudent(UserProfile viewer, String personId);
+
+  Future<void> unblockStudent(UserProfile viewer, String personId);
+
+  Future<List<PersonSummary>> loadBlocked(UserProfile user);
+
+  Future<PrivacySettings> loadPrivacy(UserProfile user);
+
+  Future<void> savePrivacy(UserProfile user, PrivacySettings settings);
+
+  /// Connect news for the user's bell: requests waiting, requests accepted.
+  Future<List<AppNotification>> loadConnectNotices(UserProfile user);
+
+  /// Who is going (or went, after it ends) to an event the viewer can see;
+  /// null if they can't see it. Names follow each person's privacy setting.
+  Future<EventAttendees?> loadEventAttendees(UserProfile viewer, String eventId);
 
   /// [user] with tags matching what they're associated with now: club
   /// memberships and officer positions from the member lists, and assigned
@@ -426,9 +476,14 @@ class MockCampusService implements CampusService {
   // ---------- Events (in memory, this preview only) ----------
 
   late final _events = {for (final e in mockEvents(clock())) e.id: e};
-  final _registered = mockRegistrations();
+  final _registered = {
+    for (final e in {...mockRegistrations().keys, ...mockPeopleRegistrations.keys})
+      e: {...?mockRegistrations()[e], ...?mockPeopleRegistrations[e]},
+  };
   final _invited = <String, Set<String>>{}; // event id → invited student ids
-  final _history = {for (final e in mockEventHistory.entries) e.key: [...e.value]};
+  final _history = {
+    for (final e in {...mockEventHistory, ...mockPeopleHistory}.entries) e.key: [...e.value],
+  };
   final _eventPresent = <String, Set<String>>{}; // event id → scanned student ids
   final _eventFinalized = {...mockFinalizedEvents};
 
@@ -655,6 +710,7 @@ class MockCampusService implements CampusService {
       for (final id in _registered[eventId] ?? const <String>{})
         if (_rosterStudent(id) case final s?)
           EventRegistrant(
+            id: s.id,
             name: s.name,
             maskedId: s.maskedId,
             photoAsset: s.photoAsset,
@@ -774,6 +830,372 @@ class MockCampusService implements CampusService {
       added++;
     }
     return added;
+  }
+
+  // ---------- People and Connect (spec §10.1) ----------
+
+  /// Connected pairs, stored as "a|b" with the smaller id first.
+  final _connected = {for (final (a, b) in mockConnections) _pair(a, b)};
+
+  /// Waiting requests: "from>to" → when it was sent.
+  late final _connectRequests = {
+    for (final (from, to, hoursAgo) in mockConnectRequests)
+      '$from>$to': clock().subtract(Duration(hours: hoursAgo)),
+  };
+  final _blocks = <String, Set<String>>{}; // blocker → students they blocked
+  final _privacy = Map<String, PrivacySettings>.of(mockPrivacy);
+  final _connectNotices = <String, List<AppNotification>>{}; // e.g. "… accepted"
+
+  static String _pair(String a, String b) => a.compareTo(b) < 0 ? '$a|$b' : '$b|$a';
+
+  bool _isConnected(String a, String b) => _connected.contains(_pair(a, b));
+
+  bool _blockedEither(String a, String b) =>
+      (_blocks[a]?.contains(b) ?? false) || (_blocks[b]?.contains(a) ?? false);
+
+  Set<String> _connectionsOf(String id) => {
+        for (final p in _connected)
+          if (p.split('|') case [final a, final b] when a == id || b == id) a == id ? b : a,
+      };
+
+  ConnectionStatus _statusWith(UserProfile viewer, String id) {
+    if (viewer.role != UserRole.student) return ConnectionStatus.none; // teachers don't connect
+    if (_blocks[viewer.id]?.contains(id) ?? false) return ConnectionStatus.blocked;
+    if (_isConnected(viewer.id, id)) return ConnectionStatus.connected;
+    if (_connectRequests.containsKey('${viewer.id}>$id')) return ConnectionStatus.requestSent;
+    if (_connectRequests.containsKey('$id>${viewer.id}')) return ConnectionStatus.requestReceived;
+    return ConnectionStatus.none;
+  }
+
+  Set<String> _mutualWith(UserProfile viewer, String id) => viewer.role == UserRole.student
+      ? _connectionsOf(viewer.id).intersection(_connectionsOf(id))
+      : const {};
+
+  PersonSummary _summary(UserProfile viewer, OrgMember m) => PersonSummary(
+        id: m.id,
+        name: m.name,
+        section: m.section,
+        photoAsset: m.photoAsset,
+        status: _statusWith(viewer, m.id),
+        mutual: _mutualWith(viewer, m.id).length,
+      );
+
+  List<PersonSummary> _summaries(UserProfile viewer, Iterable<String> ids) =>
+      [for (final id in ids) if (_student(id) case final m?) _summary(viewer, m)]
+        ..sort((a, b) => a.name.compareTo(b.name));
+
+  /// Every sample student (the class lists), as people.
+  Iterable<OrgMember> get _people => [
+        for (final roster in mockRosters.values)
+          for (final s in roster) ?_student(s.id),
+      ];
+
+  /// The one visibility rule (spec §10.1): may [viewer] see a part of
+  /// [ownerId]'s profile that is set to [level]?
+  bool _mayView(UserProfile viewer, String ownerId, PrivacyLevel level) {
+    if (viewer.id == ownerId) return true;
+    // Every teacher sees everything (decided 2026-10-24).
+    if (viewer.role == UserRole.teacher) return true;
+    if (_blockedEither(viewer.id, ownerId)) return false;
+    return switch (level) {
+      PrivacyLevel.public => true,
+      PrivacyLevel.connections => _isConnected(viewer.id, ownerId),
+      PrivacyLevel.onlyMe => false,
+    };
+  }
+
+  PrivacySettings _privacyOf(String id) => _privacy[id] ?? const PrivacySettings();
+
+  /// A sample student as a profile, with tags from their memberships.
+  UserProfile _asProfile(OrgMember m) {
+    if (m.id == mockStudent.id) return withAffiliations(mockStudent);
+    final names = m.name.split(' ');
+    return withAffiliations(UserProfile(
+      id: m.id,
+      role: UserRole.student,
+      firstName: names.first,
+      lastName: names.skip(1).join(' '),
+      designation: m.section,
+      maskedId: m.maskedId,
+      email: '',
+      qrToken: '',
+      photoAsset: m.photoAsset,
+      tags: mockSampleStudentTags,
+    ));
+  }
+
+  void _requireStudent(UserProfile user) {
+    if (user.role != UserRole.student) {
+      throw StateError('Only students connect with each other.');
+    }
+  }
+
+  OrgMember _otherStudent(UserProfile viewer, String id) {
+    final m = _student(id);
+    if (m == null || id == viewer.id) throw StateError('No such student.');
+    return m;
+  }
+
+  @override
+  Future<PersonProfile?> loadPerson(UserProfile viewer, String personId) async {
+    await _wait();
+    final m = _student(personId);
+    if (m == null) return null;
+    final summary = _summary(viewer, m);
+    if (viewer.role == UserRole.student &&
+        viewer.id != personId &&
+        _blockedEither(viewer.id, personId)) {
+      return PersonProfile(person: summary, maskedId: m.maskedId, limited: true);
+    }
+    final now = clock();
+    final settings = _privacyOf(personId);
+    final profile = _asProfile(m);
+    return PersonProfile(
+      person: summary,
+      maskedId: m.maskedId,
+      tags: profile.tags,
+      about: mockPeopleAbout[personId] ?? (personId == mockStudent.id ? mockStudent.about : null),
+      connectionCount: _connectionsOf(personId).length,
+      mutualConnections: _summaries(viewer, _mutualWith(viewer, personId)),
+      connections: _mayView(viewer, personId, settings.connections)
+          ? _summaries(viewer, _connectionsOf(personId))
+          : null,
+      upcoming: _mayView(viewer, personId, settings.upcomingEvents)
+          ? (_events.values
+              .where((e) =>
+                  (_registered[e.id]?.contains(personId) ?? false) &&
+                  e.status == EventStatus.published &&
+                  e.start.isAfter(now) &&
+                  // Members-only events stay hidden from those who can't see them.
+                  (viewer.role == UserRole.teacher ||
+                      viewer.id == personId ||
+                      _eligible(viewer, e)))
+              .toList()
+            ..sort((a, b) => a.start.compareTo(b.start)))
+          : null,
+      history: _mayView(viewer, personId, settings.eventHistory)
+          ? ([...?_history[personId]]..sort((a, b) => b.date.compareTo(a.date)))
+          : null,
+    );
+  }
+
+  @override
+  Future<ConnectionsOverview> loadConnections(UserProfile user) async {
+    await _wait();
+    List<String> requests(bool incoming) {
+      final waiting = _connectRequests.entries.where((e) {
+        final [from, to] = e.key.split('>');
+        return incoming ? to == user.id : from == user.id;
+      }).toList()
+        ..sort((a, b) => a.value.compareTo(b.value));
+      return [for (final e in waiting) e.key.split('>')[incoming ? 0 : 1]];
+    }
+
+    PersonSummary? one(String id) =>
+        _student(id) == null ? null : _summary(user, _student(id)!);
+    return ConnectionsOverview(
+      incoming: [for (final id in requests(true)) ?one(id)],
+      connections: _summaries(user, _connectionsOf(user.id)),
+      sent: [for (final id in requests(false)) ?one(id)],
+    );
+  }
+
+  @override
+  Future<List<PersonSummary>> searchPeople(UserProfile viewer, String query) async {
+    await _wait();
+    final q = query.trim().toLowerCase();
+    return _summaries(viewer, [
+      for (final m in _people)
+        if (m.id != viewer.id &&
+            !_blockedEither(viewer.id, m.id) &&
+            m.name.toLowerCase().contains(q))
+          m.id,
+    ]);
+  }
+
+  @override
+  Future<List<PersonSummary>> loadSuggestions(UserProfile viewer) async {
+    await _wait();
+    if (viewer.role != UserRole.student) return const [];
+    final me = _student(viewer.id);
+    final myClubs = {
+      for (final e in _members.entries)
+        if (e.value.containsKey(viewer.id)) e.key,
+    };
+    // Mutual connections count most, then the same section, then shared clubs.
+    int score(OrgMember m) =>
+        _mutualWith(viewer, m.id).length * 3 +
+        (m.section == me?.section ? 2 : 0) +
+        myClubs.where((c) => _members[c]!.containsKey(m.id)).length;
+    final candidates = [
+      for (final m in _people)
+        if (m.id != viewer.id &&
+            _statusWith(viewer, m.id) == ConnectionStatus.none &&
+            !_blockedEither(viewer.id, m.id) &&
+            score(m) > 0)
+          m,
+    ]..sort((a, b) {
+        final s = score(b).compareTo(score(a));
+        return s != 0 ? s : a.name.compareTo(b.name);
+      });
+    return [for (final m in candidates.take(6)) _summary(viewer, m)];
+  }
+
+  @override
+  Future<void> sendConnectRequest(UserProfile viewer, String personId) async {
+    await _wait();
+    _requireStudent(viewer);
+    _otherStudent(viewer, personId);
+    if (_blockedEither(viewer.id, personId)) {
+      throw StateError("You can't connect with this student.");
+    }
+    switch (_statusWith(viewer, personId)) {
+      case ConnectionStatus.connected:
+        throw StateError("You're already connected.");
+      case ConnectionStatus.requestSent:
+        throw StateError('You already sent a request.');
+      case ConnectionStatus.requestReceived:
+        // They already asked: connecting both ways is the same as accepting.
+        _accept(viewer, personId);
+      default:
+        _connectRequests['${viewer.id}>$personId'] = clock();
+    }
+  }
+
+  void _accept(UserProfile viewer, String fromId) {
+    _connectRequests.remove('$fromId>${viewer.id}');
+    _connected.add(_pair(viewer.id, fromId));
+    _connectNotices.putIfAbsent(fromId, () => []).insert(
+          0,
+          AppNotification(
+            id: 'connect-ok-${viewer.id}-${_connected.length}',
+            kind: NotificationKind.connection,
+            title: '${viewer.fullName} accepted your request to connect.',
+            time: clock(),
+            route: '/life/people/${viewer.id}',
+          ),
+        );
+  }
+
+  @override
+  Future<void> cancelConnectRequest(UserProfile viewer, String personId) async {
+    await _wait();
+    if (_connectRequests.remove('${viewer.id}>$personId') == null) {
+      throw StateError('There is no request to cancel.');
+    }
+  }
+
+  @override
+  Future<void> answerConnectRequest(UserProfile viewer, String fromId,
+      {required bool accept}) async {
+    await _wait();
+    _requireStudent(viewer);
+    if (!_connectRequests.containsKey('$fromId>${viewer.id}')) {
+      throw StateError('This request was already answered.');
+    }
+    if (accept) {
+      _accept(viewer, fromId);
+    } else {
+      _connectRequests.remove('$fromId>${viewer.id}'); // silent: no notice
+    }
+  }
+
+  @override
+  Future<void> removeConnection(UserProfile viewer, String personId) async {
+    await _wait();
+    if (!_connected.remove(_pair(viewer.id, personId))) {
+      throw StateError("You aren't connected.");
+    }
+  }
+
+  @override
+  Future<void> blockStudent(UserProfile viewer, String personId) async {
+    await _wait();
+    _requireStudent(viewer);
+    _otherStudent(viewer, personId);
+    _blocks.putIfAbsent(viewer.id, () => {}).add(personId);
+    _connected.remove(_pair(viewer.id, personId));
+    _connectRequests.remove('${viewer.id}>$personId');
+    _connectRequests.remove('$personId>${viewer.id}');
+  }
+
+  @override
+  Future<void> unblockStudent(UserProfile viewer, String personId) async {
+    await _wait();
+    if (!(_blocks[viewer.id]?.remove(personId) ?? false)) {
+      throw StateError("This student isn't blocked.");
+    }
+  }
+
+  @override
+  Future<List<PersonSummary>> loadBlocked(UserProfile user) async {
+    await _wait();
+    return _summaries(user, _blocks[user.id] ?? const {});
+  }
+
+  @override
+  Future<PrivacySettings> loadPrivacy(UserProfile user) async {
+    await _wait();
+    return _privacyOf(user.id);
+  }
+
+  @override
+  Future<void> savePrivacy(UserProfile user, PrivacySettings settings) async {
+    await _wait();
+    _requireStudent(user);
+    _privacy[user.id] = settings;
+  }
+
+  @override
+  Future<EventAttendees?> loadEventAttendees(UserProfile viewer, String eventId) async {
+    final d = await loadEvent(viewer, eventId); // the same "who can see the event" rule
+    if (d == null) return null;
+    final past = !d.event.end.isAfter(clock());
+    // Went: attendance records (registration isn't attendance). Going: registrations.
+    final ids = (past
+            ? {
+                for (final e in _history.entries)
+                  if (e.value.any((r) => r.eventId == eventId)) e.key,
+              }
+            : {...?_registered[eventId]})
+        .where((id) => _student(id) != null)
+        .toSet();
+    PrivacyLevel level(String id) =>
+        past ? _privacyOf(id).eventHistory : _privacyOf(id).upcomingEvents;
+    final shown = _summaries(
+        viewer, ids.where((id) => id != viewer.id && _mayView(viewer, id, level(id))))
+      // Connections first; each part stays by name.
+      ..sort((a, b) {
+        final c = (b.status == ConnectionStatus.connected ? 1 : 0)
+            .compareTo(a.status == ConnectionStatus.connected ? 1 : 0);
+        return c != 0 ? c : a.name.compareTo(b.name);
+      });
+    return EventAttendees(
+      past: past,
+      shown: shown,
+      includesViewer: ids.contains(viewer.id),
+      // Upcoming totals include the unnamed sample registrations.
+      total: past ? ids.length : d.going,
+    );
+  }
+
+  @override
+  Future<List<AppNotification>> loadConnectNotices(UserProfile user) async {
+    await _wait();
+    return [
+      ...?_connectNotices[user.id],
+      // A waiting request shows until it's answered (or cancelled).
+      for (final e in _connectRequests.entries)
+        if (e.key.split('>') case [final from, final to] when to == user.id)
+          if (_student(from) case final m?)
+            AppNotification(
+              id: 'connect-req-$from',
+              kind: NotificationKind.connection,
+              title: '${m.name} wants to connect.',
+              time: e.value,
+              route: '/profile',
+            ),
+    ];
   }
 
   // ---------- Organizations ----------
@@ -1067,6 +1489,10 @@ class MockCampusService implements CampusService {
       isMember: _isMember(user, o),
       requested: _joinRequests[o.id]?.contains(user.id) ?? false,
       advises: _advisedOrNull(user, o.id) != null,
+      // Memberships are visible to all (spec §12); blocked students are left out.
+      members: _members[o.id] == null
+          ? null
+          : _summaries(user, _members[o.id]!.keys.where((id) => !_blockedEither(user.id, id))),
       events: [for (final e in visibleEvents) _detail(user, e)],
       news: visiblePosts,
       membersOnlyHidden:

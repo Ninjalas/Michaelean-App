@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../models/campus.dart';
 import '../../services/campus_service.dart';
@@ -92,23 +93,27 @@ class _EventRegistrationsScreenState extends State<EventRegistrationsScreen> {
 
   Widget _row(EventRegistrant r) {
     final text = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
-      child: Row(
-        children: [
-          UserAvatar(name: r.name, imageAsset: r.photoAsset, size: 40),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(r.name, style: text.bodyLarge),
-                Text(r.maskedId, style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-              ],
+    // Opens the student's full profile (teachers see everything, spec §10.1).
+    return InkWell(
+      onTap: () => context.push('/life/people/${r.id}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+        child: Row(
+          children: [
+            UserAvatar(name: r.name, imageAsset: r.photoAsset, size: 40),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(r.name, style: text.bodyLarge),
+                  Text(r.maskedId, style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                ],
+              ),
             ),
-          ),
-          if (r.invited) const StatusPill('Invited', tone: PillTone.navy),
-        ],
+            if (r.invited) const StatusPill('Invited', tone: PillTone.navy),
+          ],
+        ),
       ),
     );
   }

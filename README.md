@@ -331,6 +331,41 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Connect, step 4 of 4: Going lists and teacher entry points** (spec §10.1). Connect is now complete.
+  - **Event pages:** the placeholder "Attendees" section (blank circles, "names for managers only") is replaced by **Going**: up to four photos and a sentence like "You, Carlo and 239 others are going", connections first. Tapping it opens the full list (`screens/shared/going_screen.dart`, `/life/events/<id>/going` and `/profile/event/<id>/going`): each person with Connect, Pending, Asked you, or Connected, and at the end how many aren't named and why (their privacy settings, or sample registrations without names). Managers keep a **Registrations ›** link for their tools.
+  - **After the event** it becomes **Went**, built from attendance records (registration isn't attendance), and follows each person's Event history setting.
+  - **The rule** (`CampusService.loadEventAttendees`): only people whose setting lets the viewer see them are named; everyone else, including blocked students and unnamed sample registrations, is counted. Teachers see everyone named. The viewer shows as "You".
+  - **Teachers open any student's full profile** by tapping them in: a class's roster, attendance review (the profile opens over the review, `/attendance/<session>/review/people/<id>`), an event's registrations, and Manage club's members and requests. Michaelean Life has a **People** section that opens the search. `EventRegistrant` gained an `id` for this.
+  - Fixes found by the tests: an "else" that attached to the wrong "if" (upcoming events listed nobody), and a Going list that overflowed on a small phone with large text ("Wants to connect" is now "Asked you", and row buttons can shrink).
+  - Known limit (older than Connect): a club's adviser can't open the club's **members-only** events from the event pages, because advising isn't membership. They do see them in Manage club › Events.
+  - Tests: 5 more service tests (who is named and counted, Only me, teachers, Went, blocking, the summary sentence) and 5 more screen tests (the event's Going line and list, Went, teachers opening students from a class and from Manage club, the teacher People section). The screen audit covers the Going pages and the profile over attendance review.
+
+- **Connect, step 3 of 4: finding people and privacy** (spec §10.1).
+  - **Student Life › People:** up to three "people you may know", each with a **Connect** button; **See all ›** opens **People** (`screens/shared/people_screen.dart`, `/life/people`): search students by name. With no search, students see suggestions and teachers see all students (view only, no buttons). Someone you just asked leaves the suggestions.
+  - **Club Members tab** (spec §7.4): club pages with a member list (CSS, Robotics) gain a **Members (n)** tab; tapping a member opens their profile, with Connect where it applies. Blocked students are left out. `OrganizationPage.members` carries the list.
+  - **Settings › Privacy** (students only, `screens/shared/privacy_screen.dart`, `/profile/privacy`): Upcoming events, Event history, and Connections, each **Public / Connections / Only me**, saved as soon as you choose (put back with a message if saving fails). Below: **Blocked students** with **Unblock**. It says name, photo, section, tags, and About are always shown.
+  - Shared: `connectAction` in `widgets/person_row.dart`: the Connect button (or Pending, Wants to connect, Connected) for any list of people, and the honest "Request sent to … in this preview only." message.
+  - Tests: 6 more in `test/people_screens_test.dart` (Connect from Student Life; search; teachers browse view-only; club Members tab; Privacy saving and unblocking; no Privacy row for teachers). The screen audit covers People and Privacy. Three older tests now scroll past the new People section and the club's sixth tab.
+
+- **Connect, step 2 of 4: profiles and connecting** (spec §10.1).
+  - **Other students' profiles** (`screens/shared/person_screen.dart`, routes `/life/people/<id>` and `/profile/people/<id>`, so Back stays in the tab you came from). The same layout as Profile: photo, name, section, masked ID, connections and mutual counts, tags, About, Mutual Connections, **Going To**, **Event History**, and **Connections**. Each of the last three shows only if their privacy settings allow it; otherwise it says "Hidden by <name>'s privacy settings."
+  - **Buttons by where you stand:** **Connect** → **Pending · Cancel request**; when they asked you, **Accept** / **Decline**; when connected, a quiet **Connected**. The **⋯** menu has **Remove connection** and **Block** (each asks first). A blocked profile shows the name only, with **Unblock**. Every message says it's this preview only, and that declining or removing isn't told to the other person.
+  - **Teachers** see every section, whatever the settings, with no Connect buttons or menu.
+  - **Your Profile** (students) now has a **Connections** section above Event History: **Requests** with Accept (✓) and Decline (×), your connections, and **Sent** requests with Cancel. Tapping anyone opens their profile.
+  - **Bell:** "… wants to connect." opens Profile; "… accepted your request to connect." opens their profile.
+  - New shared widget: `widgets/person_row.dart` (photo, name, section, mutual count, optional button), reused later by search and Going lists. `tagTone` moved to a shared function in `profile_screen.dart`, so both profiles color tags the same.
+  - Tests: `test/people_screens_test.dart` (accept from Profile; a connection's and a stranger's view; Connect → Pending; block and unblock; teacher view; the bell's accepted notice). The screen audit covers three profile pages. Two older tests now scroll past the Connections section to reach Event History.
+
+- **Connect, step 1 of 4: data and privacy rules** (decided 2026-10-24, spec §10.1). Students will connect with students like LinkedIn's Connect: a mutual connection by request and acceptance. This step builds everything underneath; the screens come in steps 2–4.
+  - **Decisions recorded** in `docs/spec.md` (new §10.1 Connect; club page tabs gain **Members**, §7.4; visibility rules, §12) and in CLAUDE.md, which closes open decision 4.
+  - **Privacy settings** per student (`models/people.dart`): Upcoming events, Event history, and Connections list, each **Public / Connections / Only me**, default Connections.
+  - **One visibility rule** (`_mayView` in `CampusService`): the student sees everything of their own; **every teacher sees everything** (decided); a block hides each from the other; otherwise Public shows to all, Connections to connections, Only me to no one. A blocked profile shows the name only. Members-only events stay hidden from people who can't see them.
+  - **Actions** in `CampusService`: `loadPerson`, `loadConnections`, `searchPeople`, `loadSuggestions` (mutual connections, then same section, then shared clubs; up to 6), `sendConnectRequest` (connects at once if they already asked), `cancelConnectRequest`, `answerConnectRequest` (declining is silent), `removeConnection` (silent), `blockStudent` / `unblockStudent` / `loadBlocked`, `loadPrivacy` / `savePrivacy`, `loadConnectNotices`. Only students connect; teachers get "Only students connect with each other."
+  - **Bell:** a new notification type, **Connections** (with its own switch in Settings › Notifications). Waiting requests show as "Bea Villareal wants to connect."; accepting tells the sender.
+  - **Sample data** (`lib/mock/mock_people.dart`): the 35 students from the sample class lists are the people. Nicolas starts with 4 connections (Andrea, Carlo, Erika, Diego), 2 requests to answer (Bea, Aira), and 1 sent (Alyssa). Several students have different privacy settings, sample event history, and upcoming registrations, so every case can be tried. Where sample people now register by name (ev1, ev3, ev5), the anonymous counts were lowered by the same number, so every event's total is unchanged.
+  - The screens for this arrived in step 2 (above).
+  - Tests: `test/people_test.dart` (20): every viewer case (connection, Only me, stranger, Public, teacher, self, members-only events), mutual connections, each action and its refusals, blocking both ways, search, suggestions, privacy saving, unchanged event totals, and the bell notices. Tests counting unread notifications now include the two requests.
+
 - **Teachers get role tags** (feature refinement). A teacher's tags now show what the school assigned them, as a new tag kind, **Role** (green pill; "Assigned role" in Personal Information):
   - **`<Club> Adviser`** for each club they advise, e.g. `[Computer Science Society Adviser]` `[SMCL Robotics Club Adviser]`.
   - **`<Office> Clearance Staff`** when they process clearance, e.g. `[Department of Computer Studies Clearance Staff]`.
@@ -594,7 +629,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-111 tests currently pass, at any time of day. They cover:
+153 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
@@ -623,7 +658,7 @@ Don't silently invent answers to these. Ask the group (or the school) and record
 1. ~~Class editing scope.~~ **Decided 2026-10-23:** teachers edit only their own assigned classes (for now).
 2. Is departmental society membership automatic or application-based?
 3. ~~Single sessions or schedules.~~ **Decided 2026-10-23:** one class meeting at a time (for now). Which changes need approval or notification is still open.
-4. Visibility of event histories (still open). **Attendee lists, decided 2026-10-23:** all teachers can see them (not built yet).
+4. ~~Visibility of event histories and attendee lists.~~ **Decided 2026-10-24** with Connect (spec §10.1): each student chooses Public / Connections / Only me; Going lists name only who the viewer may see and count the rest; every teacher sees everything.
 5. Which student/faculty info comes from the Microsoft directory vs. another official source?
 6. Backend, database, and authorization architecture (later).
 7. Which free hosting service, and the Flutter web/PWA configuration.
