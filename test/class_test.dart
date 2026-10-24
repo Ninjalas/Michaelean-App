@@ -103,10 +103,13 @@ void main() {
     await tester.tap(farAhead); // select it, so "Today" appears
     await tester.pumpAndSettle();
 
-    // "Today" brings the strip back.
-    await tester.tap(find.text('Today'));
+    // "Today" brings the strip back. On a Sunday (no classes) the button
+    // names the next class day instead and jumps there.
+    final back = DateTime.now().weekday == DateTime.sunday ? weekdayName(classDay(1)) : 'Today';
+    await tester.scrollUntilVisible(find.widgetWithText(TextButton, back), -300, scrollable: page);
+    await tester.tap(find.widgetWithText(TextButton, back));
     await tester.pumpAndSettle();
-    expect(find.text('Today'), findsNothing); // today is selected again
+    expect(find.widgetWithText(TextButton, back), findsNothing); // the start day is selected again
 
     await tester.scrollUntilVisible(find.text('Show QR'), -300, scrollable: page);
     await tester.tap(find.text('Show QR'));

@@ -331,6 +331,37 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **More animations, step 5 of 5: Home's stats count up.** The numbers on Home's stats (94%, 3, 3/7, …) **count up from 0** the first time they show (300 ms). Only the first number in a stat counts ("0/7" → "3/7"). A reload with the same numbers doesn't replay it; a number that changes eases from the old value to the new one. Digits are equal-width, so the number doesn't wobble while counting. Screen readers hear the final number. Instant with reduce motion. In `widgets/stats_row.dart`. Tests: `test/stats_count_test.dart`.
+  - This finishes the five-step animation plan (nav bar, press feedback, shimmer, page slide, count-up).
+
+- **Fix: a way back on days without classes.** On the student Class page, the "Today" button (back to today after scrolling the day strip) never showed on Sundays, since Sunday has no classes and isn't in the strip. Now, on a day without classes, the button names the next class day ("Monday") and jumps there, the same day the page opens on. On class days it still says "Today". `test/class_test.dart` checks whichever applies on the day it runs (it used to fail on Sundays).
+
+- **More animations, step 4 of 5: pages slide in from the right.** Every page you open now slides in from the right (the page underneath shifts slightly left) and slides back out on Back, the same on Android and iPhone. Before, Android and the web used a fade, and only iPhone slid. You can also swipe from the left edge to go back. With reduce motion, pages simply appear.
+  - **How:** the theme's page transition (`SlidePageTransitions` in `theme/app_theme.dart`) uses the iOS slide on every platform. Pop-up sheets keep their own slide-up.
+  - Tests: `test/page_slide_test.dart` (a new page is partway in, then in place, on Android; reduce motion shows it at once).
+
+- **More animations, step 3 of 5: loading shimmer.** The grey placeholder boxes shown while Home and the Life hub load now have a **soft band of light sweeping across them** (one pass every 1.2 s), so the page reads as "loading", not "stuck". The sweep runs across all the boxes together and stops as soon as the page has loaded. With reduce motion the boxes stay still.
+  - **Shared widget:** `LoadingBoxes` (`widgets/loading_boxes.dart`), which replaces the two copies of the box code in Home and the Life hub.
+  - **Not changed:** other pages show a thin progress bar while loading, which already moves.
+  - Tests: `test/loading_boxes_test.dart` (the light keeps sweeping while loading and stops after; reduce motion keeps the boxes still).
+
+- **More animations, step 2 of 5: press feedback.** Tappable cards and rows now **shrink slightly (to 97%) while pressed** and spring back when you let go, on top of the usual ripple.
+  - **Shared widget:** `Pressable` (`widgets/pressable.dart`), used instead of `InkWell` for cards and rows. It follows the ripple's own pressed state, so starting to scroll a list doesn't shrink the row under your finger, and disabled rows don't react. Cards with a fill (Up Next, the Clearance and office tiles, the event action tiles) shrink as a whole, background included. No shrink with reduce motion.
+  - **Where:** every shared row (content, person, organization, settings rows), Home's stats, Up Next and featured post, Life hub cards and class rows, event action tiles and the Going faces row, notifications, clearance items, roster, registrations, the clearance desk and Manage club members.
+  - **Not used** on small controls that already show a selected state (filter chips, the class day picker) or on form fields.
+  - Tests: `test/pressable_test.dart` (shrinks while pressed and still taps; scrolling doesn't shrink; disabled doesn't react; reduce motion keeps the size).
+
+- **More animations, step 1 of 5: the nav bar.** The grey pill behind the selected tab now **glides** to the tab you tap (250 ms), and that tab's icon gives a **tiny bounce** (it grows to 115% and settles back). Before, the pill only faded from one tab to the other, and it ignored "reduce motion"; now both are instant with reduce motion. No bounce on the first load. In `widgets/floating_nav_bar.dart`. Tests: `test/nav_bar_test.dart` (midway the pill is between the tabs and the icon is larger; settled, both are back to normal; reduce motion is instant).
+  - **Planned next** (decided 2026-10-24): press feedback on cards and rows, a loading shimmer, pages sliding in from the right, and Home's numbers counting up.
+- **Fix: person-row buttons sit at the right edge again.** Connect, Cancel, and the ✕/✓ on requests sat near the middle of the row since the Connect feature: the button area shared the row 50/50 with the name. Now the name takes the space and the button is only capped in width (so large text still can't push it off screen). Affects every person list (Profile's Connections, People, Going, Privacy's blocked list). Test: `test/person_row_test.dart`.
+
+- **Back returns where you tapped.** Before, Home's shortcuts (like *Classes today*) switched to the Michaelean Life tab, so Back stayed there. Now a page opened from Home or Profile **opens inside that tab**: the tab stays highlighted and Back walks back to where you were, step by step. The Michaelean Life tab keeps its own pages, untouched.
+  - **Covered:** Home's stats, Up Next, Today's Classes, Pending Tasks, and notifications from the bell; Profile's Classes I Teach and Event History. Links inside those pages (a class's student, an event's Going list, …) stay in the same tab.
+  - **New page:** *Event attendance* and *Events completed* on Home open an **Event History** page in Home (the same list as on Profile).
+  - **How:** `lib/utils/tab_path.dart` lists which Michaelean Life pages Home and Profile also have (`tabCopies`). `router.dart` builds those pages once and adds them to each tab, and `inTab()` turns a `/life/...` link into the same page in the current tab. Profile's event pages moved from `/profile/event/…` to `/profile/events/…`, like the other tabs.
+  - **Still switches tabs:** a notice that opens Profile itself, and the Life-only pages (club management, clearance desk).
+  - Tests: `test/back_navigation_test.dart` (Back from Home's shortcuts and Profile's classes returns to them, the tab stays highlighted, Michaelean Life keeps its own pages); the screen audit covers the new Home and Profile pages.
+
 - **Animations, step 4 of 4: small state changes.** Controls that change their state no longer flip at once (200 ms, instant with reduce motion):
   - **Buttons crossfade** to their new state: Connect → Pending (in lists and on a student's profile, where the full-width button stays full width), Register → Registering… → Registered on an event.
   - **The bell's red dot** shrinks and fades away when everything is read, and grows back when something new arrives.
@@ -658,7 +689,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-171 tests currently pass, at any time of day. They cover:
+190 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

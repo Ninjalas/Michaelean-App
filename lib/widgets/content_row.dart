@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'pressable.dart';
 import 'user_avatar.dart';
 
 /// A list row: optional thumbnail, a small source line, a title, and a
@@ -83,7 +84,7 @@ class ContentRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final inlinePill = hasThumb ? null : pill; // with a thumbnail, the pill sits on it
-    return InkWell(
+    return Pressable(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),

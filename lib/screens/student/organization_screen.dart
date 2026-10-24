@@ -9,6 +9,7 @@ import '../../services/home_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
@@ -277,7 +278,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
           imageAsset: d.event.coverAsset,
           placeholderIcon: Icons.event_outlined,
           pill: eventPill(d, now),
-          onTap: () => context.push('/life/events/${d.event.id}'),
+          onTap: () => context.push(inTab(context, '/life/events/${d.event.id}')),
         ),
     ]);
   }
@@ -308,7 +309,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
           meta: post.body,
           imageAsset: post.imageAsset,
           pill: post.urgent ? const StatusPill('URGENT', tone: PillTone.red) : null,
-          onTap: () => context.push('/life/organizations/${p.org.id}/post/${post.id}'),
+          onTap: () => context.push(inTab(context, '/life/organizations/${p.org.id}/post/${post.id}')),
         ),
     ]);
   }
@@ -321,7 +322,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
       for (final m in members)
         PersonRow(
           person: m,
-          onTap: () => context.push('/life/people/${m.id}'),
+          onTap: () => context.push(inTab(context, '/life/people/${m.id}')),
           trailing: connectAction(context, widget.campusService, m),
         ),
     ]);

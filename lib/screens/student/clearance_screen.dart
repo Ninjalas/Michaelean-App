@@ -6,9 +6,11 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/clearance_widgets.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 
@@ -150,8 +152,8 @@ class _ClearanceScreenState extends State<ClearanceScreen> {
 
   Widget _itemRow(ClearanceItem item) {
     final text = Theme.of(context).textTheme;
-    return InkWell(
-      onTap: () => context.push('/life/clearance/${item.id}'),
+    return Pressable(
+      onTap: () => context.push(inTab(context, '/life/clearance/${item.id}')),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Row(

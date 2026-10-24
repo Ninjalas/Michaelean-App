@@ -7,9 +7,12 @@ import '../../services/home_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/content_row.dart';
 import '../teacher/create_menu.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/loading_boxes.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stats_row.dart';
@@ -231,20 +234,22 @@ class _HomeScreenState extends State<HomeScreen> {
       if (a != null)
         StatsRow(items: [
           StatItem('${a.classPercent}%', 'Class attendance',
-              onTap: () => context.go('/life/class')),
-          // Event history lives on Profile.
-          StatItem('${a.eventPercent}%', 'Event attendance', onTap: () => context.go('/profile')),
-          StatItem('${a.eventsCompleted}', 'Events completed', onTap: () => context.go('/profile')),
+              onTap: () => context.push('/home/class')),
+          StatItem('${a.eventPercent}%', 'Event attendance',
+              onTap: () => context.push('/home/history')),
+          StatItem('${a.eventsCompleted}', 'Events completed',
+              onTap: () => context.push('/home/history')),
           StatItem('${a.requirementsCleared}/${a.requirementsTotal}', 'Cleared',
-              onTap: () => context.go('/life/clearance')),
+              onTap: () => context.push('/home/clearance')),
         ]),
       if (t != null)
         StatsRow(items: [
-          StatItem('${t.classesToday}', 'Classes today', onTap: () => context.go('/life/classes')),
+          StatItem('${t.classesToday}', 'Classes today',
+              onTap: () => context.push('/home/classes')),
           StatItem('${t.sessionsToFinalize}', 'To finalize',
-              onTap: () => context.go('/life/classes')),
+              onTap: () => context.push('/home/classes')),
           StatItem('${t.upcomingEvents}', 'Upcoming events',
-              onTap: () => context.go('/life/events')),
+              onTap: () => context.push('/home/events')),
         ]),
       const SizedBox(height: AppSpacing.lg),
       UpNextCard(
@@ -252,9 +257,9 @@ class _HomeScreenState extends State<HomeScreen> {
         now: now,
         onTap: feed.nextClass == null
             ? null
-            : () => context.go(isTeacher
-                ? '/life/classes/${feed.nextClass!.classId}'
-                : '/life/class'),
+            : () => context.push(isTeacher
+                ? '/home/classes/${feed.nextClass!.classId}'
+                : '/home/class'),
         // Permission, not the Teacher label, decides who sees this (spec §12).
         onStartAttendance: isTeacher &&
                 feed.nextClass != null &&
@@ -271,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: t.title,
               meta: t.detail,
               pill: _taskPill(t.status),
-              onTap: () => t.route != null ? context.push(t.route!) : _openSoon(t.title),
+              onTap: () => t.route != null ? context.push(inTab(context, t.route!)) : _openSoon(t.title),
             ),
         ]),
       ],
@@ -290,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 meta: '${formatTime(c.start)} – ${formatTime(c.end)} · ${c.room}',
                 metaIcon: Icons.schedule_rounded,
                 pill: _classPill(c, now),
-                onTap: () => context.go('/life/classes/${c.classId}'),
+                onTap: () => context.push('/home/classes/${c.classId}'),
               ),
           ]),
       ],
@@ -363,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _featured(Post p, DateTime now) {
     final text = Theme.of(context).textTheme;
-    return InkWell(
+    return Pressable(
       onTap: () => _openPost(p),
       borderRadius: BorderRadius.circular(AppRadius.large),
       child: Padding(
@@ -414,19 +419,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ];
 
-  Widget _loading() => Column(
-        children: [
-          for (final h in [64.0, 120.0, 220.0])
-            Container(
-              height: h,
-              margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.fill,
-                borderRadius: BorderRadius.circular(AppRadius.large),
-              ),
-            ),
-        ],
-      );
+  // Shaped like the stats, Up Next, and the first section.
+  Widget _loading() => const LoadingBoxes(heights: [64, 120, 220]);
 
   Widget _error() => Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.section),

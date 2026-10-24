@@ -6,12 +6,14 @@ import '../services/campus_service.dart';
 import '../services/session.dart';
 import '../theme/app_theme.dart';
 import 'fade_switch.dart';
+import 'pressable.dart';
 import 'user_avatar.dart';
 
 /// A student in a list (connections, requests, search, Going lists): photo,
 /// name, section and mutual connections, with an optional action on the right.
 class PersonRow extends StatelessWidget {
   static const textIndent = 44 + AppSpacing.md; // divider indent under the name
+  static const maxTrailingWidth = 160.0; // the button never squeezes the name more
 
   final PersonSummary person;
   final VoidCallback onTap;
@@ -25,7 +27,7 @@ class PersonRow extends StatelessWidget {
     final mutual = person.mutual == 0
         ? ''
         : ' · ${person.mutual} mutual';
-    return InkWell(
+    return Pressable(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -43,10 +45,15 @@ class PersonRow extends StatelessWidget {
                 ],
               ),
             ),
-            // Flexible: with large text, the button gives way instead of overflowing.
+            // Right-aligned at its own width; capped so with large text the
+            // button gives way instead of overflowing. (A Flexible here would
+            // split the row with the name and pull the button to the middle.)
             if (trailing != null) ...[
               const SizedBox(width: AppSpacing.sm),
-              Flexible(child: trailing!),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: maxTrailingWidth),
+                child: trailing!,
+              ),
             ],
           ],
         ),

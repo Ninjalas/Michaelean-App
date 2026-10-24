@@ -243,7 +243,7 @@ void main() {
 
   testWidgets('a past event shows who went', (tester) async {
     await signIn(tester, 'Student', campus);
-    await go(tester, '/profile/event/past-git');
+    await go(tester, '/profile/events/past-git');
     await reveal(tester, find.text('You, Andrea and 2 others went'));
     expect(find.text('Went'), findsOneWidget);
   });

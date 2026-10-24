@@ -7,6 +7,7 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
@@ -298,13 +299,10 @@ class _PersonScreenState extends State<PersonScreen> {
     );
   }
 
-  /// The event page in this tab (Profile has its own event route); none
-  /// over attendance review, which sits above the tabs.
-  String? _eventPath(String eventId) => _base.startsWith('/profile')
-      ? '/profile/event/$eventId'
-      : _base.startsWith('/life')
-          ? '/life/events/$eventId'
-          : null;
+  /// The event page in this tab; none over attendance review, which sits
+  /// above the tabs.
+  String? _eventPath(String eventId) =>
+      _base.startsWith('/attendance') ? null : inTab(context, '/life/events/$eventId');
 
   /// The main button(s) for where you stand with them.
   Widget _actions(PersonSummary p) {

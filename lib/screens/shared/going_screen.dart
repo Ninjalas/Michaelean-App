@@ -5,6 +5,7 @@ import '../../models/people.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
@@ -101,8 +102,7 @@ class _GoingScreenState extends State<GoingScreen> {
     final text = Theme.of(context).textTheme;
     final muted = text.bodyMedium?.copyWith(color: AppColors.muted);
     // Profiles open in the tab this list was opened from.
-    final tab =
-        GoRouterState.of(context).uri.path.startsWith('/profile') ? '/profile' : '/life';
+    final tab = tabRoot(context);
     return Scaffold(
       body: SafeArea(
         bottom: false,

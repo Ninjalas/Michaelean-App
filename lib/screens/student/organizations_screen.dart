@@ -5,6 +5,7 @@ import '../../models/campus.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/org_row.dart';
@@ -108,7 +109,7 @@ class _OrganizationsScreenState extends State<OrganizationsScreen> {
           pill: showMember && memberOf.contains(orgs[i].id)
               ? const StatusPill('Member', tone: PillTone.green)
               : null,
-          onTap: () => context.push('/life/organizations/${orgs[i].id}'),
+          onTap: () => context.push(inTab(context, '/life/organizations/${orgs[i].id}')),
         ),
       ],
     ];

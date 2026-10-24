@@ -7,7 +7,9 @@ import '../../services/notification_prefs.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/pressable.dart';
 
 /// Recent notifications, shown inside the shared pop-up and grouped into
 /// Today / Earlier (spec §6). Opening one marks it read and navigates; it
@@ -57,11 +59,12 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
 
   Future<void> _open(AppNotification n) async {
     final router = GoRouter.of(context);
+    final route = n.route == null ? null : inTab(context, n.route!);
     await widget.homeService.markNotificationsRead(SessionScope.of(context).user!, [n.id]);
     router.pop(); // close the pop-up first
     router.push(n.postId != null
         ? '/home/post/${n.postId}'
-        : n.route ?? Uri(path: '/home/soon', queryParameters: {'what': n.title}).toString());
+        : route ?? Uri(path: '/home/soon', queryParameters: {'what': n.title}).toString());
   }
 
   @override
@@ -157,7 +160,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
 
   Widget _row(AppNotification n, DateTime now) {
     final text = Theme.of(context).textTheme;
-    return InkWell(
+    return Pressable(
       onTap: () => _open(n),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),

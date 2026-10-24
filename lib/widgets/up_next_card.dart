@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/feed.dart';
 import '../theme/app_theme.dart';
 import '../utils/dates.dart';
+import 'pressable.dart';
 
 /// The solid navy "Up next" card with the next class (spec §6, §8): the one
 /// navy hero on Home. Teachers allowed to take attendance also get a
@@ -28,75 +29,67 @@ class UpNextCard extends StatelessWidget {
 
     final text = Theme.of(context).textTheme;
     final inProgress = !c.start.isAfter(now);
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.navy,
-        borderRadius: BorderRadius.circular(AppRadius.large),
-        boxShadow: AppColors.floatShadow,
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.large),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.screen),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Pressable(
+      color: AppColors.navy,
+      shadow: AppColors.floatShadow,
+      borderRadius: BorderRadius.circular(AppRadius.large),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screen),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Text('UP NEXT',
-                        style: text.labelMedium
-                            ?.copyWith(color: AppColors.onNavyMuted, letterSpacing: 1.2)),
-                    const SizedBox(width: AppSpacing.sm),
-                    // A long date shortens instead of overflowing.
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm + 2, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text(
-                            inProgress ? 'Now' : formatDayLabel(c.start, now),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.white),
-                          ),
-                        ),
+                Text('UP NEXT',
+                    style: text.labelMedium
+                        ?.copyWith(color: AppColors.onNavyMuted, letterSpacing: 1.2)),
+                const SizedBox(width: AppSpacing.sm),
+                // A long date shortens instead of overflowing.
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm + 2, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        inProgress ? 'Now' : formatDayLabel(c.start, now),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.white),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(c.subject, style: text.headlineSmall?.copyWith(color: AppColors.white)),
-                const SizedBox(height: AppSpacing.md),
-                _line(Icons.schedule_rounded, '${formatTime(c.start)} – ${formatTime(c.end)}'),
-                _line(Icons.place_outlined, c.room),
-                if (c.teacher != null)
-                  _line(Icons.person_outline_rounded, c.teacher!)
-                else
-                  _line(Icons.groups_outlined, c.section),
-                if (onStartAttendance != null) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  FilledButton.icon(
-                    onPressed: onStartAttendance,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.white,
-                      foregroundColor: AppColors.navy,
-                    ),
-                    icon: const Icon(Icons.qr_code_scanner_rounded),
-                    label: const Text('Start attendance'),
                   ),
-                ],
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: AppSpacing.md),
+            Text(c.subject, style: text.headlineSmall?.copyWith(color: AppColors.white)),
+            const SizedBox(height: AppSpacing.md),
+            _line(Icons.schedule_rounded, '${formatTime(c.start)} – ${formatTime(c.end)}'),
+            _line(Icons.place_outlined, c.room),
+            if (c.teacher != null)
+              _line(Icons.person_outline_rounded, c.teacher!)
+            else
+              _line(Icons.groups_outlined, c.section),
+            if (onStartAttendance != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: onStartAttendance,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.white,
+                  foregroundColor: AppColors.navy,
+                ),
+                icon: const Icon(Icons.qr_code_scanner_rounded),
+                label: const Text('Start attendance'),
+              ),
+            ],
+          ],
         ),
       ),
     );

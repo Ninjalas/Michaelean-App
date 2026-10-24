@@ -7,9 +7,11 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
@@ -97,8 +99,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         for (var i = 0; i < d.roster.length; i++) ...[
           if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
           // Opens the student's full profile (teachers see everything, spec §10.1).
-          InkWell(
-            onTap: () => context.push('/life/people/${d.roster[i].id}'),
+          Pressable(
+            onTap: () => context.push(inTab(context, '/life/people/${d.roster[i].id}')),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
               child: Row(
@@ -193,7 +195,7 @@ class _SessionCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           OutlinedButton(
             onPressed: () =>
-                context.push('/life/classes/${s.classId}/edit?session=${s.id}'),
+                context.push(inTab(context, '/life/classes/${s.classId}/edit?session=${s.id}')),
             child: const Text('Change this session'),
           ),
         ],

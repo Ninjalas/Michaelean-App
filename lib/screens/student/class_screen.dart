@@ -75,13 +75,16 @@ class _ClassScreenState extends State<ClassScreen> {
       for (var d = sem.start; !d.isAfter(sem.end); d = DateTime(d.year, d.month, d.day + 1))
         if (d.weekday != DateTime.sunday) d,
     ];
-    // Start on today, or the nearest class day inside the semester.
-    if (!days.contains(_selected)) {
-      final today = _dayOnly(DateTime.now());
-      _selected = days.firstWhere((d) => !d.isBefore(today), orElse: () => days.last);
-    }
     _days = days;
+    if (!days.contains(_selected)) _selected = _home;
     return _ClassData(days, sessions, records);
+  }
+
+  /// Where the strip starts: today, or on a day without classes (Sunday) the
+  /// next class day inside the semester.
+  DateTime get _home {
+    final today = _dayOnly(DateTime.now());
+    return _days.firstWhere((d) => !d.isBefore(today), orElse: () => _days.last);
   }
 
   @override
@@ -208,19 +211,21 @@ class _ClassScreenState extends State<ClassScreen> {
   Widget _monthRow() {
     final text = Theme.of(context).textTheme;
     final today = _dayOnly(DateTime.now());
+    final home = _days.isEmpty ? today : _home;
     final month = formatDate(_selected).split(' ').skip(1).join(' '); // "October 2026"
     return Row(
       children: [
         Expanded(child: Text(month, style: text.titleMedium)),
-        if (_selected != today && _days.contains(today))
+        // "Today", or on a day without classes the day it jumps to ("Monday").
+        if (_selected != home)
           TextButton(
-            onPressed: () => _select(today, scroll: true),
+            onPressed: () => _select(home, scroll: true),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.navy,
               minimumSize: const Size(48, 40),
               textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
-            child: const Text('Today'),
+            child: Text(home == today ? 'Today' : weekdayName(home)),
           ),
       ],
     );

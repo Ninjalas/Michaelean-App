@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/campus.dart';
 import '../theme/app_theme.dart';
+import 'pressable.dart';
 import 'user_avatar.dart';
 
 /// An organization in a list: logo, name, member count (spec §7.4).
@@ -17,7 +18,7 @@ class OrgRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return InkWell(
+    return Pressable(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),

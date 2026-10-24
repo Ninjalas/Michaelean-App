@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/clearance_widgets.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -182,7 +183,7 @@ class _ClearanceDeskScreenState extends State<ClearanceDeskScreen> {
   Widget _caseRow(ClearanceCase c) {
     final text = Theme.of(context).textTheme;
     final waiting = c.items.where((i) => i.status == ClearanceStatus.inReview).toList();
-    return InkWell(
+    return Pressable(
       onTap: () => context.push('/life/verify/${c.student.id}'),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),

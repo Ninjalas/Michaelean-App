@@ -13,6 +13,7 @@ import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -302,7 +303,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
   /// Tapping opens the student's full profile (spec §10.1).
   Widget _person(OrgMember m, Widget trailing) {
     final text = Theme.of(context).textTheme;
-    return InkWell(
+    return Pressable(
       key: ValueKey(m.id), // AnimatedRows matches rows by it
       onTap: () => context.push('/life/people/${m.id}'),
       child: Padding(

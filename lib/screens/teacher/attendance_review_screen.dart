@@ -7,6 +7,7 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -160,7 +161,7 @@ class _AttendanceReviewScreenState extends State<AttendanceReviewScreen> {
           for (var i = 0; i < unchecked.length; i++) ...[
             if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
             // Opens the student's profile over this page (spec §10.1).
-            InkWell(
+            Pressable(
               onTap: () => context.push(
                   '/attendance/${widget.sessionId}/review/people/${unchecked[i].id}'),
               child: Padding(

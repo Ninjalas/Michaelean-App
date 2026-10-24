@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'pressable.dart';
 
 /// A rounded, soft-gray group of rows with white dividers (Luma's grouped
 /// inset lists, spec §11). Used by Settings and its pages.
@@ -42,7 +43,7 @@ class InsetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return InkWell(
+    return Pressable(
       onTap: onTap,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 52),

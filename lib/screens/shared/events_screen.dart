@@ -7,6 +7,7 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
@@ -86,7 +87,7 @@ class _EventsScreenState extends State<EventsScreen> {
                   ? RoundIconButton(
                       icon: Icons.add_rounded,
                       tooltip: 'Create event',
-                      onPressed: () => context.push('/life/events/new'),
+                      onPressed: () => context.push(inTab(context, '/life/events/new')),
                     )
                   : null,
             ),
@@ -263,7 +264,7 @@ class _EventsScreenState extends State<EventsScreen> {
       imageAsset: e.coverAsset,
       placeholderIcon: Icons.event_outlined,
       pill: eventPill(d, DateTime.now()),
-      onTap: () => context.push('/life/events/${e.id}'),
+      onTap: () => context.push(inTab(context, '/life/events/${e.id}')),
     );
   }
 

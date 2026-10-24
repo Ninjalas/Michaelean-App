@@ -9,7 +9,6 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/dates.dart';
 import '../../widgets/animated_rows.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
@@ -19,6 +18,7 @@ import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/tab_reselect.dart';
 import '../../widgets/user_avatar.dart';
+import 'event_history_screen.dart';
 
 /// Shared social-identity profile for both roles, in Luma's profile layout
 /// (spec §10). No QR here: it lives on the long-press sheet (spec §1.3).
@@ -186,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           title: c.subject,
                                           meta: c.room,
                                           metaIcon: Icons.place_outlined,
-                                          onTap: () => context.go('/life/classes/${c.classId}'),
+                                          onTap: () => context.push('/profile/classes/${c.classId}'),
                                         ),
                                     ]),
                                 ],
@@ -195,16 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   _muted('No recorded events yet.')
                                 else
                                   ..._divided(indent: ContentRow.textIndent, [
-                                    for (final e in data.history)
-                                      ContentRow(
-                                        title: e.eventName,
-                                        meta: '${formatDate(e.date)} · ${e.role.label}',
-                                        metaIcon: Icons.calendar_today_outlined,
-                                        imageAsset: e.imageAsset,
-                                        placeholderIcon: Icons.event_outlined,
-                                        pill: StatusPill(e.status.label, tone: PillTone.green),
-                                        onTap: () => context.push('/profile/event/${e.eventId}'),
-                                      ),
+                                    for (final e in data.history) eventRecordRow(context, e),
                                   ]),
                               ],
                             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'pressable.dart';
 
 class StatItem {
   final String value; // e.g. "92%" or "3/6"
@@ -53,16 +54,18 @@ class _Stat extends StatelessWidget {
       button: true,
       label: '${item.label}: ${item.value}',
       excludeSemantics: true,
-      child: InkWell(
+      child: Pressable(
         onTap: item.onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: AppSpacing.xs),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(item.value,
-                  maxLines: 1,
-                  style: text.headlineSmall?.copyWith(fontSize: 22, color: AppColors.navy)),
+              _countUp(context, text.headlineSmall?.copyWith(
+                fontSize: 22,
+                color: AppColors.navy,
+                fontFeatures: const [FontFeature.tabularFigures()], // no wobble while counting
+              )),
               const SizedBox(height: 2),
               Text(
                 item.label,
@@ -74,6 +77,25 @@ class _Stat extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// The value with its first number counting up from 0 the first time it
+  /// shows ("0/7" → "3/7"), and easing to a new number when it changes;
+  /// the same number on a reload doesn't replay it (spec §2.5). Instant with
+  /// the phone's reduce-motion setting.
+  Widget _countUp(BuildContext context, TextStyle? style) {
+    final number = RegExp(r'\d+').firstMatch(item.value);
+    if (number == null) return Text(item.value, maxLines: 1, style: style);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: double.parse(number[0]!)),
+      duration: AppMotion.of(context, AppMotion.slow),
+      curve: Curves.easeOutCubic,
+      builder: (context, n, _) => Text(
+        item.value.replaceRange(number.start, number.end, '${n.round()}'),
+        maxLines: 1,
+        style: style,
       ),
     );
   }

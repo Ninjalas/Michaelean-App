@@ -14,8 +14,10 @@ import '../../widgets/animated_rows.dart';
 import '../../widgets/clearance_widgets.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/loading_boxes.dart';
 import '../../widgets/org_row.dart';
 import '../../widgets/person_row.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/tab_reselect.dart';
@@ -356,21 +358,9 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
         ],
       ];
 
-  Widget _loading() => Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.section),
-        child: Column(
-          children: [
-            for (final h in [120.0, 240.0, 120.0])
-              Container(
-                height: h,
-                margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-                decoration: BoxDecoration(
-                  color: AppColors.fill,
-                  borderRadius: BorderRadius.circular(AppRadius.large),
-                ),
-              ),
-          ],
-        ),
+  Widget _loading() => const Padding(
+        padding: EdgeInsets.only(top: AppSpacing.section),
+        child: LoadingBoxes(heights: [120, 240, 120]),
       );
 
   Widget _error() => Padding(
@@ -407,7 +397,7 @@ class _EventCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return SizedBox(
       width: width,
-      child: InkWell(
+      child: Pressable(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.large),
         child: Column(
@@ -465,7 +455,7 @@ class _TeacherClassRow extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final c = session;
     final ended = !c.end.isAfter(now);
-    return InkWell(
+    return Pressable(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -521,43 +511,40 @@ class _ClearanceProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final s = summary;
-    return Material(
+    return Pressable(
       color: AppColors.fill,
       borderRadius: BorderRadius.circular(AppRadius.large),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.large),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.screen),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: Text(s.periodName, style: text.titleMedium)),
-                  Text('${s.cleared}/${s.total}',
-                      style: text.headlineSmall?.copyWith(fontSize: 22, color: AppColors.navy)),
-                ],
-              ),
-              Text('Due ${formatDayMonth(s.deadline)}',
-                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-              const SizedBox(height: AppSpacing.md),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: LinearProgressIndicator(
-                  value: s.total == 0 ? 0 : s.cleared / s.total,
-                  minHeight: 6,
-                  backgroundColor: AppColors.white,
-                  color: AppColors.navy,
-                  semanticsLabel: '${s.cleared} of ${s.total} cleared',
-                ),
-              ),
-              if (s.needsCorrection > 0) ...[
-                const SizedBox(height: AppSpacing.md),
-                StatusPill('${s.needsCorrection} needs correction', tone: PillTone.red),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screen),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(s.periodName, style: text.titleMedium)),
+                Text('${s.cleared}/${s.total}',
+                    style: text.headlineSmall?.copyWith(fontSize: 22, color: AppColors.navy)),
               ],
+            ),
+            Text('Due ${formatDayMonth(s.deadline)}',
+                style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+            const SizedBox(height: AppSpacing.md),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: LinearProgressIndicator(
+                value: s.total == 0 ? 0 : s.cleared / s.total,
+                minHeight: 6,
+                backgroundColor: AppColors.white,
+                color: AppColors.navy,
+                semanticsLabel: '${s.cleared} of ${s.total} cleared',
+              ),
+            ),
+            if (s.needsCorrection > 0) ...[
+              const SizedBox(height: AppSpacing.md),
+              StatusPill('${s.needsCorrection} needs correction', tone: PillTone.red),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -573,21 +560,18 @@ class _OfficeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Material(
+    return Pressable(
       color: AppColors.fill,
       borderRadius: BorderRadius.circular(AppRadius.large),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.large),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.screen),
-          child: Row(
-            children: [
-              Expanded(child: Text(office.name, style: text.titleMedium)),
-              Text('${office.pendingCount} pending',
-                  style: text.titleMedium?.copyWith(color: AppColors.navy)),
-            ],
-          ),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screen),
+        child: Row(
+          children: [
+            Expanded(child: Text(office.name, style: text.titleMedium)),
+            Text('${office.pendingCount} pending',
+                style: text.titleMedium?.copyWith(color: AppColors.navy)),
+          ],
         ),
       ),
     );

@@ -7,6 +7,7 @@ import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/edit_profile_screen.dart';
 import 'screens/shared/event_detail_screen.dart';
+import 'screens/shared/event_history_screen.dart';
 import 'screens/shared/events_screen.dart';
 import 'screens/shared/going_screen.dart';
 import 'screens/shared/help_screen.dart';
@@ -50,6 +51,7 @@ import 'services/home_service.dart';
 import 'services/session.dart';
 import 'services/user_service.dart';
 import 'models/feed.dart';
+import 'utils/tab_path.dart';
 import 'widgets/app_sheet.dart';
 
 /// All app routes. The app opens on the opening intro, then the sign-in
@@ -58,6 +60,167 @@ import 'widgets/app_sheet.dart';
 GoRouter createRouter(Session session, UserService userService, HomeService homeService,
     CampusService campusService) {
   final rootKey = GlobalKey<NavigatorState>();
+  // Michaelean Life pages that Home and Profile also open in their own tab,
+  // so Back returns where the user was (utils/tab_path.dart).
+  final shared = <String, GoRoute Function()>{
+    // Student Class screen (spec §7.1).
+    'class': () => GoRoute(
+      path: 'class',
+      builder: (context, state) => ClassScreen(campusService: campusService),
+    ),
+    // Teacher class management (spec §9.1).
+    'classes': () => GoRoute(
+      path: 'classes',
+      builder: (context, state) => ClassesScreen(campusService: campusService),
+      routes: [
+        GoRoute(
+          path: ':classId',
+          builder: (context, state) => ClassDetailScreen(
+            campusService: campusService,
+            classId: state.pathParameters['classId']!,
+          ),
+          routes: [
+            GoRoute(
+              path: 'edit',
+              parentNavigatorKey: rootKey, // form with Save at the bottom
+              builder: (context, state) => EditSessionScreen(
+                campusService: campusService,
+                sessionId: state.uri.queryParameters['session'] ?? '',
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+    // Clearance (spec §7.5).
+    'clearance': () => GoRoute(
+      path: 'clearance',
+      builder: (context, state) => ClearanceScreen(campusService: campusService),
+      routes: [
+        GoRoute(
+          path: ':itemId',
+          builder: (context, state) => ClearanceItemScreen(
+            campusService: campusService,
+            itemId: state.pathParameters['itemId']!,
+          ),
+        ),
+      ],
+    ),
+    // Organizations (spec §7.4). An event opened from an
+    // organization is pushed on top, so Back returns to it.
+    'organizations': () => GoRoute(
+      path: 'organizations',
+      builder: (context, state) =>
+          OrganizationsScreen(campusService: campusService),
+      routes: [
+        GoRoute(
+          path: ':orgId',
+          builder: (context, state) => OrganizationScreen(
+            campusService: campusService,
+            homeService: homeService,
+            orgId: state.pathParameters['orgId']!,
+          ),
+          routes: [
+            GoRoute(
+              path: 'post/:postId',
+              routes: [
+                // A club post its adviser wrote in this preview.
+                GoRoute(
+                  path: 'edit',
+                  parentNavigatorKey: rootKey,
+                  builder: (context, state) => PostFormScreen(
+                    homeService: homeService,
+                    campusService: campusService,
+                    postId: state.pathParameters['postId']!,
+                  ),
+                ),
+              ],
+              builder: (context, state) => PostDetailScreen(
+                postId: state.pathParameters['postId']!,
+                homeService: homeService,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+    // People search, and other students' profiles (spec §10.1).
+    'people': () => GoRoute(
+      path: 'people',
+      builder: (context, state) => PeopleScreen(campusService: campusService),
+      routes: [
+        GoRoute(
+          path: ':personId',
+          builder: (context, state) => PersonScreen(
+            campusService: campusService,
+            personId: state.pathParameters['personId']!,
+          ),
+        ),
+      ],
+    ),
+    // Events (spec §7.3, §9.2). Forms cover the nav bar, like
+    // Edit Session, since their buttons sit at the bottom.
+    'events': () => GoRoute(
+      path: 'events',
+      builder: (context, state) => EventsScreen(campusService: campusService),
+      routes: [
+        GoRoute(
+          path: 'new',
+          parentNavigatorKey: rootKey,
+          builder: (context, state) => EventFormScreen(campusService: campusService),
+        ),
+        GoRoute(
+          path: ':eventId',
+          builder: (context, state) => EventDetailScreen(
+            campusService: campusService,
+            eventId: state.pathParameters['eventId']!,
+          ),
+          routes: [
+            GoRoute(
+              path: 'edit',
+              parentNavigatorKey: rootKey,
+              builder: (context, state) => EventFormScreen(
+                campusService: campusService,
+                eventId: state.pathParameters['eventId']!,
+              ),
+            ),
+            GoRoute(
+              path: 'invite',
+              parentNavigatorKey: rootKey,
+              builder: (context, state) => EventInviteScreen(
+                campusService: campusService,
+                eventId: state.pathParameters['eventId']!,
+              ),
+            ),
+            GoRoute(
+              path: 'checkin',
+              parentNavigatorKey: rootKey, // full-screen scanner
+              builder: (context, state) => EventCheckInScreen(
+                campusService: campusService,
+                eventId: state.pathParameters['eventId']!,
+              ),
+            ),
+            GoRoute(
+              path: 'registrations',
+              builder: (context, state) => EventRegistrationsScreen(
+                campusService: campusService,
+                eventId: state.pathParameters['eventId']!,
+              ),
+            ),
+            // Who's going (or went), spec §10.1.
+            GoRoute(
+              path: 'going',
+              builder: (context, state) => GoingScreen(
+                campusService: campusService,
+                eventId: state.pathParameters['eventId']!,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  };
+
   return GoRouter(
     navigatorKey: rootKey,
     initialLocation: '/opening',
@@ -173,6 +336,13 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     title: state.uri.queryParameters['what'] ?? 'Coming soon',
                   ),
                 ),
+                for (final page in tabCopies['/home']!) shared[page]!(),
+                // Event history, from the attendance stats.
+                GoRoute(
+                  path: 'history',
+                  builder: (context, state) =>
+                      EventHistoryScreen(campusService: campusService),
+                ),
               ],
             ),
           ]),
@@ -181,49 +351,8 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               path: '/life',
               builder: (context, state) => LifeHubScreen(campusService: campusService),
               routes: [
-                // Student Class screen (spec §7.1).
-                GoRoute(
-                  path: 'class',
-                  builder: (context, state) => ClassScreen(campusService: campusService),
-                ),
-                // Teacher class management (spec §9.1).
-                GoRoute(
-                  path: 'classes',
-                  builder: (context, state) => ClassesScreen(campusService: campusService),
-                  routes: [
-                    GoRoute(
-                      path: ':classId',
-                      builder: (context, state) => ClassDetailScreen(
-                        campusService: campusService,
-                        classId: state.pathParameters['classId']!,
-                      ),
-                      routes: [
-                        GoRoute(
-                          path: 'edit',
-                          parentNavigatorKey: rootKey, // form with Save at the bottom
-                          builder: (context, state) => EditSessionScreen(
-                            campusService: campusService,
-                            sessionId: state.uri.queryParameters['session'] ?? '',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                // Clearance (spec §7.5) and staff verification (spec §9.3).
-                GoRoute(
-                  path: 'clearance',
-                  builder: (context, state) => ClearanceScreen(campusService: campusService),
-                  routes: [
-                    GoRoute(
-                      path: ':itemId',
-                      builder: (context, state) => ClearanceItemScreen(
-                        campusService: campusService,
-                        itemId: state.pathParameters['itemId']!,
-                      ),
-                    ),
-                  ],
-                ),
+                for (final make in shared.values) make(),
+                // Staff verification (spec §9.3).
                 GoRoute(
                   path: 'verify',
                   builder: (context, state) => ClearanceDeskScreen(campusService: campusService),
@@ -234,22 +363,6 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       builder: (context, state) => ClearanceCaseScreen(
                         campusService: campusService,
                         studentId: state.pathParameters['studentId']!,
-                      ),
-                    ),
-                  ],
-                ),
-                // Organizations (spec §7.4). An event opened from an
-                // organization is pushed on top, so Back returns to it.
-                // People search, and other students' profiles (spec §10.1).
-                GoRoute(
-                  path: 'people',
-                  builder: (context, state) => PeopleScreen(campusService: campusService),
-                  routes: [
-                    GoRoute(
-                      path: ':personId',
-                      builder: (context, state) => PersonScreen(
-                        campusService: campusService,
-                        personId: state.pathParameters['personId']!,
                       ),
                     ),
                   ],
@@ -297,103 +410,6 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     ),
                   ],
                 ),
-                GoRoute(
-                  path: 'organizations',
-                  builder: (context, state) =>
-                      OrganizationsScreen(campusService: campusService),
-                  routes: [
-                    GoRoute(
-                      path: ':orgId',
-                      builder: (context, state) => OrganizationScreen(
-                        campusService: campusService,
-                        homeService: homeService,
-                        orgId: state.pathParameters['orgId']!,
-                      ),
-                      routes: [
-                        GoRoute(
-                          path: 'post/:postId',
-                          routes: [
-                            // A club post its adviser wrote in this preview.
-                            GoRoute(
-                              path: 'edit',
-                              parentNavigatorKey: rootKey,
-                              builder: (context, state) => PostFormScreen(
-                                homeService: homeService,
-                                campusService: campusService,
-                                postId: state.pathParameters['postId']!,
-                              ),
-                            ),
-                          ],
-                          builder: (context, state) => PostDetailScreen(
-                            postId: state.pathParameters['postId']!,
-                            homeService: homeService,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                // Events (spec §7.3, §9.2). Forms cover the nav bar, like
-                // Edit Session, since their buttons sit at the bottom.
-                GoRoute(
-                  path: 'events',
-                  builder: (context, state) => EventsScreen(campusService: campusService),
-                  routes: [
-                    GoRoute(
-                      path: 'new',
-                      parentNavigatorKey: rootKey,
-                      builder: (context, state) => EventFormScreen(campusService: campusService),
-                    ),
-                    GoRoute(
-                      path: ':eventId',
-                      builder: (context, state) => EventDetailScreen(
-                        campusService: campusService,
-                        eventId: state.pathParameters['eventId']!,
-                      ),
-                      routes: [
-                        GoRoute(
-                          path: 'edit',
-                          parentNavigatorKey: rootKey,
-                          builder: (context, state) => EventFormScreen(
-                            campusService: campusService,
-                            eventId: state.pathParameters['eventId']!,
-                          ),
-                        ),
-                        GoRoute(
-                          path: 'invite',
-                          parentNavigatorKey: rootKey,
-                          builder: (context, state) => EventInviteScreen(
-                            campusService: campusService,
-                            eventId: state.pathParameters['eventId']!,
-                          ),
-                        ),
-                        GoRoute(
-                          path: 'checkin',
-                          parentNavigatorKey: rootKey, // full-screen scanner
-                          builder: (context, state) => EventCheckInScreen(
-                            campusService: campusService,
-                            eventId: state.pathParameters['eventId']!,
-                          ),
-                        ),
-                        GoRoute(
-                          path: 'registrations',
-                          builder: (context, state) => EventRegistrationsScreen(
-                            campusService: campusService,
-                            eventId: state.pathParameters['eventId']!,
-                          ),
-                        ),
-                        // Who's going (or went), spec §10.1.
-                        GoRoute(
-                          path: 'going',
-                          builder: (context, state) => GoingScreen(
-                            campusService: campusService,
-                            eventId: state.pathParameters['eventId']!,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
               ],
             ),
           ]),
@@ -416,31 +432,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                   path: 'privacy',
                   builder: (context, state) => PrivacyScreen(campusService: campusService),
                 ),
-                // Another student's profile (spec §10.1), from Connections.
-                GoRoute(
-                  path: 'people/:personId',
-                  builder: (context, state) => PersonScreen(
-                    campusService: campusService,
-                    personId: state.pathParameters['personId']!,
-                  ),
-                ),
-                // An event from Event History, opened inside the Profile tab.
-                GoRoute(
-                  path: 'event/:eventId',
-                  builder: (context, state) => EventDetailScreen(
-                    campusService: campusService,
-                    eventId: state.pathParameters['eventId']!,
-                  ),
-                  routes: [
-                    GoRoute(
-                      path: 'going',
-                      builder: (context, state) => GoingScreen(
-                        campusService: campusService,
-                        eventId: state.pathParameters['eventId']!,
-                      ),
-                    ),
-                  ],
-                ),
+                for (final page in tabCopies['/profile']!) shared[page]!(),
                 GoRoute(
                   path: 'edit',
                   parentNavigatorKey: rootKey, // full page over the nav bar (Save sits at the bottom)

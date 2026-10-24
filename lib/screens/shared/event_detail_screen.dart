@@ -8,8 +8,10 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
 import 'going_screen.dart';
@@ -131,9 +133,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (d.canManage) ...[
         if (e.status == EventStatus.published && !d.attendanceFinalized)
           (Icons.qr_code_scanner_rounded, 'Take attendance',
-              () => context.push('/life/events/${e.id}/checkin'), false),
+              () => context.push(inTab(context, '/life/events/${e.id}/checkin')), false),
         (Icons.people_outline_rounded, 'View registrations',
-            () => context.push('/life/events/${e.id}/registrations'), false),
+            () => context.push(inTab(context, '/life/events/${e.id}/registrations')), false),
         if (e.status != EventStatus.cancelled && upcoming)
           (Icons.event_busy_outlined, 'Cancel event', _cancelEvent, true),
       ] else if (d.registered && upcoming && e.status == EventStatus.published)
@@ -236,9 +238,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             _Action(Icons.edit_outlined, 'Edit',
                 e.status == EventStatus.cancelled || !upcoming
                     ? null
-                    : () => context.push('/life/events/${e.id}/edit')),
+                    : () => context.push(inTab(context, '/life/events/${e.id}/edit'))),
             _Action(Icons.person_add_alt_rounded, 'Invite',
-                live ? () => context.push('/life/events/${e.id}/invite') : null),
+                live ? () => context.push(inTab(context, '/life/events/${e.id}/invite')) : null),
             _Action(Icons.more_horiz_rounded, 'More', () => _more(d)),
           ]
         : [
@@ -371,7 +373,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   snap.hasError ? "Couldn't load who's going." : '${d.going} registered',
                   style: muted);
             }
-            return InkWell(
+            return Pressable(
               onTap: () => context.push('${GoRouterState.of(context).uri.path}/going'),
               borderRadius: BorderRadius.circular(AppRadius.small),
               child: Padding(
@@ -392,7 +394,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              onPressed: () => context.push('/life/events/${e.id}/registrations'),
+              onPressed: () => context.push(inTab(context, '/life/events/${e.id}/registrations')),
               child: const Text('Registrations ›'),
             ),
           ),
@@ -461,26 +463,23 @@ class _Action extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: onTap != null,
-      child: Material(
+      child: Pressable(
         color: AppColors.fill,
         borderRadius: BorderRadius.circular(AppRadius.large),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.large),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            child: StateFade(
-              state: label,
-              child: Column(
-                children: [
-                  Icon(icon, color: color),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
-                ],
-              ),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          child: StateFade(
+            state: label,
+            child: Column(
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(height: AppSpacing.xs),
+                Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+              ],
             ),
           ),
         ),

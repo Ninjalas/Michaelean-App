@@ -5,8 +5,10 @@ import '../../models/campus.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -98,8 +100,8 @@ class _EventRegistrationsScreenState extends State<EventRegistrationsScreen> {
   Widget _row(EventRegistrant r) {
     final text = Theme.of(context).textTheme;
     // Opens the student's full profile (teachers see everything, spec §10.1).
-    return InkWell(
-      onTap: () => context.push('/life/people/${r.id}'),
+    return Pressable(
+      onTap: () => context.push(inTab(context, '/life/people/${r.id}')),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
         child: Row(

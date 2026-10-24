@@ -54,6 +54,21 @@ class AppMotion {
       MediaQuery.disableAnimationsOf(context) ? Duration.zero : d;
 }
 
+/// The iOS-style page slide, used on every platform; pages just appear with
+/// the phone's reduce-motion setting.
+class SlidePageTransitions extends PageTransitionsBuilder {
+  const SlidePageTransitions();
+
+  static const _slide = CupertinoPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context,
+      Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    return _slide.buildTransitions(route, context, animation, secondaryAnimation, child);
+  }
+}
+
 class AppRadius {
   static const small = 12.0; // thumbnails, small elements
   static const large = 20.0; // cover images, sheets, modals
@@ -81,14 +96,10 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.paper,
       dividerColor: AppColors.hairline,
-      // Smooth, never abrupt page changes (spec §2.5). iOS keeps its native
-      // slide so the swipe-back gesture still works in the installed PWA.
-      pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+      // Pages slide in from the right on every phone, and back out on Back,
+      // with the swipe-back gesture (spec §2.5, decided 2026-10-24).
+      pageTransitionsTheme: PageTransitionsTheme(builders: {
+        for (final p in TargetPlatform.values) p: const SlidePageTransitions(),
       }),
     );
 

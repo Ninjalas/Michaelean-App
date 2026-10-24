@@ -6,6 +6,7 @@ import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
@@ -114,7 +115,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                               PersonRow(
                                 key: ValueKey(p.id),
                                 person: p,
-                                onTap: () => context.push('/life/people/${p.id}'),
+                                onTap: () => context.push(inTab(context, '/life/people/${p.id}')),
                                 trailing: connectAction(context, widget.campusService, p),
                               ),
                           ],

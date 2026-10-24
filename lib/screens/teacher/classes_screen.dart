@@ -7,6 +7,7 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
@@ -81,7 +82,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
                               meta: '${c.weekdays.map(weekdayShort).join(' · ')}, '
                                   '${formatMinutesRange(c.startMinute, c.endMinute)}',
                               metaIcon: Icons.schedule_rounded,
-                              onTap: () => context.push('/life/classes/${c.id}'),
+                              onTap: () => context.push(inTab(context, '/life/classes/${c.id}')),
                             );
                           },
                         );

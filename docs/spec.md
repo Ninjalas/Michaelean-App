@@ -27,6 +27,7 @@ Teacher: `Home | Michaelean Life | Profile`
 - Home is the initial destination after sign-in.
 - Student Life and Michaelean Life are feature hubs, not landing screens.
 - Bottom tabs keep their state.
+- **Back returns where you tapped (decided 2026-10-24).** A shortcut never switches tabs: a page opened from Home (stats, Up Next, Today's Classes, Pending Tasks, notifications) or from Profile (Classes I Teach, Event History) opens inside that tab, which stays highlighted, so Back walks back to it. Links inside those pages stay in the same tab too. Home's event stats open an Event History page. The Life hub keeps its own pages. Which pages each tab has a copy of is listed in `lib/utils/tab_path.dart`.
 - Reuse shared components; adapt content and actions to the role. No duplicated student/teacher screens.
 - The development role switch lives in the Settings pop-up (§11) and on the sign-in preview screen. It is never a security mechanism.
 
@@ -121,7 +122,9 @@ Both are free (OFL) and bundled as asset files so they work offline. Inter is al
 - Sheets slide/spring up over a dimming background.
 - A list image expands into the event detail cover.
 - The Home header collapses smoothly on scroll.
-- Tab and page transitions are smooth, never abrupt.
+- Tab and page transitions are smooth, never abrupt. Pages slide in from the right on every phone and back out on Back, with swipe-back from the left edge (decided 2026-10-24).
+- Small feedback: the nav bar pill glides to the tapped tab and its icon bounces; cards and rows shrink slightly while pressed; loading boxes shimmer; Home's stats count up from 0 the first time they show.
+- Everything follows the phone's reduce-motion setting (no motion when it's on).
 - The scan flash on the attendance camera (§9.1).
 
 ### 2.6 Imagery
