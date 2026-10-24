@@ -285,7 +285,7 @@ Rules:
 
 Each entry shows logo, name, and member count. Don't treat a department as its society, and don't list other departments' societies as school-wide clubs.
 
-**Organization page:** cover photo, logo, name, tags, and membership status (Member / Join), then **tabs**: About, Schedule, Events, News, Officers.
+**Organization page:** cover photo, logo, name, tags, and membership status (Member / Join), then **tabs**: About, Schedule, Events, News, Officers, Members (decided 2026-10-24, for clubs with a member list; memberships are visible to all, §12; tapping a member opens their profile, §10.1).
 
 - The Events tab lists the organization's events; tapping one opens the shared event detail, with Back preserved.
 - Only authorized officers can publish or manage organization content. Administrators manage memberships and officer assignments. When an officer role ends, management permissions are revoked but historical posts remain.
@@ -390,6 +390,22 @@ Top to bottom:
 
 **Edit Profile:** edit presentation details such as the photo and About. Academic information, identifiers, memberships, roles, and attendance history cannot be edited.
 
+### 10.1 Connect (decided 2026-10-24)
+
+Students connect with students, like LinkedIn's Connect: a **mutual** connection, made by request and acceptance. The button says **Connect**; the list is **Connections**.
+
+- **Requests:** the receiver gets a bell notice and a request with **Accept** or **Decline**. Declining is silent (the sender keeps seeing "Pending" and can cancel). When accepted, the sender gets a bell notice.
+- **Safety:** **Remove connection** (silent) and **Block**. Blocking removes the connection and hides each from the other everywhere (search, suggestions, Going lists, member lists, requests); a blocked profile shows the name only. Unblock in Settings › Privacy › Blocked students.
+- **Finding people:** Student Life › **People** (suggestions from the same section, the same clubs, and mutual connections; See all › to search by name), club **Members** tabs, and event **Going** lists.
+- **Privacy settings** (Settings › Privacy), each **Public / Connections / Only me**, default **Connections**:
+  - **Upcoming events:** events the student is going to.
+  - **Event history:** past events the student attended.
+  - **Connections list.**
+- **What a profile shows:** to anyone: photo, name, section, tags, About, connection count, and mutual connections, plus what the student set to Public. Connections also see what's set to Connections. The student sees everything.
+- **Teachers** don't connect. Every teacher can open any student's profile and see everything, whatever the settings (decided; no note is shown to students). They open profiles from class lists, attendance review, club members and requests, event registrations, and a People search (view only).
+- **Own profile:** a **Connections** section with incoming requests, connections, and sent requests.
+- **Event pages:** a row of faces with "Andrea, Carlo and 14 others are going", connections first; tapping opens the full **Going** list with Connect buttons. People whose Upcoming events setting hides them from the viewer are **counted, not named**. Anyone who can see the event can open the list. After the event it becomes **Went** and follows each person's Event history setting.
+
 ## 11. Settings Pop-Up
 
 The settings icon on Profile opens a sheet over the screen with a dimmed background, in Luma's grouped, rounded inset-list style:
@@ -422,7 +438,7 @@ Privacy:
 - QR content is a random token, never personal data.
 - Avoid unnecessary personal information.
 - Hide or disable unauthorized actions, with an explanation where useful.
-- Visibility rules for event history and attendee lists remain to be finalized.
+- Event history, upcoming events, and connection lists follow each student's privacy settings (§10.1, decided 2026-10-24). Teachers see all of them. Attendee (Going) lists name only people whose settings allow it and count the rest.
 
 ## 13. Development Order (rebuild)
 
