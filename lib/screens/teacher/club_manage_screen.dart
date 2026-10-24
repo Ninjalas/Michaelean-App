@@ -9,8 +9,10 @@ import '../../services/home_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -200,18 +202,21 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
               children: [
                 BackHeader(admin?.org.name ?? 'Manage club'),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load this club."))
-                      : !snap.hasData
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : admin == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text("You aren't an adviser of this club.",
-                                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                                )
-                              : _content(admin, snap.data!.$2),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load this club."))
+                        : !snap.hasData
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : admin == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text("You aren't an adviser of this club.",
+                                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                                  )
+                                : _content(admin, snap.data!.$2),
+                  ),
                 ),
               ],
             );
@@ -298,6 +303,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
   Widget _person(OrgMember m, Widget trailing) {
     final text = Theme.of(context).textTheme;
     return InkWell(
+      key: ValueKey(m.id), // AnimatedRows matches rows by it
       onTap: () => context.push('/life/people/${m.id}'),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -363,7 +369,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
       else if (shown.isEmpty)
         _empty('No members match "$_search".')
       else
-        ..._divided(indent: 44 + AppSpacing.md, [
+        AnimatedRows(separator: const Divider(height: 1, indent: 44 + AppSpacing.md), children: [
           for (final m in shown)
             _person(
               m,
@@ -389,9 +395,10 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
     return [
       Text('Oldest first. Accepting makes them a member right away.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted)),
-      ..._divided(indent: 44 + AppSpacing.md, [
+      AnimatedRows(separator: const Divider(height: 1, indent: 44 + AppSpacing.md), children: [
         for (final m in a.requests)
           Column(
+            key: ValueKey(m.id),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _person(m, const SizedBox.shrink()),

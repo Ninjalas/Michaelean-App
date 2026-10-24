@@ -33,22 +33,31 @@ class RoundIconButton extends StatelessWidget {
             constraints: const BoxConstraints.tightFor(width: 48, height: 48),
             icon: Icon(icon, color: AppColors.ink),
           ),
-          if (showDot)
-            Positioned(
-              top: 11,
-              right: 12,
-              child: IgnorePointer(
-                child: Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: AppColors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.white, width: 1.5),
+          Positioned(
+            top: 11,
+            right: 12,
+            child: IgnorePointer(
+              child: AnimatedScale(
+                scale: showDot ? 1 : 0,
+                duration: AppMotion.of(context, AppMotion.fast),
+                curve: AppMotion.curve,
+                child: AnimatedOpacity(
+                  opacity: showDot ? 1 : 0,
+                  duration: AppMotion.of(context, AppMotion.fast),
+                  curve: AppMotion.curve,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: AppColors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.white, width: 1.5),
+                    ),
                   ),
                 ),
               ),
             ),
+          ),
         ],
       ),
     );

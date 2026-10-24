@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:michaelean_app/main.dart';
+import 'package:michaelean_app/screens/shared/notifications_sheet.dart';
 import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
@@ -57,8 +58,11 @@ void main() {
     await tester.tap(find.byTooltip(RegExp('^Notifications')));
     await tester.pumpAndSettle();
     // The urgent venue-change notice still shows; the seminar recap is hidden.
-    expect(find.textContaining('Venue change'), findsOneWidget);
-    expect(find.textContaining('Recap posted'), findsNothing);
+    // (Only inside the pop-up: Home's feed behind it has posts by those names.)
+    Finder inBell(String t) =>
+        find.descendant(of: find.byType(NotificationsSheet), matching: find.textContaining(t));
+    expect(inBell('Venue change'), findsOneWidget);
+    expect(inBell('Recap posted'), findsNothing);
     expect(find.text('1 hidden by your notification settings.'), findsOneWidget);
   });
 

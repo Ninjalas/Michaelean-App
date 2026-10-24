@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
@@ -96,18 +97,21 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
               children: [
                 BackHeader(page?.org.name ?? 'Organization'),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load this organization."))
-                      : snap.connectionState != ConnectionState.done && !snap.hasData
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : page == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text("This organization isn't available to you.",
-                                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                                )
-                              : _content(page),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load this organization."))
+                        : snap.connectionState != ConnectionState.done && !snap.hasData
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : page == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text("This organization isn't available to you.",
+                                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                                  )
+                                : _content(page),
+                  ),
                 ),
               ],
             );

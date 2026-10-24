@@ -7,6 +7,7 @@ import '../../services/notification_prefs.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../widgets/fade_switch.dart';
 
 /// Recent notifications, shown inside the shared pop-up and grouped into
 /// Today / Earlier (spec §6). Opening one marks it read and navigates; it
@@ -67,7 +68,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
   Widget build(BuildContext context) {
     return FutureBuilder<List<AppNotification>>(
       future: _items,
-      builder: (context, snap) {
+      builder: fadeOnLoad((context, snap) {
         final now = DateTime.now(); // read after loading, so "1h ago" isn't "59m ago"
         final items = snap.data;
         if (snap.hasError) {
@@ -115,7 +116,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
             if (_hidden > 0) _hiddenNote(),
           ],
         );
-      },
+      }),
     );
   }
 
@@ -181,7 +182,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
             // Unread marker; the space stays so times line up either way.
             Semantics(
               label: n.read ? null : 'Unread',
-              child: Container(
+              child: AnimatedContainer(
+                duration: AppMotion.of(context, AppMotion.fast),
+                curve: AppMotion.curve,
                 width: 8,
                 height: 8,
                 margin: const EdgeInsets.only(left: AppSpacing.sm),

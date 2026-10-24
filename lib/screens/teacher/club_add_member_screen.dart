@@ -4,7 +4,9 @@ import '../../models/campus.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Add member: the adviser searches the sample students and adds them one
@@ -91,7 +93,7 @@ class _ClubAddMemberScreenState extends State<ClubAddMemberScreen> {
             Expanded(
               child: FutureBuilder<List<OrgMember>>(
                 future: _results,
-                builder: (context, snap) {
+                builder: fadeOnLoad((context, snap) {
                   if (snap.hasError) {
                     return Padding(
                       padding: const EdgeInsets.all(AppSpacing.screen),
@@ -109,44 +111,47 @@ class _ClubAddMemberScreenState extends State<ClubAddMemberScreen> {
                       child: Text('No students to add match "$_query".', style: muted),
                     );
                   }
-                  return ListView.separated(
+                  return ListView(
                     padding: const EdgeInsets.fromLTRB(
                         AppSpacing.screen, 0, AppSpacing.screen, 120),
-                    itemCount: list.length + 1,
-                    separatorBuilder: (_, i) =>
-                        i == 0 ? const SizedBox.shrink() : const Divider(height: 1, indent: 56),
-                    itemBuilder: (context, i) {
-                      if (i == 0) {
-                        return Text('Sample students from the class lists.',
-                            style: text.bodyMedium?.copyWith(color: AppColors.muted));
-                      }
-                      final m = list[i - 1];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        child: Row(
-                          children: [
-                            UserAvatar(name: m.name, imageAsset: m.photoAsset, size: 44),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Sample students from the class lists.',
+                          style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                      // Someone you add folds away (spec §2.5).
+                      AnimatedRows(
+                        separator: const Divider(height: 1, indent: 56),
+                        children: [
+                          for (final m in list)
+                            Padding(
+                              key: ValueKey(m.id),
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                              child: Row(
                                 children: [
-                                  Text(m.name, style: text.titleMedium),
-                                  Text('${m.section} · ${m.maskedId}',
-                                      style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                                  UserAvatar(name: m.name, imageAsset: m.photoAsset, size: 44),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(m.name, style: text.titleMedium),
+                                        Text('${m.section} · ${m.maskedId}',
+                                            style:
+                                                text.bodyMedium?.copyWith(color: AppColors.muted)),
+                                      ],
+                                    ),
+                                  ),
+                                  OutlinedButton(
+                                    onPressed: _adding == null ? () => _add(m) : null,
+                                    child: Text(_adding == m.id ? 'Adding…' : 'Add'),
+                                  ),
                                 ],
                               ),
                             ),
-                            OutlinedButton(
-                              onPressed: _adding == null ? () => _add(m) : null,
-                              child: Text(_adding == m.id ? 'Adding…' : 'Add'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                        ],
+                      ),
+                    ],
                   );
-                },
+                }),
               ),
             ),
           ],

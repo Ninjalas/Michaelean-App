@@ -6,7 +6,9 @@ import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 
 /// People (spec §10.1): search students by name. With no search, students
@@ -74,7 +76,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
             Expanded(
               child: FutureBuilder<List<PersonSummary>>(
                 future: _results,
-                builder: (context, snap) {
+                builder: fadeOnLoad((context, snap) {
                   if (snap.hasError) {
                     return Padding(
                       padding: const EdgeInsets.all(AppSpacing.screen),
@@ -105,17 +107,21 @@ class _PeopleScreenState extends State<PeopleScreen> {
                               style: muted),
                         )
                       else
-                        for (var i = 0; i < list.length; i++) ...[
-                          if (i > 0) const Divider(height: 1, indent: PersonRow.textIndent),
-                          PersonRow(
-                            person: list[i],
-                            onTap: () => context.push('/life/people/${list[i].id}'),
-                            trailing: connectAction(context, widget.campusService, list[i]),
-                          ),
-                        ],
+                        AnimatedRows(
+                          separator: const Divider(height: 1, indent: PersonRow.textIndent),
+                          children: [
+                            for (final p in list)
+                              PersonRow(
+                                key: ValueKey(p.id),
+                                person: p,
+                                onTap: () => context.push('/life/people/${p.id}'),
+                                trailing: connectAction(context, widget.campusService, p),
+                              ),
+                          ],
+                        ),
                     ],
                   );
-                },
+                }),
               ),
             ),
           ],

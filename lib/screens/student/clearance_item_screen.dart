@@ -6,6 +6,7 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/clearance_widgets.dart';
+import '../../widgets/fade_switch.dart';
 
 /// One clearance requirement (spec §7.5): what to do, the reason if it was
 /// returned, and a way to resubmit. Submitting only sends it for review;
@@ -74,20 +75,23 @@ class _ClearanceItemScreenState extends State<ClearanceItemScreen> {
               children: [
                 BackHeader(item?.office ?? 'Requirement'),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load this requirement."))
-                      : snap.connectionState != ConnectionState.done && !snap.hasData
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : item == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text(
-                                      "This requirement isn't available. There may be no "
-                                      'active clearance period.',
-                                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                                )
-                              : _content(item),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load this requirement."))
+                        : snap.connectionState != ConnectionState.done && !snap.hasData
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : item == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text(
+                                        "This requirement isn't available. There may be no "
+                                        'active clearance period.',
+                                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                                  )
+                                : _content(item),
+                  ),
                 ),
               ],
             );

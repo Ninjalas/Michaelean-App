@@ -10,12 +10,15 @@ import '../../services/home_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../widgets/animated_rows.dart';
 import '../../widgets/clearance_widgets.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/org_row.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/tab_reselect.dart';
 
 /// The feature hub tab, for browsing: Student Life for students (spec §7),
 /// Michaelean Life for teachers (spec §9). Each feature shows a live preview
@@ -50,6 +53,7 @@ class _HubData {
 }
 
 class _LifeHubScreenState extends State<LifeHubScreen> {
+  final _scroll = ScrollController();
   Future<_HubData>? _data;
   String? _loadedFor; // Session.dataKey the data belongs to
 
@@ -103,30 +107,46 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
         future: _data,
         builder: (context, snap) {
           final data = snap.data;
-          return ListView(
-            // No side padding here: the events strip runs edge to edge.
-            padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: 120),
-            children: [
-              _pad(Text(isStudent ? 'Student Life' : 'Michaelean Life',
-                  style: text.headlineMedium)),
-              const SizedBox(height: AppSpacing.xs),
-              _pad(Text(
-                isStudent ? 'Your campus, beyond the classroom.' : 'Teaching & Campus',
-                style: text.bodyLarge?.copyWith(color: AppColors.muted),
-              )),
-              if (snap.hasError)
-                _pad(_error())
-              else if (data == null)
-                _pad(_loading())
-              else if (isStudent)
-                ..._student(data)
-              else
-                ..._teacher(user, data),
-            ],
+          // Tapping the tab again glides back to the top.
+          return ScrollToTopOnTabTap(
+            tab: 1,
+            controller: _scroll,
+            child: ListView(
+              controller: _scroll,
+              // No side padding here: the events strip runs edge to edge.
+              padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: 120),
+              children: [
+                _pad(Text(isStudent ? 'Student Life' : 'Michaelean Life',
+                    style: text.headlineMedium)),
+                const SizedBox(height: AppSpacing.xs),
+                _pad(Text(
+                  isStudent ? 'Your campus, beyond the classroom.' : 'Teaching & Campus',
+                  style: text.bodyLarge?.copyWith(color: AppColors.muted),
+                )),
+                // The placeholders fade into the sections (spec §2.5).
+                FadeSwitch(
+                  loaded: data != null || snap.hasError,
+                  child: snap.hasError
+                      ? _pad(_error())
+                      : data == null
+                          ? _pad(_loading())
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: isStudent ? _student(data) : _teacher(user, data),
+                            ),
+                ),
+              ],
+            ),
           );
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   // ---------- Student Life ----------
@@ -174,14 +194,19 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       if (d.suggestions.isEmpty)
         _pad(_muted('Find classmates and club mates in See all.'))
       else
-        ..._divided([
-          for (final p in d.suggestions.take(3))
-            PersonRow(
-              person: p,
-              onTap: () => context.push('/life/people/${p.id}'),
-              trailing: connectAction(context, widget.campusService, p),
-            ),
-        ], indent: PersonRow.textIndent),
+        // Someone you asked folds away; the next suggestion fades in.
+        _pad(AnimatedRows(
+          separator: const Divider(height: 1, indent: PersonRow.textIndent),
+          children: [
+            for (final p in d.suggestions.take(3))
+              PersonRow(
+                key: ValueKey(p.id),
+                person: p,
+                onTap: () => context.push('/life/people/${p.id}'),
+                trailing: connectAction(context, widget.campusService, p),
+              ),
+          ],
+        )),
 
       _pad(SectionHeader('Clearance', onSeeAll: () => context.push('/life/clearance'))),
       _pad(d.clearance == null

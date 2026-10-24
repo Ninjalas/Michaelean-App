@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/clearance_widgets.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 
@@ -49,7 +50,7 @@ class _ClearanceScreenState extends State<ClearanceScreen> {
             Expanded(
               child: FutureBuilder<ClearanceView>(
                 future: _data,
-                builder: (context, snap) {
+                builder: fadeOnLoad((context, snap) {
                   if (snap.hasError) {
                     return Center(
                       child: Column(
@@ -87,7 +88,7 @@ class _ClearanceScreenState extends State<ClearanceScreen> {
                       ],
                     ],
                   );
-                },
+                }),
               ),
             ),
           ],

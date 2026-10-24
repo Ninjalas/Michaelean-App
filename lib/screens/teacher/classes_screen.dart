@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 
 /// The teacher's assigned classes (spec §9.1). Each opens its class page.
 class ClassesScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
                     )
                   : FutureBuilder<List<ClassInfo>>(
                       future: _classes,
-                      builder: (context, snap) {
+                      builder: fadeOnLoad((context, snap) {
                         if (snap.hasError) {
                           return const Center(child: Text("Couldn't load your classes."));
                         }
@@ -84,7 +85,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
                             );
                           },
                         );
-                      },
+                      }),
                     ),
             ),
           ],

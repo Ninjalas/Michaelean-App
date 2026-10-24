@@ -5,6 +5,7 @@ import '../models/user_profile.dart';
 import '../services/campus_service.dart';
 import '../services/session.dart';
 import '../theme/app_theme.dart';
+import 'fade_switch.dart';
 import 'user_avatar.dart';
 
 /// A student in a list (connections, requests, search, Going lists): photo,
@@ -61,16 +62,20 @@ Widget? connectAction(BuildContext context, CampusService campus, PersonSummary 
   final me = SessionScope.of(context).user;
   if (me == null || me.role != UserRole.student || me.id == p.id) return null;
   final muted = Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted);
-  return switch (p.status) {
-    ConnectionStatus.none => OutlinedButton(
-        onPressed: () => _connect(context, campus, p),
-        child: const Text('Connect'),
-      ),
-    ConnectionStatus.requestSent => Text('Pending', style: muted),
-    ConnectionStatus.requestReceived => Text('Asked you', style: muted),
-    ConnectionStatus.connected => Text('Connected', style: muted),
-    ConnectionStatus.blocked => null,
-  };
+  if (p.status == ConnectionStatus.blocked) return null;
+  return StateFade(
+    state: p.status,
+    child: switch (p.status) {
+      ConnectionStatus.none => OutlinedButton(
+          onPressed: () => _connect(context, campus, p),
+          child: const Text('Connect'),
+        ),
+      ConnectionStatus.requestSent => Text('Pending', style: muted),
+      ConnectionStatus.requestReceived => Text('Asked you', style: muted),
+      ConnectionStatus.connected => Text('Connected', style: muted),
+      ConnectionStatus.blocked => const SizedBox.shrink(), // returned null above
+    },
+  );
 }
 
 /// Sends a request from a list, then reloads and says so honestly.

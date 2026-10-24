@@ -6,7 +6,9 @@ import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/segmented_pills.dart';
 
@@ -100,7 +102,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     )
                   : FutureBuilder<(PrivacySettings, List<PersonSummary>)>(
                       future: _data,
-                      builder: (context, snap) {
+                      builder: fadeOnLoad((context, snap) {
                         if (snap.hasError) {
                           return Padding(
                             padding: const EdgeInsets.all(AppSpacing.screen),
@@ -149,22 +151,25 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                             if (blocked.isEmpty)
                               Text("You haven't blocked anyone.", style: muted)
                             else
-                              for (var i = 0; i < blocked.length; i++) ...[
-                                if (i > 0)
-                                  const Divider(height: 1, indent: PersonRow.textIndent),
-                                PersonRow(
-                                  person: blocked[i],
-                                  onTap: () =>
-                                      context.push('/profile/people/${blocked[i].id}'),
-                                  trailing: TextButton(
-                                    onPressed: _busy ? null : () => _unblock(blocked[i]),
-                                    child: const Text('Unblock'),
-                                  ),
-                                ),
-                              ],
+                              // Unblocked students fold away (spec §2.5).
+                              AnimatedRows(
+                                separator: const Divider(height: 1, indent: PersonRow.textIndent),
+                                children: [
+                                  for (final b in blocked)
+                                    PersonRow(
+                                      key: ValueKey(b.id),
+                                      person: b,
+                                      onTap: () => context.push('/profile/people/${b.id}'),
+                                      trailing: TextButton(
+                                        onPressed: _busy ? null : () => _unblock(b),
+                                        child: const Text('Unblock'),
+                                      ),
+                                    ),
+                                ],
+                              ),
                           ],
                         );
-                      },
+                      }),
                     ),
             ),
           ],

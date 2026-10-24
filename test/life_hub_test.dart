@@ -65,6 +65,8 @@ void main() {
 
     // Mock assumption: the teacher processes the department's clearance items.
     await tester.scrollUntilVisible(find.text('3 pending'), 200, scrollable: page);
+    await tester.ensureVisible(find.text('3 pending')); // clear of the nav bar
+    await tester.pumpAndSettle();
     await tester.tap(find.text('3 pending'));
     await tester.pumpAndSettle();
     expect(find.text('Clearance Verification'), findsOneWidget);

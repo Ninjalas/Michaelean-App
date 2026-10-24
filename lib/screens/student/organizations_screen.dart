@@ -6,6 +6,7 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/org_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
@@ -49,7 +50,7 @@ class _OrganizationsScreenState extends State<OrganizationsScreen> {
             Expanded(
               child: FutureBuilder<OrgDirectory>(
                 future: _data,
-                builder: (context, snap) {
+                builder: fadeOnLoad((context, snap) {
                   if (snap.hasError) {
                     return Center(
                       child: Column(
@@ -86,7 +87,7 @@ class _OrganizationsScreenState extends State<OrganizationsScreen> {
                               style: muted)),
                     ],
                   );
-                },
+                }),
               ),
             ),
           ],

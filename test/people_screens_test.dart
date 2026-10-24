@@ -277,4 +277,26 @@ void main() {
     await tester.scrollUntilVisible(hint, 200, scrollable: find.byType(Scrollable).first);
     expect(hint, findsOneWidget);
   });
+
+  testWidgets('accepting a request: the row folds away as it joins Connections', (tester) async {
+    await signIn(tester, 'Student', campus);
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    final accept = find.byTooltip('Accept Bea Villareal');
+    await tester.scrollUntilVisible(accept, 200, scrollable: find.byType(Scrollable).last);
+    await tester.ensureVisible(accept);
+    await tester.pumpAndSettle();
+    await tester.tap(accept);
+    // Frame by frame: at some point she is both leaving Requests and
+    // arriving in Connections.
+    var most = 0;
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      final n = find.text('Bea Villareal', skipOffstage: false).evaluate().length;
+      if (n > most) most = n;
+    }
+    expect(most, 2);
+    await tester.pumpAndSettle();
+    expect(find.text('Bea Villareal', skipOffstage: false), findsOneWidget);
+  });
 }

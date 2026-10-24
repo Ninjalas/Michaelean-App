@@ -9,6 +9,7 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
 import 'going_screen.dart';
@@ -191,20 +192,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               children: [
                 const BackHeader('Event'),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load this event."))
-                      // While reloading after an action, keep showing the
-                      // last version instead of a blank page.
-                      : snap.connectionState != ConnectionState.done && !snap.hasData
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : d == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text("This event isn't available to you.",
-                                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                                )
-                              : _content(d),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load this event."))
+                        // While reloading after an action, keep showing the
+                        // last version instead of a blank page.
+                        : snap.connectionState != ConnectionState.done && !snap.hasData
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : d == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text("This event isn't available to you.",
+                                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                                  )
+                                : _content(d),
+                  ),
                 ),
               ],
             );
@@ -465,15 +469,18 @@ class _Action extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.large),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            child: Column(
-              children: [
-                Icon(icon, color: color),
-                const SizedBox(height: AppSpacing.xs),
-                Text(label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
-              ],
+            child: StateFade(
+              state: label,
+              child: Column(
+                children: [
+                  Icon(icon, color: color),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+                ],
+              ),
             ),
           ),
         ),

@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 
@@ -109,7 +110,7 @@ class _ClassScreenState extends State<ClassScreen> {
             Expanded(
               child: FutureBuilder<_ClassData>(
                 future: _data,
-                builder: (context, snap) {
+                builder: fadeOnLoad((context, snap) {
                   final data = snap.data;
                   if (snap.hasError) return _error();
                   if (data == null) {
@@ -135,7 +136,7 @@ class _ClassScreenState extends State<ClassScreen> {
                           style: text.bodyMedium?.copyWith(color: AppColors.muted)),
                     ],
                   );
-                },
+                }),
               ),
             ),
           ],

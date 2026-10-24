@@ -47,6 +47,11 @@ class AppMotion {
   static const normal = Duration(milliseconds: 250); // expand/collapse, sheets
   static const slow = Duration(milliseconds: 300); // page-level changes
   static const curve = Curves.easeOut;
+
+  /// [d], or no animation when the phone's "reduce motion" setting is on
+  /// (accessibility). Use it for every animation.
+  static Duration of(BuildContext context, Duration d) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : d;
 }
 
 class AppRadius {

@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/segmented_pills.dart';
@@ -113,7 +114,7 @@ class _EventsScreenState extends State<EventsScreen> {
               Expanded(
                 child: FutureBuilder<List<EventDetail>>(
                   future: _data,
-                  builder: (context, snap) {
+                  builder: fadeOnLoad((context, snap) {
                     if (snap.hasError) return _error(user);
                     if (snap.connectionState != ConnectionState.done) {
                       return const Align(
@@ -124,7 +125,7 @@ class _EventsScreenState extends State<EventsScreen> {
                           AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
                       children: _content(user, snap.data!),
                     );
-                  },
+                  }),
                 ),
               ),
             ],

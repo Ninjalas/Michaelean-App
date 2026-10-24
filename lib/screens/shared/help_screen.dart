@@ -4,6 +4,7 @@ import '../../models/campus.dart';
 import '../../services/campus_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/inset_list.dart';
 
 /// Help & Support (spec §11): short answers to common questions, then the
@@ -86,7 +87,7 @@ class _HelpScreenState extends State<HelpScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   FutureBuilder<List<SupportContact>>(
                     future: _contacts,
-                    builder: (context, snap) {
+                    builder: fadeOnLoad((context, snap) {
                       if (snap.hasError) return Text("Couldn't load the offices.", style: muted);
                       final list = snap.data;
                       if (list == null) return const LinearProgressIndicator();
@@ -106,7 +107,7 @@ class _HelpScreenState extends State<HelpScreen> {
                             ),
                           ),
                       ]);
-                    },
+                    }),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text('Sample contacts for the prototype. The real directory will come from '

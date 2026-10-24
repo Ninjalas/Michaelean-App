@@ -10,11 +10,14 @@ import '../../services/session.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../widgets/animated_rows.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/tab_reselect.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Shared social-identity profile for both roles, in Luma's profile layout
@@ -52,6 +55,7 @@ PillTone tagTone(TagKind k) => switch (k) {
     };
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final _scroll = ScrollController();
   Future<_ProfileData>? _data;
   String? _loadedFor; // Session.dataKey the data belongs to
   bool _busy = false; // answering or cancelling a request
@@ -102,102 +106,121 @@ class _ProfileScreenState extends State<ProfileScreen> {
         future: _data,
         builder: (context, snap) {
           final data = snap.data;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.md, AppSpacing.screen, 120),
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 96),
-                  const Spacer(),
-                  RoundIconButton(
-                    icon: Icons.settings_outlined,
-                    tooltip: 'Settings',
-                    onPressed: () => context.push('/profile/settings'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(user.fullName, style: text.displaySmall),
-              const SizedBox(height: AppSpacing.xs),
-              Text('${isTeacher ? 'Teacher' : 'Student'} · ${user.designation}',
-                  style: text.bodyLarge),
-              Text('ID ${user.maskedId}',
-                  style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-              const SizedBox(height: AppSpacing.md),
-              // Inline stats, counted from the loaded records (never typed in).
-              SizedBox(
-                height: 24,
-                child: data == null ? null : _stats(data, isTeacher),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              // Official tags: assigned by the school, not editable here (spec §5).
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [for (final t in user.tags) StatusPill(t.label, tone: tagTone(t.kind))],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              FilledButton(
-                onPressed: () => context.push('/profile/edit'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.fill,
-                  foregroundColor: AppColors.ink,
+          // Tapping Profile again glides back to the top.
+          return ScrollToTopOnTabTap(
+            tab: 2,
+            controller: _scroll,
+            child: ListView(
+              controller: _scroll,
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen, AppSpacing.md, AppSpacing.screen, 120),
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 96),
+                    const Spacer(),
+                    RoundIconButton(
+                      icon: Icons.settings_outlined,
+                      tooltip: 'Settings',
+                      onPressed: () => context.push('/profile/settings'),
+                    ),
+                  ],
                 ),
-                child: const Text('Edit Profile'),
-              ),
-              if (user.about != null) ...[
-                const SectionHeader('About'),
-                Text(user.about!, style: text.bodyLarge),
-              ],
-              if (snap.hasError)
-                _error()
-              else if (data == null)
-                const Padding(
-                  padding: EdgeInsets.only(top: AppSpacing.section),
-                  child: LinearProgressIndicator(),
-                )
-              else ...[
-                if (data.connections != null) ..._connections(data.connections!),
-                if (isTeacher) ...[
-                  const SectionHeader('Classes I Teach'),
-                  if (data.teaching.isEmpty)
-                    _muted('No classes assigned.')
-                  else
-                    ..._divided([
-                      for (final c in data.teaching)
-                        ContentRow(
-                          source: c.section,
-                          title: c.subject,
-                          meta: c.room,
-                          metaIcon: Icons.place_outlined,
-                          onTap: () => context.go('/life/classes/${c.classId}'),
-                        ),
-                    ]),
+                const SizedBox(height: AppSpacing.lg),
+                Text(user.fullName, style: text.displaySmall),
+                const SizedBox(height: AppSpacing.xs),
+                Text('${isTeacher ? 'Teacher' : 'Student'} · ${user.designation}',
+                    style: text.bodyLarge),
+                Text('ID ${user.maskedId}',
+                    style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                const SizedBox(height: AppSpacing.md),
+                // Inline stats, counted from the loaded records (never typed in).
+                SizedBox(
+                  height: 24,
+                  child: data == null ? null : _stats(data, isTeacher),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // Official tags: assigned by the school, not editable here (spec §5).
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [for (final t in user.tags) StatusPill(t.label, tone: tagTone(t.kind))],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton(
+                  onPressed: () => context.push('/profile/edit'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.fill,
+                    foregroundColor: AppColors.ink,
+                  ),
+                  child: const Text('Edit Profile'),
+                ),
+                if (user.about != null) ...[
+                  const SectionHeader('About'),
+                  Text(user.about!, style: text.bodyLarge),
                 ],
-                const SectionHeader('Event History'),
-                if (data.history.isEmpty)
-                  _muted('No recorded events yet.')
-                else
-                  ..._divided(indent: ContentRow.textIndent, [
-                    for (final e in data.history)
-                      ContentRow(
-                        title: e.eventName,
-                        meta: '${formatDate(e.date)} · ${e.role.label}',
-                        metaIcon: Icons.calendar_today_outlined,
-                        imageAsset: e.imageAsset,
-                        placeholderIcon: Icons.event_outlined,
-                        pill: StatusPill(e.status.label, tone: PillTone.green),
-                        onTap: () => context.push('/profile/event/${e.eventId}'),
-                      ),
-                  ]),
+                // The progress bar fades into the sections (spec §2.5).
+                FadeSwitch(
+                  loaded: data != null || snap.hasError,
+                  child: snap.hasError
+                      ? _error()
+                      : data == null
+                          ? const Padding(
+                              padding: EdgeInsets.only(top: AppSpacing.section),
+                              child: LinearProgressIndicator(),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (data.connections != null) ..._connections(data.connections!),
+                                if (isTeacher) ...[
+                                  const SectionHeader('Classes I Teach'),
+                                  if (data.teaching.isEmpty)
+                                    _muted('No classes assigned.')
+                                  else
+                                    ..._divided([
+                                      for (final c in data.teaching)
+                                        ContentRow(
+                                          source: c.section,
+                                          title: c.subject,
+                                          meta: c.room,
+                                          metaIcon: Icons.place_outlined,
+                                          onTap: () => context.go('/life/classes/${c.classId}'),
+                                        ),
+                                    ]),
+                                ],
+                                const SectionHeader('Event History'),
+                                if (data.history.isEmpty)
+                                  _muted('No recorded events yet.')
+                                else
+                                  ..._divided(indent: ContentRow.textIndent, [
+                                    for (final e in data.history)
+                                      ContentRow(
+                                        title: e.eventName,
+                                        meta: '${formatDate(e.date)} · ${e.role.label}',
+                                        metaIcon: Icons.calendar_today_outlined,
+                                        imageAsset: e.imageAsset,
+                                        placeholderIcon: Icons.event_outlined,
+                                        pill: StatusPill(e.status.label, tone: PillTone.green),
+                                        onTap: () => context.push('/profile/event/${e.eventId}'),
+                                      ),
+                                  ]),
+                              ],
+                            ),
+                ),
               ],
-            ],
+            ),
           );
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   /// "3 Attended · 2 Orgs" (students) or "3 Classes · 1 Hosted" (teachers).
@@ -285,34 +308,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SectionHeader('Connections (${c.connections.length})'),
       if (c.incoming.isNotEmpty) ...[
         group('Requests (${c.incoming.length})'),
-        ..._divided(indent: PersonRow.textIndent, [
-          for (final p in c.incoming)
-            PersonRow(
-              person: p,
-              onTap: () => open(p),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: 'Decline ${p.name}',
-                    onPressed: _busy
-                        ? null
-                        : () => _act((me) => s.answerConnectRequest(me, p.id, accept: false),
-                            "Request declined. They aren't told."),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                  IconButton.filled(
-                    tooltip: 'Accept ${p.name}',
-                    onPressed: _busy
-                        ? null
-                        : () => _act((me) => s.answerConnectRequest(me, p.id, accept: true),
-                            'Connected in this preview only.'),
-                    icon: const Icon(Icons.check_rounded),
-                  ),
-                ],
+        AnimatedRows(
+          separator: const Divider(height: 1, indent: PersonRow.textIndent),
+          children: [
+            for (final p in c.incoming)
+              PersonRow(
+                key: ValueKey(p.id),
+                person: p,
+                onTap: () => open(p),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Decline ${p.name}',
+                      onPressed: _busy
+                          ? null
+                          : () => _act((me) => s.answerConnectRequest(me, p.id, accept: false),
+                              "Request declined. They aren't told."),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                    IconButton.filled(
+                      tooltip: 'Accept ${p.name}',
+                      onPressed: _busy
+                          ? null
+                          : () => _act((me) => s.answerConnectRequest(me, p.id, accept: true),
+                              'Connected in this preview only.'),
+                      icon: const Icon(Icons.check_rounded),
+                    ),
+                  ],
+                ),
               ),
-            ),
-        ]),
+          ],
+        ),
         group('Your connections'),
       ],
       if (c.connections.isEmpty)
@@ -321,24 +348,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: _muted('No connections yet. Find people in Student Life.'),
         )
       else
-        ..._divided(indent: PersonRow.textIndent, [
-          for (final p in c.connections) PersonRow(person: p, onTap: () => open(p)),
-        ]),
+        AnimatedRows(
+          separator: const Divider(height: 1, indent: PersonRow.textIndent),
+          children: [
+            for (final p in c.connections) PersonRow(key: ValueKey(p.id), person: p, onTap: () => open(p)),
+          ],
+        ),
       if (c.sent.isNotEmpty) ...[
         group('Sent'),
-        ..._divided(indent: PersonRow.textIndent, [
-          for (final p in c.sent)
-            PersonRow(
-              person: p,
-              onTap: () => open(p),
-              trailing: TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => _act((me) => s.cancelConnectRequest(me, p.id), 'Request cancelled.'),
-                child: const Text('Cancel'),
+        AnimatedRows(
+          separator: const Divider(height: 1, indent: PersonRow.textIndent),
+          children: [
+            for (final p in c.sent)
+              PersonRow(
+                key: ValueKey(p.id),
+                person: p,
+                onTap: () => open(p),
+                trailing: TextButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _act((me) => s.cancelConnectRequest(me, p.id), 'Request cancelled.'),
+                  child: const Text('Cancel'),
+                ),
               ),
-            ),
-        ]),
+          ],
+        ),
       ],
     ];
   }

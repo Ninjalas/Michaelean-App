@@ -9,9 +9,11 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/content_row.dart';
 import '../teacher/create_menu.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stats_row.dart';
+import '../../widgets/tab_reselect.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/two_tone_date.dart';
 import '../../widgets/up_next_card.dart';
@@ -108,24 +110,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   AppSpacing.screen, 0, AppSpacing.screen, canPost ? 192 : 120),
               sliver: SliverList.list(children: [
                 _greeting(user),
-                if (snap.hasError)
-                  _error()
-                else if (feed == null)
-                  _loading()
-                else if (feed.isEmpty)
-                  _empty()
-                else
-                  ..._content(user, feed),
+                // The placeholders fade into the feed (spec §2.5).
+                FadeSwitch(
+                  loaded: feed != null || snap.hasError,
+                  child: snap.hasError
+                      ? _error()
+                      : feed == null
+                          ? _loading()
+                          : feed.isEmpty
+                              ? _empty()
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: _content(user, feed),
+                                ),
+                ),
               ]),
             ),
           ],
         );
       },
     );
-    if (!canPost) return feedView;
+    // Tapping Home again glides back to the top.
+    final scrollable = ScrollToTopOnTabTap(tab: 0, controller: _scroll, child: feedView);
+    if (!canPost) return scrollable;
     return Stack(
       children: [
-        feedView,
+        scrollable,
         Positioned(
           right: AppSpacing.screen,
           bottom: fabBottom,

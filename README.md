@@ -331,6 +331,34 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Animations, step 4 of 4: small state changes.** Controls that change their state no longer flip at once (200 ms, instant with reduce motion):
+  - **Buttons crossfade** to their new state: Connect → Pending (in lists and on a student's profile, where the full-width button stays full width), Register → Registering… → Registered on an event.
+  - **The bell's red dot** shrinks and fades away when everything is read, and grows back when something new arrives.
+  - **Unread dots** in the notifications sheet fade out when a notice is opened.
+  - **Shared widget:** `StateFade` (in `widgets/fade_switch.dart`), a crossfade that runs whenever the state it's given changes.
+  - Tests: `test/state_fade_test.dart` (a button crossfades and keeps its width; reduce motion is instant; the bell's dot is midway while shrinking, then gone, then back).
+
+- **Animations, step 3 of 4: list changes.** When an action changes a list, rows no longer jump: a row that's gone **fades and folds away** while the rows below slide up, and a new row **fades and unfolds in** (250 ms).
+  - **Shared widget:** `AnimatedRows` (`widgets/animated_rows.dart`). It compares each new version of a list with the last one, matching rows by their key (a student's id), keeps leaving rows long enough to fold them away, and puts them where they were. Nothing animates on the first build (the page fade covers that), and nothing at all with reduce motion. A row that comes back while leaving simply stays.
+  - **Used on:** Profile (requests, connections, sent: accepting a request folds it out of Requests while it fades into Connections), Manage club (members, also when filtering by search, and requests), Privacy's blocked students, Student Life's People suggestions and the People page (someone you asked folds away and the next suggestion fades in), and Add member's results (someone you added folds away).
+  - **Not used** where rows only change their label (the Going list's Pending/Connected) — that's step 4.
+  - Tests: `test/animated_rows_test.dart` (a row folds away and the list shrinks by exactly one row and divider; a new row fades in between its neighbours; no animation on the first build; a returning row stays; reduce motion is instant) and, on Profile, accepting a request shows the student leaving Requests and arriving in Connections at the same time.
+
+- **Animations, step 2 of 4: tab fade and loading fade.**
+  - **Switching tabs:** the new tab fades in (200 ms) instead of snapping; the bottom bar stays put (`AppShell`).
+  - **Loading → content:** placeholders and progress bars fade into the content (250 ms) instead of swapping at once, using one shared widget, `FadeSwitch` (`widgets/fade_switch.dart`), and `fadeOnLoad` for FutureBuilder builders. It fades only when loading finishes; a reload after an action updates the content in place.
+  - **Covered:** Home, Student/Michaelean Life, Profile, the notifications pop-up, Events, an event, Going, People, a profile, Privacy, Help, Class, Clearance and a requirement, Organizations and a club page, Classes and a class, Clearance Verification, Manage club, Add member, and event registrations.
+  - **Not covered (still swap at once):** forms and short review pages that show a progress bar for a moment: post page, attendance review, clearance case, edit club info, the event, post, and invite forms, and change session.
+  - **Side effect, on purpose:** Home, Student/Michaelean Life, and Profile now build all their sections at once (so the whole page can fade in together) instead of only the ones near the screen. They're short pages, so it doesn't slow them down noticeably. Several tests now scroll a row clear of the bottom bar before tapping, or look only inside the notifications pop-up.
+  - Tests: `test/animations_test.dart`: midway through, both loading and content are there; a reload doesn't fade; reduce motion makes it instant; switching tabs fades the tab in.
+
+- **Animations, step 1 of 4: tab re-tap** (decided 2026-10-24: quick and subtle, 200–300 ms ease-out per spec §2.5, and the phone's "reduce motion" setting is respected).
+  - **Tapping the tab you're on again** (Home, Student/Michaelean Life, Profile): deeper inside the tab, it goes **back to the tab's first page** with the normal Back animation (it used to jump there instantly). On the first page, it **glides back to the top** (300 ms). From far down it first jumps to one screen from the top, then glides the rest, so it never drags.
+  - **How:** `AppShell` pops the tab's own navigator, or tells the page through `TabReselect` (`widgets/tab_reselect.dart`); each tab's first page wraps its list in `ScrollToTopOnTabTap`. `scrollToTop()` does the glide.
+  - **`AppMotion.of(context, duration)`** (theme): the duration, or none when the phone's reduce-motion setting is on. Every animation from now on uses it.
+  - Tests: `test/tab_reselect_test.dart`: the glide is still moving one frame in (so it isn't a jump) and ends at the top; on an inner page the first tap goes back and the second goes to the top; Life and Profile too; with reduce motion it's at the top on the very next frame.
+  - Coming next (steps 2–4): a fade when switching tabs and when content finishes loading, rows that fade and fold away after actions, and small state changes (buttons, the bell's dot, unread dots).
+
 - **Advisers see their clubs' members-only events** (decided 2026-10-24). A club's adviser now counts as a member for that club's members-only events, so Mark can open the CSS General Assembly, see it in Events, and see who's going. It's one rule (`_eligible` in `CampusService`), so every event list and page follows it. Advising still isn't membership otherwise (no Member badge, no member tag). Recorded in spec §7.4. Test in `clubs_test.dart`.
 
 - **Connect, step 4 of 4: Going lists and teacher entry points** (spec §10.1). Connect is now complete.
@@ -630,7 +658,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-154 tests currently pass, at any time of day. They cover:
+171 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

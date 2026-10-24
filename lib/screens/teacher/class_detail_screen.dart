@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
@@ -54,18 +55,21 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               children: [
                 BackHeader(d?.info.subject ?? 'Class'),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load this class."))
-                      : snap.connectionState != ConnectionState.done
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : d == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text("You can't manage this class.",
-                                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                                )
-                              : _content(d),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load this class."))
+                        : snap.connectionState != ConnectionState.done
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : d == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text("You can't manage this class.",
+                                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                                  )
+                                : _content(d),
+                  ),
                 ),
               ],
             );

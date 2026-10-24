@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
@@ -126,18 +127,21 @@ class _PersonScreenState extends State<PersonScreen> {
                 BackHeader(p?.person.name ?? 'Profile',
                     trailing: p == null ? null : _moreMenu(p)),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load this profile."))
-                      : !snap.hasData && snap.connectionState != ConnectionState.done
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : p == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text("This profile isn't available.",
-                                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                                )
-                              : _content(p),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load this profile."))
+                        : !snap.hasData && snap.connectionState != ConnectionState.done
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : p == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text("This profile isn't available.",
+                                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                                  )
+                                : _content(p),
+                  ),
                 ),
               ],
             );
@@ -305,51 +309,54 @@ class _PersonScreenState extends State<PersonScreen> {
   /// The main button(s) for where you stand with them.
   Widget _actions(PersonSummary p) {
     final s = widget.campusService;
-    return switch (p.status) {
-      ConnectionStatus.none => FilledButton.icon(
-          onPressed: _busy
-              ? null
-              : () => _act((me) => s.sendConnectRequest(me, p.id),
-                  'Request sent in this preview only.'),
-          icon: const Icon(Icons.person_add_alt_1_outlined),
-          label: const Text('Connect'),
-        ),
-      ConnectionStatus.requestSent => OutlinedButton(
-          onPressed: _busy
-              ? null
-              : () => _act((me) => s.cancelConnectRequest(me, p.id), 'Request cancelled.'),
-          child: const Text('Pending · Cancel request'),
-        ),
-      ConnectionStatus.requestReceived => Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _busy
-                    ? null
-                    : () => _act((me) => s.answerConnectRequest(me, p.id, accept: false),
-                        "Request declined. They aren't told."),
-                child: const Text('Decline'),
+    return StateFade(
+      state: p.status,
+      child: switch (p.status) {
+        ConnectionStatus.none => FilledButton.icon(
+            onPressed: _busy
+                ? null
+                : () => _act((me) => s.sendConnectRequest(me, p.id),
+                    'Request sent in this preview only.'),
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+            label: const Text('Connect'),
+          ),
+        ConnectionStatus.requestSent => OutlinedButton(
+            onPressed: _busy
+                ? null
+                : () => _act((me) => s.cancelConnectRequest(me, p.id), 'Request cancelled.'),
+            child: const Text('Pending · Cancel request'),
+          ),
+        ConnectionStatus.requestReceived => Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _act((me) => s.answerConnectRequest(me, p.id, accept: false),
+                          "Request declined. They aren't told."),
+                  child: const Text('Decline'),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: FilledButton(
-                onPressed: _busy
-                    ? null
-                    : () => _act((me) => s.answerConnectRequest(me, p.id, accept: true),
-                        'Connected in this preview only.'),
-                child: const Text('Accept'),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _act((me) => s.answerConnectRequest(me, p.id, accept: true),
+                          'Connected in this preview only.'),
+                  child: const Text('Accept'),
+                ),
               ),
-            ),
-          ],
-        ),
-      ConnectionStatus.connected => OutlinedButton.icon(
-          onPressed: null, // remove lives in the ⋯ menu, so it isn't tapped by accident
-          icon: const Icon(Icons.check_rounded),
-          label: const Text('Connected'),
-        ),
-      ConnectionStatus.blocked => const SizedBox.shrink(), // shown as a limited profile
-    };
+            ],
+          ),
+        ConnectionStatus.connected => OutlinedButton.icon(
+            onPressed: null, // remove lives in the ⋯ menu, so it isn't tapped by accident
+            icon: const Icon(Icons.check_rounded),
+            label: const Text('Connected'),
+          ),
+        ConnectionStatus.blocked => const SizedBox.shrink(), // shown as a limited profile
+      },
+    );
   }
 
   List<Widget> _people(List<PersonSummary> people) => _divided(indent: PersonRow.textIndent, [

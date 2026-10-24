@@ -7,6 +7,7 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/clearance_widgets.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -114,58 +115,61 @@ class _ClearanceDeskScreenState extends State<ClearanceDeskScreen> {
               children: [
                 const BackHeader('Clearance Verification'),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load clearance verification."))
-                      : snap.connectionState != ConnectionState.done && !snap.hasData
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : desk == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text(
-                                      "Clearance processing isn't available to you. You may "
-                                      'not be assigned to a clearance area, or there is no '
-                                      'active period.',
-                                      style: muted),
-                                )
-                              : ListView(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(AppSpacing.screen),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.fill,
-                                        borderRadius: BorderRadius.circular(AppRadius.large),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load clearance verification."))
+                        : snap.connectionState != ConnectionState.done && !snap.hasData
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : desk == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text(
+                                        "Clearance processing isn't available to you. You may "
+                                        'not be assigned to a clearance area, or there is no '
+                                        'active period.',
+                                        style: muted),
+                                  )
+                                : ListView(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(AppSpacing.screen),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.fill,
+                                          borderRadius: BorderRadius.circular(AppRadius.large),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          children: [
+                                            Text(desk.office, style: text.titleLarge),
+                                            Text(
+                                                '${desk.periodName} · '
+                                                '${desk.pending.length} pending',
+                                                style: text.bodyMedium
+                                                    ?.copyWith(color: AppColors.muted)),
+                                            const SizedBox(height: AppSpacing.lg),
+                                            FilledButton.icon(
+                                              onPressed: () => _scan(desk),
+                                              icon: const Icon(Icons.qr_code_scanner_rounded),
+                                              label: const Text('Scan Student QR'),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          Text(desk.office, style: text.titleLarge),
-                                          Text(
-                                              '${desk.periodName} · '
-                                              '${desk.pending.length} pending',
-                                              style: text.bodyMedium
-                                                  ?.copyWith(color: AppColors.muted)),
-                                          const SizedBox(height: AppSpacing.lg),
-                                          FilledButton.icon(
-                                            onPressed: () => _scan(desk),
-                                            icon: const Icon(Icons.qr_code_scanner_rounded),
-                                            label: const Text('Scan Student QR'),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SectionHeader('Pending'),
-                                    if (desk.pending.isEmpty)
-                                      Text('Nothing is waiting for review.', style: muted),
-                                    for (var i = 0; i < desk.pending.length; i++) ...[
-                                      if (i > 0)
-                                        const Divider(height: 1, indent: 48 + AppSpacing.md),
-                                      _caseRow(desk.pending[i]),
+                                      const SectionHeader('Pending'),
+                                      if (desk.pending.isEmpty)
+                                        Text('Nothing is waiting for review.', style: muted),
+                                      for (var i = 0; i < desk.pending.length; i++) ...[
+                                        if (i > 0)
+                                          const Divider(height: 1, indent: 48 + AppSpacing.md),
+                                        _caseRow(desk.pending[i]),
+                                      ],
                                     ],
-                                  ],
-                                ),
+                                  ),
+                  ),
                 ),
               ],
             );

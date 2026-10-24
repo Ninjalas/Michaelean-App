@@ -6,6 +6,7 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -114,45 +115,48 @@ class _GoingScreenState extends State<GoingScreen> {
               children: [
                 BackHeader(a == null ? 'Going' : (a.past ? 'Went' : 'Going')),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load who's going."))
-                      : !snap.hasData && snap.connectionState != ConnectionState.done
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : a == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text("This event isn't available to you.",
-                                      style: text.bodyLarge?.copyWith(color: AppColors.muted)),
-                                )
-                              : ListView(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
-                                  children: [
-                                    Text(goingLine(a), style: text.titleMedium),
-                                    for (var i = 0; i < a.shown.length; i++) ...[
-                                      if (i > 0)
-                                        const Divider(height: 1, indent: PersonRow.textIndent),
-                                      PersonRow(
-                                        person: a.shown[i],
-                                        onTap: () =>
-                                            context.push('$tab/people/${a.shown[i].id}'),
-                                        trailing: connectAction(
-                                            context, widget.campusService, a.shown[i]),
-                                      ),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load who's going."))
+                        : !snap.hasData && snap.connectionState != ConnectionState.done
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : a == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text("This event isn't available to you.",
+                                        style: text.bodyLarge?.copyWith(color: AppColors.muted)),
+                                  )
+                                : ListView(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
+                                    children: [
+                                      Text(goingLine(a), style: text.titleMedium),
+                                      for (var i = 0; i < a.shown.length; i++) ...[
+                                        if (i > 0)
+                                          const Divider(height: 1, indent: PersonRow.textIndent),
+                                        PersonRow(
+                                          person: a.shown[i],
+                                          onTap: () =>
+                                              context.push('$tab/people/${a.shown[i].id}'),
+                                          trailing: connectAction(
+                                              context, widget.campusService, a.shown[i]),
+                                        ),
+                                      ],
+                                      if (a.others > 0) ...[
+                                        const SizedBox(height: AppSpacing.md),
+                                        Text(
+                                          '${a.others} ${a.others == 1 ? 'other isn\'t' : 'others aren\'t'} '
+                                          'named: their privacy settings hide '
+                                          "${a.past ? 'their event history' : 'their upcoming events'}"
+                                          ', or they are sample registrations without names.',
+                                          style: muted,
+                                        ),
+                                      ],
                                     ],
-                                    if (a.others > 0) ...[
-                                      const SizedBox(height: AppSpacing.md),
-                                      Text(
-                                        '${a.others} ${a.others == 1 ? 'other isn\'t' : 'others aren\'t'} '
-                                        'named: their privacy settings hide '
-                                        "${a.past ? 'their event history' : 'their upcoming events'}"
-                                        ', or they are sample registrations without names.',
-                                        style: muted,
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                                  ),
+                  ),
                 ),
               ],
             );

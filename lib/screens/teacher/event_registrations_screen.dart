@@ -6,6 +6,7 @@ import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/fade_switch.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -52,36 +53,39 @@ class _EventRegistrationsScreenState extends State<EventRegistrationsScreen> {
               children: [
                 const BackHeader('Registrations'),
                 Expanded(
-                  child: snap.hasError
-                      ? const Center(child: Text("Couldn't load registrations."))
-                      : snap.connectionState != ConnectionState.done
-                          ? const Align(
-                              alignment: Alignment.topCenter, child: LinearProgressIndicator())
-                          : list == null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.screen),
-                                  child: Text("You can't view this event's registrations.",
-                                      style: muted),
-                                )
-                              : ListView(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      AppSpacing.screen, 0, AppSpacing.screen, 120),
-                                  children: [
-                                    Text('${list.length} registered', style: text.titleMedium),
-                                    Text("Registration isn't attendance.",
-                                        style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                                    const SizedBox(height: AppSpacing.sm),
-                                    if (list.isEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: AppSpacing.lg),
-                                        child: Text('No registrations yet.', style: muted),
-                                      ),
-                                    for (var i = 0; i < list.length; i++) ...[
-                                      if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
-                                      _row(list[i]),
+                  child: FadeSwitch(
+                    loaded: snap.hasData || snap.hasError || snap.connectionState == ConnectionState.done,
+                    child: snap.hasError
+                        ? const Center(child: Text("Couldn't load registrations."))
+                        : snap.connectionState != ConnectionState.done
+                            ? const Align(
+                                alignment: Alignment.topCenter, child: LinearProgressIndicator())
+                            : list == null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.screen),
+                                    child: Text("You can't view this event's registrations.",
+                                        style: muted),
+                                  )
+                                : ListView(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        AppSpacing.screen, 0, AppSpacing.screen, 120),
+                                    children: [
+                                      Text('${list.length} registered', style: text.titleMedium),
+                                      Text("Registration isn't attendance.",
+                                          style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      if (list.isEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: AppSpacing.lg),
+                                          child: Text('No registrations yet.', style: muted),
+                                        ),
+                                      for (var i = 0; i < list.length; i++) ...[
+                                        if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
+                                        _row(list[i]),
+                                      ],
                                     ],
-                                  ],
-                                ),
+                                  ),
+                  ),
                 ),
               ],
             );

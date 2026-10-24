@@ -36,6 +36,8 @@ Future<void> openManage(WidgetTester tester, String club) async {
   await tester.pumpAndSettle();
   final row = find.text(club);
   await tester.scrollUntilVisible(row, 200, scrollable: find.byType(Scrollable).first);
+  await tester.ensureVisible(row); // to the top, clear of the nav bar
+  await tester.pumpAndSettle();
   await tester.tap(row);
   await tester.pumpAndSettle();
 }

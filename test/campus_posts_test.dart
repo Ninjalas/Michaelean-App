@@ -42,8 +42,10 @@ void main() {
     await signIn(tester, 'Teacher');
     await tester.tap(find.byTooltip('Create post'));
     await tester.pumpAndSettle();
+    // Inside the menu (Home has its own "School News" section behind it).
+    final menu = find.byWidgetPredicate((w) => w.runtimeType.toString() == '_Option');
     for (final o in ['Announcement', 'School News', 'Campus update']) {
-      expect(find.text(o), findsOneWidget);
+      expect(find.descendant(of: menu, matching: find.text(o)), findsOneWidget);
     }
     await tester.binding.handlePopRoute(); // Android / browser Back closes it
     await tester.pumpAndSettle();
