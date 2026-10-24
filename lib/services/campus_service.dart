@@ -495,7 +495,11 @@ class MockCampusService implements CampusService {
   var _newEvents = 0;
 
   bool _eligible(UserProfile user, CampusEvent e) =>
-      e.audience == null || user.tags.any((t) => t.label == e.audience);
+      e.audience == null ||
+      user.tags.any((t) => t.label == e.audience) ||
+      // A club's adviser counts as a member for its members-only events
+      // (decided 2026-10-24); advising isn't membership otherwise.
+      mockOrganizations.any((o) => o.name == e.audience && o.adviserIds.contains(user.id));
 
   bool _manages(UserProfile user, CampusEvent e) =>
       user.can(Permission.manageEvents) && e.managerIds.contains(user.id);

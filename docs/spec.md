@@ -288,6 +288,7 @@ Each entry shows logo, name, and member count. Don't treat a department as its s
 **Organization page:** cover photo, logo, name, tags, and membership status (Member / Join), then **tabs**: About, Schedule, Events, News, Officers, Members (decided 2026-10-24, for clubs with a member list; memberships are visible to all, §12; tapping a member opens their profile, §10.1).
 
 - The Events tab lists the organization's events; tapping one opens the shared event detail, with Back preserved.
+- A club's adviser counts as a member for its members-only events (decided 2026-10-24).
 - Only authorized officers can publish or manage organization content. Administrators manage memberships and officer assignments. When an officer role ends, management permissions are revoked but historical posts remain.
 
 ### 7.5 Clearance

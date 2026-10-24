@@ -331,13 +331,14 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Advisers see their clubs' members-only events** (decided 2026-10-24). A club's adviser now counts as a member for that club's members-only events, so Mark can open the CSS General Assembly, see it in Events, and see who's going. It's one rule (`_eligible` in `CampusService`), so every event list and page follows it. Advising still isn't membership otherwise (no Member badge, no member tag). Recorded in spec §7.4. Test in `clubs_test.dart`.
+
 - **Connect, step 4 of 4: Going lists and teacher entry points** (spec §10.1). Connect is now complete.
   - **Event pages:** the placeholder "Attendees" section (blank circles, "names for managers only") is replaced by **Going**: up to four photos and a sentence like "You, Carlo and 239 others are going", connections first. Tapping it opens the full list (`screens/shared/going_screen.dart`, `/life/events/<id>/going` and `/profile/event/<id>/going`): each person with Connect, Pending, Asked you, or Connected, and at the end how many aren't named and why (their privacy settings, or sample registrations without names). Managers keep a **Registrations ›** link for their tools.
   - **After the event** it becomes **Went**, built from attendance records (registration isn't attendance), and follows each person's Event history setting.
   - **The rule** (`CampusService.loadEventAttendees`): only people whose setting lets the viewer see them are named; everyone else, including blocked students and unnamed sample registrations, is counted. Teachers see everyone named. The viewer shows as "You".
   - **Teachers open any student's full profile** by tapping them in: a class's roster, attendance review (the profile opens over the review, `/attendance/<session>/review/people/<id>`), an event's registrations, and Manage club's members and requests. Michaelean Life has a **People** section that opens the search. `EventRegistrant` gained an `id` for this.
   - Fixes found by the tests: an "else" that attached to the wrong "if" (upcoming events listed nobody), and a Going list that overflowed on a small phone with large text ("Wants to connect" is now "Asked you", and row buttons can shrink).
-  - Known limit (older than Connect): a club's adviser can't open the club's **members-only** events from the event pages, because advising isn't membership. They do see them in Manage club › Events.
   - Tests: 5 more service tests (who is named and counted, Only me, teachers, Went, blocking, the summary sentence) and 5 more screen tests (the event's Going line and list, Went, teachers opening students from a class and from Manage club, the teacher People section). The screen audit covers the Going pages and the profile over attendance review.
 
 - **Connect, step 3 of 4: finding people and privacy** (spec §10.1).
@@ -629,7 +630,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-153 tests currently pass, at any time of day. They cover:
+154 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

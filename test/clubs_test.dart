@@ -198,6 +198,14 @@ void main() {
           isEmpty);
     });
 
+    test("advisers count as members for their clubs' members-only events", () async {
+      // ev1 is for CSS members only; Mark advises CSS.
+      expect(await campus.loadEvent(mockTeacher, 'ev1'), isNotNull);
+      expect((await campus.loadEventAttendees(mockTeacher, 'ev1'))!.shown.length, 4);
+      // ev6 is for Dance Company members; he doesn't advise it.
+      expect(await campus.loadEvent(mockTeacher, 'ev6'), isNull);
+    });
+
     test('club events are hosted by the club', () async {
       final day = DateTime.now().add(const Duration(days: 10));
       final e = await campus.saveEvent(mockTeacher,
