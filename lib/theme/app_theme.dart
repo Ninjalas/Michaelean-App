@@ -8,11 +8,13 @@ class AppColors {
   static const navy = Color(0xFF242A5E); // primary actions, selected states
   static const red = Color(0xFFB3242E); // attention only (URGENT, alerts)
   static const white = Color(0xFFFFFFFF);
-  static const paper = Color(0xFFFFFFFF); // screen background: pure white, Luma-like
+  static const page = Color(0xFFF4F5F9); // screen background: soft blue-grey, so white cards stand out
   static const ink = Color(0xFF16171D); // primary text
   static const muted = Color(0xFF6E7079); // secondary text (kept dark enough for AA)
   static const hairline = Color(0xFFECECEE); // dividers
-  static const fill = Color(0xFFF3F3F4); // soft gray tiles, inputs, active nav pill
+  static const fill = Color(0xFFF3F3F4); // soft gray inside white: placeholders, neutral pills, nav pill
+  static const track = Color(0xFFE9EBF1); // controls on the page: chips, day pills, switch track, skeletons
+  static const trackText = Color(0xFF5A5C66); // secondary text on track (5.6:1; muted is only 4.1:1 there)
 
   static const onNavyMuted = Color(0xB8FFFFFF); // secondary text on navy (white at 72%)
 
@@ -28,6 +30,12 @@ class AppColors {
   /// back button, Up next card). Sheets get their depth from the dimmed page.
   static const floatShadow = [
     BoxShadow(color: Color(0x14000000), blurRadius: 32, offset: Offset(0, 8)),
+  ];
+
+  /// An even softer shadow under white cards on the page (spec §2.4); also
+  /// keeps a white card visible on a white sheet.
+  static const cardShadow = [
+    BoxShadow(color: Color(0x0F1B2150), blurRadius: 18, offset: Offset(0, 4)),
   ];
 }
 
@@ -94,7 +102,7 @@ class AppTheme {
         surfaceContainerLow: AppColors.white,
         surfaceContainerHigh: AppColors.white,
       ),
-      scaffoldBackgroundColor: AppColors.paper,
+      scaffoldBackgroundColor: AppColors.page,
       dividerColor: AppColors.hairline,
       // Pages slide in from the right on every phone, and back out on Back,
       // with the swipe-back gesture (spec §2.5, decided 2026-10-24).
@@ -140,12 +148,17 @@ class AppTheme {
       // Luma-style inputs: borderless, light gray, rounded (spec §2.1 Forms).
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.fill,
+        // White with a hairline, so inputs read on the soft page and on white sheets.
+        fillColor: AppColors.white,
         contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg, vertical: AppSpacing.md + 2),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.large),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: AppColors.hairline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.large),
+          borderSide: const BorderSide(color: AppColors.hairline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.large),

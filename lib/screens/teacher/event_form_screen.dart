@@ -258,7 +258,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
             borderRadius: BorderRadius.circular(AppRadius.small),
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.fill,
+                color: AppColors.track,
                 border: asset == _cover ? Border.all(color: AppColors.navy, width: 3) : null,
                 borderRadius: BorderRadius.circular(AppRadius.small),
               ),
@@ -539,8 +539,11 @@ class _PickerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.fill,
-      borderRadius: BorderRadius.circular(AppRadius.large),
+      color: AppColors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.large),
+        side: const BorderSide(color: AppColors.hairline),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.large),

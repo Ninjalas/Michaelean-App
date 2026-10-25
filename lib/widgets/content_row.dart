@@ -14,6 +14,10 @@ class ContentRow extends StatelessWidget {
   /// that have a thumbnail (Luma-style).
   static const textIndent = thumbSize + AppSpacing.md;
 
+  /// The same for rows with an [icon] tile.
+  static const iconIndent = iconSize + AppSpacing.md;
+  static const iconSize = 40.0;
+
   final String title;
   final String? source;
   final String? sourceImage;
@@ -21,6 +25,7 @@ class ContentRow extends StatelessWidget {
   final IconData? metaIcon; // small gray icon before the meta line
   final String? imageAsset;
   final IconData? placeholderIcon; // gray tile when there's no image, keeps rows aligned
+  final IconData? icon; // small navy tile on the left, for rows without a photo
   final Widget? pill;
   final VoidCallback? onTap;
 
@@ -33,6 +38,7 @@ class ContentRow extends StatelessWidget {
     this.metaIcon,
     this.imageAsset,
     this.placeholderIcon,
+    this.icon,
     this.pill,
     this.onTap,
   });
@@ -93,6 +99,18 @@ class ContentRow extends StatelessWidget {
           children: [
             if (hasThumb) ...[
               _thumbnail(),
+              const SizedBox(width: AppSpacing.md),
+            ] else if (icon != null) ...[
+              // A soft navy tile gives text-only rows a visual anchor (spec §2.1).
+              Container(
+                width: iconSize,
+                height: iconSize,
+                decoration: BoxDecoration(
+                  color: AppColors.navyTint,
+                  borderRadius: BorderRadius.circular(AppRadius.small),
+                ),
+                child: Icon(icon, color: AppColors.navy, size: 22),
+              ),
               const SizedBox(width: AppSpacing.md),
             ],
             Expanded(

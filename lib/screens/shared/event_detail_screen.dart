@@ -464,7 +464,8 @@ class _Action extends StatelessWidget {
       button: true,
       enabled: onTap != null,
       child: Pressable(
-        color: AppColors.fill,
+        color: AppColors.white,
+        shadow: AppColors.cardShadow,
         borderRadius: BorderRadius.circular(AppRadius.large),
         onTap: onTap,
         child: Padding(

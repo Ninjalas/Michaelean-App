@@ -15,6 +15,7 @@ import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Manage club (decided 2026-10-23): the page a club's adviser uses to run
@@ -292,12 +293,9 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted)),
       );
 
-  List<Widget> _divided(List<Widget> rows, {double indent = 0}) => [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) Divider(height: 1, indent: indent),
-          rows[i],
-        ],
-      ];
+  /// A section's rows together in one white card (spec §2.1).
+  List<Widget> _divided(List<Widget> rows, {double indent = 0}) =>
+      rows.isEmpty ? const [] : [SurfaceCard(indent: indent, children: rows)];
 
   /// Avatar, name, and "section · masked ID", with something on the right.
   /// Tapping opens the student's full profile (spec §10.1).
@@ -370,7 +368,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
       else if (shown.isEmpty)
         _empty('No members match "$_search".')
       else
-        AnimatedRows(separator: const Divider(height: 1, indent: 44 + AppSpacing.md), children: [
+        SurfaceCard(child: AnimatedRows(separator: const Divider(height: 1, indent: 44 + AppSpacing.md), children: [
           for (final m in shown)
             _person(
               m,
@@ -387,7 +385,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
                 ],
               ),
             ),
-        ]),
+        ])),
     ];
   }
 
@@ -396,7 +394,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
     return [
       Text('Oldest first. Accepting makes them a member right away.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted)),
-      AnimatedRows(separator: const Divider(height: 1, indent: 44 + AppSpacing.md), children: [
+      SurfaceCard(child: AnimatedRows(separator: const Divider(height: 1, indent: 44 + AppSpacing.md), children: [
         for (final m in a.requests)
           Column(
             key: ValueKey(m.id),
@@ -423,7 +421,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
               const SizedBox(height: AppSpacing.md),
             ],
           ),
-      ]),
+      ])),
     ];
   }
 

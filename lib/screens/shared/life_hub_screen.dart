@@ -16,11 +16,13 @@ import '../../widgets/clearance_widgets.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/loading_boxes.dart';
+import '../../widgets/navy_hero.dart';
 import '../../widgets/org_row.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/tab_reselect.dart';
 
 /// The feature hub tab, for browsing: Student Life for students (spec §7),
@@ -105,10 +107,10 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
   Widget build(BuildContext context) {
     final user = SessionScope.of(context).user;
     if (user == null) return const SizedBox.shrink(); // preview just ended
-    final text = Theme.of(context).textTheme;
     final isStudent = user.role == UserRole.student;
 
     return SafeArea(
+      top: false, // the navy hero reaches behind the status bar
       bottom: false,
       child: FutureBuilder<_HubData>(
         future: _data,
@@ -121,15 +123,9 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
             child: ListView(
               controller: _scroll,
               // No side padding here: the events strip runs edge to edge.
-              padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: 120),
+              padding: const EdgeInsets.only(bottom: 120),
               children: [
-                _pad(Text(isStudent ? 'Student Life' : 'Michaelean Life',
-                    style: text.headlineMedium)),
-                const SizedBox(height: AppSpacing.xs),
-                _pad(Text(
-                  isStudent ? 'Your campus, beyond the classroom.' : 'Teaching & Campus',
-                  style: text.bodyLarge?.copyWith(color: AppColors.muted),
-                )),
+                _hero(isStudent, data, failed: snap.hasError),
                 // The placeholders fade into the sections (spec §2.5).
                 FadeSwitch(
                   loaded: data != null || snap.hasError,
@@ -156,16 +152,46 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
     super.dispose();
   }
 
+  /// The navy hero (spec §2.1): the hub's title, and for students this
+  /// semester's Grades card hanging over its bottom edge (spec §7.6).
+  Widget _hero(bool isStudent, _HubData? data, {required bool failed}) {
+    final text = Theme.of(context).textTheme;
+    final grades = data?.grades;
+    return NavyHero(
+      overlap: !isStudent || failed || (data != null && grades == null)
+          ? null
+          : FadeSwitch(
+              loaded: data != null,
+              child: grades == null
+                  // A plain white card holds the place while loading.
+                  ? Container(
+                      height: 104,
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.large),
+                        boxShadow: AppColors.cardShadow,
+                      ),
+                    )
+                  : _GradesTile(sem: grades, onTap: () => context.push('/life/grades')),
+            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(isStudent ? 'Student Life' : 'Michaelean Life',
+              style: text.headlineMedium?.copyWith(color: AppColors.white)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(isStudent ? 'Your campus, beyond the classroom.' : 'Teaching & Campus',
+              style: text.bodyLarge?.copyWith(color: AppColors.onNavyMuted)),
+        ],
+      ),
+    );
+  }
+
   // ---------- Student Life ----------
 
   List<Widget> _student(_HubData d) {
     final now = DateTime.now();
     return [
-      // First: this semester's GWA so far, and which grades are out (spec §7.6).
-      if (d.grades != null) ...[
-        _pad(SectionHeader('Grades', onSeeAll: () => context.push('/life/grades'))),
-        _pad(_GradesTile(sem: d.grades!, onTap: () => context.push('/life/grades'))),
-      ],
       _pad(SectionHeader('Class', onSeeAll: () => context.push('/life/class'))),
       ..._studentClasses(d.classes, now),
 
@@ -207,7 +233,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
         _pad(_muted('Find classmates and club mates in See all.'))
       else
         // Someone you asked folds away; the next suggestion fades in.
-        _pad(AnimatedRows(
+        _pad(SurfaceCard(child: AnimatedRows(
           separator: const Divider(height: 1, indent: PersonRow.textIndent),
           children: [
             for (final p in d.suggestions.take(3))
@@ -218,7 +244,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
                 trailing: connectAction(context, widget.campusService, p),
               ),
           ],
-        )),
+        ))),
 
       _pad(SectionHeader('Clearance', onSeeAll: () => context.push('/life/clearance'))),
       _pad(d.clearance == null
@@ -361,12 +387,9 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
   Widget _muted(String s) => Text(s,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted));
 
-  List<Widget> _divided(List<Widget> rows, {double indent = 0}) => [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) _pad(Divider(height: 1, indent: indent)),
-          _pad(rows[i]),
-        ],
-      ];
+  /// A section's rows together in one white card (spec §2.1).
+  List<Widget> _divided(List<Widget> rows, {double indent = 0}) =>
+      rows.isEmpty ? const [] : [_pad(SurfaceCard(indent: indent, children: rows))];
 
   Widget _loading() => const Padding(
         padding: EdgeInsets.only(top: AppSpacing.section),
@@ -420,7 +443,7 @@ class _EventCard extends StatelessWidget {
                 child: event.coverAsset != null
                     ? Image.asset(event.coverAsset!, fit: BoxFit.cover)
                     : const ColoredBox(
-                        color: AppColors.fill,
+                        color: AppColors.track,
                         child: Icon(Icons.event_outlined, size: 40, color: AppColors.muted),
                       ),
               ),
@@ -522,7 +545,8 @@ class _ClearanceProgress extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final s = summary;
     return Pressable(
-      color: AppColors.fill,
+      color: AppColors.white,
+      shadow: AppColors.cardShadow,
       borderRadius: BorderRadius.circular(AppRadius.large),
       onTap: onTap,
       child: Padding(
@@ -545,7 +569,7 @@ class _ClearanceProgress extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: s.total == 0 ? 0 : s.cleared / s.total,
                 minHeight: 6,
-                backgroundColor: AppColors.white,
+                backgroundColor: AppColors.track, // the empty part shows on the white card
                 color: AppColors.navy,
                 semanticsLabel: '${s.cleared} of ${s.total} cleared',
               ),
@@ -579,7 +603,8 @@ class _GradesTile extends StatelessWidget {
     final done = sem.finished.length;
     final gwa = sem.gwa(AverageMethod.byUnits);
     return Pressable(
-      color: AppColors.fill,
+      color: AppColors.white,
+      shadow: AppColors.cardShadow,
       borderRadius: BorderRadius.circular(AppRadius.large),
       onTap: onTap,
       child: Padding(
@@ -587,6 +612,17 @@ class _GradesTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Grades',
+                      style: text.labelLarge
+                          ?.copyWith(color: AppColors.navy, fontWeight: FontWeight.w700)),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
                 Expanded(child: Text(sem.name, style: text.titleMedium)),
@@ -626,7 +662,8 @@ class _OfficeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Pressable(
-      color: AppColors.fill,
+      color: AppColors.white,
+      shadow: AppColors.cardShadow,
       borderRadius: BorderRadius.circular(AppRadius.large),
       onTap: onTap,
       child: Padding(

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'pressable.dart';
 
-/// A rounded, soft-gray group of rows with white dividers (Luma's grouped
-/// inset lists, spec §11). Used by Settings and its pages.
+/// A rounded white group of rows with hairlines (Luma's grouped inset lists,
+/// spec §11), with the card shadow so it reads on the page and on sheets.
+/// Used by Settings and its pages.
 class InsetGroup extends StatelessWidget {
   final List<Widget> children;
 
@@ -12,18 +13,23 @@ class InsetGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.fill,
-      borderRadius: BorderRadius.circular(AppRadius.large),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0)
-              const Divider(height: 1.5, thickness: 1.5, indent: 52, color: AppColors.white),
-            children[i],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.large),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Material(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppRadius.large),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) const Divider(height: 1, indent: 52),
+              children[i],
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

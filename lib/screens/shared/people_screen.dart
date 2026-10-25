@@ -11,6 +11,7 @@ import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
+import '../../widgets/surface_card.dart';
 
 /// People (spec §10.1): search students by name. With no search, students
 /// see their suggestions and teachers see every student. Teachers view
@@ -108,7 +109,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                               style: muted),
                         )
                       else
-                        AnimatedRows(
+                        SurfaceCard(child: AnimatedRows(
                           separator: const Divider(height: 1, indent: PersonRow.textIndent),
                           children: [
                             for (final p in list)
@@ -119,7 +120,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                                 trailing: connectAction(context, widget.campusService, p),
                               ),
                           ],
-                        ),
+                        )),
                     ],
                   );
                 }),

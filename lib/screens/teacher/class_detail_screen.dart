@@ -14,6 +14,7 @@ import '../../widgets/fade_switch.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// One class, for its assigned teacher (spec §9.1): today's or the next
@@ -96,35 +97,44 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         const SizedBox(height: AppSpacing.lg),
         _SessionCard(session: d.current),
         SectionHeader('Roster (${d.roster.length})'),
-        for (var i = 0; i < d.roster.length; i++) ...[
-          if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
-          // Opens the student's full profile (teachers see everything, spec §10.1).
-          Pressable(
-            onTap: () => context.push(inTab(context, '/life/people/${d.roster[i].id}')),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
-              child: Row(
-                children: [
-                  UserAvatar(
-                      name: d.roster[i].name, imageAsset: d.roster[i].photoAsset, size: 40),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(d.roster[i].name, style: text.bodyLarge)),
-                  Text(d.roster[i].maskedId,
-                      style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                ],
+        if (d.roster.isNotEmpty)
+          SurfaceCard(indent: 40 + AppSpacing.md, children: [
+            for (var i = 0; i < d.roster.length; i++)
+              // Opens the student's full profile (teachers see everything, spec §10.1).
+              Pressable(
+                onTap: () => context.push(inTab(context, '/life/people/${d.roster[i].id}')),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+                  child: Row(
+                    children: [
+                      UserAvatar(
+                          name: d.roster[i].name, imageAsset: d.roster[i].photoAsset, size: 40),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(child: Text(d.roster[i].name, style: text.bodyLarge)),
+                      // Capped and shrunk to fit, so with large text it never pushes past the edge.
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 110),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(d.roster[i].maskedId,
+                              style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+          ]),
         const SectionHeader('Recent Sessions'),
         if (d.recent.isEmpty)
           Text('No past sessions yet.',
               style: text.bodyLarge?.copyWith(color: AppColors.muted))
         else
-          for (var i = 0; i < d.recent.length; i++) ...[
-            if (i > 0) const Divider(height: 1),
-            _recentRow(d.recent[i]),
-          ],
+          if (d.recent.isNotEmpty)
+            SurfaceCard(children: [
+              for (var i = 0; i < d.recent.length; i++)
+                _recentRow(d.recent[i]),
+            ]),
       ],
     );
   }
@@ -204,8 +214,9 @@ class _SessionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.screen),
       decoration: BoxDecoration(
-        color: AppColors.fill,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(AppRadius.large),
+        boxShadow: AppColors.cardShadow,
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: body),
     );

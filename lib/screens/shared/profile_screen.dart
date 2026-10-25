@@ -12,10 +12,12 @@ import '../../theme/app_theme.dart';
 import '../../widgets/animated_rows.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/navy_hero.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/tab_reselect.dart';
 import '../../widgets/user_avatar.dart';
 import 'event_history_screen.dart';
@@ -101,6 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isTeacher = user.role == UserRole.teacher;
 
     return SafeArea(
+      top: false, // the navy hero reaches behind the status bar
       bottom: false,
       child: FutureBuilder<_ProfileData>(
         future: _data,
@@ -112,93 +115,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: _scroll,
             child: ListView(
               controller: _scroll,
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.md, AppSpacing.screen, 120),
+              padding: const EdgeInsets.only(bottom: 120),
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 96),
-                    const Spacer(),
-                    RoundIconButton(
-                      icon: Icons.settings_outlined,
-                      tooltip: 'Settings',
-                      onPressed: () => context.push('/profile/settings'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(user.fullName, style: text.displaySmall),
-                const SizedBox(height: AppSpacing.xs),
-                Text('${isTeacher ? 'Teacher' : 'Student'} · ${user.designation}',
-                    style: text.bodyLarge),
-                Text('ID ${user.maskedId}',
-                    style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                const SizedBox(height: AppSpacing.md),
-                // Inline stats, counted from the loaded records (never typed in).
-                SizedBox(
-                  height: 24,
-                  child: data == null ? null : _stats(data, isTeacher),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Official tags: assigned by the school, not editable here (spec §5).
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [for (final t in user.tags) StatusPill(t.label, tone: tagTone(t.kind))],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                FilledButton(
-                  onPressed: () => context.push('/profile/edit'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.fill,
-                    foregroundColor: AppColors.ink,
+                _hero(user),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: AppSpacing.md),
+                      Text(user.fullName, style: text.displaySmall),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text('${isTeacher ? 'Teacher' : 'Student'} · ${user.designation}',
+                          style: text.bodyLarge),
+                      Text('ID ${user.maskedId}',
+                          style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                      const SizedBox(height: AppSpacing.md),
+                      // Inline stats, counted from the loaded records (never typed in).
+                      SizedBox(
+                        height: 24,
+                        child: data == null ? null : _stats(data, isTeacher),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      // Official tags: assigned by the school, not editable here (spec §5).
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: [for (final t in user.tags) StatusPill(t.label, tone: tagTone(t.kind))],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      FilledButton(
+                        onPressed: () => context.push('/profile/edit'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.white,
+                          foregroundColor: AppColors.ink,
+                        ),
+                        child: const Text('Edit Profile'),
+                      ),
+                      if (user.about != null) ...[
+                        const SectionHeader('About'),
+                        Text(user.about!, style: text.bodyLarge),
+                      ],
+                      // The progress bar fades into the sections (spec §2.5).
+                      FadeSwitch(
+                        loaded: data != null || snap.hasError,
+                        child: snap.hasError
+                            ? _error()
+                            : data == null
+                                ? const Padding(
+                                    padding: EdgeInsets.only(top: AppSpacing.section),
+                                    child: LinearProgressIndicator(),
+                                  )
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      if (data.connections != null) ..._connections(data.connections!),
+                                      if (isTeacher) ...[
+                                        const SectionHeader('Classes I Teach'),
+                                        if (data.teaching.isEmpty)
+                                          _muted('No classes assigned.')
+                                        else
+                                          ..._divided([
+                                            for (final c in data.teaching)
+                                              ContentRow(
+                                                source: c.section,
+                                                title: c.subject,
+                                                meta: c.room,
+                                                metaIcon: Icons.place_outlined,
+                                                onTap: () => context.push('/profile/classes/${c.classId}'),
+                                              ),
+                                          ]),
+                                      ],
+                                      const SectionHeader('Event History'),
+                                      if (data.history.isEmpty)
+                                        _muted('No recorded events yet.')
+                                      else
+                                        ..._divided(indent: ContentRow.textIndent, [
+                                          for (final e in data.history) eventRecordRow(context, e),
+                                        ]),
+                                    ],
+                                  ),
+                      ),
+                    ],
                   ),
-                  child: const Text('Edit Profile'),
-                ),
-                if (user.about != null) ...[
-                  const SectionHeader('About'),
-                  Text(user.about!, style: text.bodyLarge),
-                ],
-                // The progress bar fades into the sections (spec §2.5).
-                FadeSwitch(
-                  loaded: data != null || snap.hasError,
-                  child: snap.hasError
-                      ? _error()
-                      : data == null
-                          ? const Padding(
-                              padding: EdgeInsets.only(top: AppSpacing.section),
-                              child: LinearProgressIndicator(),
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (data.connections != null) ..._connections(data.connections!),
-                                if (isTeacher) ...[
-                                  const SectionHeader('Classes I Teach'),
-                                  if (data.teaching.isEmpty)
-                                    _muted('No classes assigned.')
-                                  else
-                                    ..._divided([
-                                      for (final c in data.teaching)
-                                        ContentRow(
-                                          source: c.section,
-                                          title: c.subject,
-                                          meta: c.room,
-                                          metaIcon: Icons.place_outlined,
-                                          onTap: () => context.push('/profile/classes/${c.classId}'),
-                                        ),
-                                    ]),
-                                ],
-                                const SectionHeader('Event History'),
-                                if (data.history.isEmpty)
-                                  _muted('No recorded events yet.')
-                                else
-                                  ..._divided(indent: ContentRow.textIndent, [
-                                    for (final e in data.history) eventRecordRow(context, e),
-                                  ]),
-                              ],
-                            ),
                 ),
               ],
             ),
@@ -212,6 +211,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// The navy hero (spec §2.1): the title and Settings, with the photo in a
+  /// white ring hanging half over the navy's bottom edge.
+  Widget _hero(UserProfile user) {
+    final text = Theme.of(context).textTheme;
+    return NavyHero(
+      overlapDepth: 52,
+      overlap: Align(
+        alignment: Alignment.centerLeft,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.white,
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 96),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text('Profile', style: text.headlineMedium?.copyWith(color: AppColors.white)),
+          ),
+          RoundIconButton(
+            icon: Icons.settings_outlined,
+            tooltip: 'Settings',
+            onPressed: () => context.push('/profile/settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// "3 Attended · 2 Orgs" (students) or "3 Classes · 1 Hosted" (teachers).
@@ -244,12 +278,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _muted(String s) => Text(s,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted));
 
-  List<Widget> _divided(List<Widget> rows, {double indent = 0}) => [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) Divider(height: 1, indent: indent),
-          rows[i],
-        ],
-      ];
+  /// A section's rows together in one white card (spec §2.1).
+  List<Widget> _divided(List<Widget> rows, {double indent = 0}) =>
+      rows.isEmpty ? const [] : [SurfaceCard(indent: indent, children: rows)];
 
   Widget _error() => Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.section),
@@ -299,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SectionHeader('Connections (${c.connections.length})'),
       if (c.incoming.isNotEmpty) ...[
         group('Requests (${c.incoming.length})'),
-        AnimatedRows(
+        SurfaceCard(child: AnimatedRows(
           separator: const Divider(height: 1, indent: PersonRow.textIndent),
           children: [
             for (final p in c.incoming)
@@ -330,7 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
           ],
-        ),
+        )),
         group('Your connections'),
       ],
       if (c.connections.isEmpty)
@@ -339,15 +370,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: _muted('No connections yet. Find people in Student Life.'),
         )
       else
-        AnimatedRows(
+        SurfaceCard(child: AnimatedRows(
           separator: const Divider(height: 1, indent: PersonRow.textIndent),
           children: [
             for (final p in c.connections) PersonRow(key: ValueKey(p.id), person: p, onTap: () => open(p)),
           ],
-        ),
+        )),
       if (c.sent.isNotEmpty) ...[
         group('Sent'),
-        AnimatedRows(
+        SurfaceCard(child: AnimatedRows(
           separator: const Divider(height: 1, indent: PersonRow.textIndent),
           children: [
             for (final p in c.sent)
@@ -363,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
           ],
-        ),
+        )),
       ],
     ];
   }

@@ -4,6 +4,9 @@ import 'package:michaelean_app/main.dart';
 import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
+import 'package:michaelean_app/theme/app_theme.dart';
+import 'package:michaelean_app/widgets/navy_hero.dart';
+import 'package:michaelean_app/widgets/pressable.dart';
 
 Future<void> openHub(WidgetTester tester, String role, String tab, {bool fail = false}) async {
   tester.view.physicalSize = const Size(390, 844);
@@ -75,8 +78,14 @@ void main() {
   testWidgets("Student Life's Grades card shows this semester and opens Grades",
       (tester) async {
     await openHub(tester, 'Student', 'Student Life');
-    // Grades is the first section, above Class.
-    expect(tester.getTopLeft(find.bySemanticsLabel('See all Grades')).dy,
+    // The Grades card hangs over the navy hero, above Class (spec §2.1, §7.6).
+    final navy = find.descendant(
+        of: find.byType(NavyHero),
+        matching: find.byWidgetPredicate((w) => w is ColoredBox && w.color == AppColors.navy));
+    final card = find.ancestor(of: find.text('Midterms out · 1 of 5 finals'), matching: find.byType(Pressable)).first;
+    expect(tester.getTopLeft(card).dy, lessThan(tester.getBottomLeft(navy).dy));
+    expect(tester.getBottomLeft(card).dy, greaterThan(tester.getBottomLeft(navy).dy));
+    expect(tester.getTopLeft(card).dy,
         lessThan(tester.getTopLeft(find.bySemanticsLabel('See all Class')).dy));
     expect(find.text('Midterms out · 1 of 5 finals'), findsOneWidget);
     // Only GE 104 has both grades (93, 95 → 94 → 1.50).

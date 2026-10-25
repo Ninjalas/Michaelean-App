@@ -46,7 +46,12 @@ class _PressableState extends State<Pressable> {
       child: widget.child,
     );
     if (widget.color != null) {
-      card = Material(color: widget.color, borderRadius: widget.borderRadius, child: card);
+      card = Material(
+        color: widget.color,
+        borderRadius: widget.borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: card,
+      );
     }
     if (widget.shadow != null) {
       card = DecoratedBox(

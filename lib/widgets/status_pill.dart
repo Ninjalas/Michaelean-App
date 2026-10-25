@@ -14,7 +14,7 @@ class StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (tone) {
-      PillTone.neutral => (AppColors.fill, AppColors.muted),
+      PillTone.neutral => (AppColors.track, AppColors.trackText), // reads on the page and on white
       PillTone.navy => (AppColors.navyTint, AppColors.navy),
       PillTone.green => (AppColors.greenTint, AppColors.green),
       PillTone.amber => (AppColors.amberTint, AppColors.amber),

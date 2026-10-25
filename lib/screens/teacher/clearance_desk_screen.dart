@@ -10,6 +10,7 @@ import '../../widgets/clearance_widgets.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Clearance verification for authorized staff (spec §9.3): the assigned
@@ -139,8 +140,9 @@ class _ClearanceDeskScreenState extends State<ClearanceDeskScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(AppSpacing.screen),
                                         decoration: BoxDecoration(
-                                          color: AppColors.fill,
+                                          color: AppColors.white,
                                           borderRadius: BorderRadius.circular(AppRadius.large),
+                                          boxShadow: AppColors.cardShadow,
                                         ),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -163,11 +165,11 @@ class _ClearanceDeskScreenState extends State<ClearanceDeskScreen> {
                                       const SectionHeader('Pending'),
                                       if (desk.pending.isEmpty)
                                         Text('Nothing is waiting for review.', style: muted),
-                                      for (var i = 0; i < desk.pending.length; i++) ...[
-                                        if (i > 0)
-                                          const Divider(height: 1, indent: 48 + AppSpacing.md),
-                                        _caseRow(desk.pending[i]),
-                                      ],
+                                      if (desk.pending.isNotEmpty)
+                                        SurfaceCard(indent: 48 + AppSpacing.md, children: [
+                                          for (var i = 0; i < desk.pending.length; i++)
+                                            _caseRow(desk.pending[i]),
+                                        ]),
                                     ],
                                   ),
                   ),

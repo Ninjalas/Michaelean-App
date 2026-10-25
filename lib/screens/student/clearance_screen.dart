@@ -13,6 +13,7 @@ import '../../widgets/fade_switch.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 
 /// The student's clearance (spec §7.5): during a period, the progress and
 /// one row per requirement; outside one, a calm Clearance Unavailable
@@ -84,10 +85,11 @@ class _ClearanceScreenState extends State<ClearanceScreen> {
                         ..._active(v.active!),
                       const SectionHeader('Past Clearances'),
                       if (v.past.isEmpty) _muted('No past clearances.'),
-                      for (var i = 0; i < v.past.length; i++) ...[
-                        if (i > 0) const Divider(height: 1),
-                        _pastRow(v.past[i]),
-                      ],
+                      if (v.past.isNotEmpty)
+                        SurfaceCard(children: [
+                          for (var i = 0; i < v.past.length; i++)
+                            _pastRow(v.past[i]),
+                        ]),
                     ],
                   );
                 }),
@@ -106,8 +108,9 @@ class _ClearanceScreenState extends State<ClearanceScreen> {
       Container(
         padding: const EdgeInsets.all(AppSpacing.screen),
         decoration: BoxDecoration(
-          color: AppColors.fill,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(AppRadius.large),
+          boxShadow: AppColors.cardShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +135,7 @@ class _ClearanceScreenState extends State<ClearanceScreen> {
               child: LinearProgressIndicator(
                 value: total == 0 ? 0 : p.cleared / total,
                 minHeight: 10,
-                backgroundColor: AppColors.white,
+                backgroundColor: AppColors.track, // the empty part shows on the white card
                 color: AppColors.navy,
                 semanticsLabel: '${p.cleared} of $total cleared',
               ),
@@ -141,10 +144,11 @@ class _ClearanceScreenState extends State<ClearanceScreen> {
         ),
       ),
       const SectionHeader('Requirements'),
-      for (var i = 0; i < p.items.length; i++) ...[
-        if (i > 0) const Divider(height: 1, indent: 44 + AppSpacing.md),
-        _itemRow(p.items[i]),
-      ],
+      if (p.items.isNotEmpty)
+        SurfaceCard(indent: 44 + AppSpacing.md, children: [
+          for (var i = 0; i < p.items.length; i++)
+            _itemRow(p.items[i]),
+        ]),
       const SizedBox(height: AppSpacing.md),
       _muted("Not applicable requirements don't count toward your total."),
     ];

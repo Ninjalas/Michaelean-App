@@ -39,8 +39,12 @@ int selectedTab(WidgetTester tester) =>
     tester.widget<FloatingNavBar>(find.byType(FloatingNavBar)).selectedIndex;
 
 Future<void> tap(WidgetTester tester, Finder finder) async {
-  await tester.ensureVisible(finder);
-  await tester.pumpAndSettle();
+  // Scroll only when needed: scrolling a Home item to the very top would put
+  // it under the pinned navy bar.
+  if (!tester.any(finder.hitTestable())) {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+  }
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }

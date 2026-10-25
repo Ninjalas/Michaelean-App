@@ -11,6 +11,7 @@ import '../../widgets/filter_chips.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/segmented_pills.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 
 /// The student's own grades by semester (spec §7.6): the overall average,
 /// then Course · Units · Midterm · Final · Average. Read-only, only for the
@@ -96,7 +97,11 @@ class _GradesScreenState extends State<GradesScreen> {
                       const SizedBox(height: AppSpacing.lg),
                       _Overall(sem, semester: semesters.indexOf(sem)),
                       const SizedBox(height: AppSpacing.lg),
-                      _GradeTable(sem),
+                      SurfaceCard(
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xs),
+                        child: _GradeTable(sem),
+                      ),
                       const SizedBox(height: AppSpacing.lg),
                       Text(
                         'Sample grades, not official records. Passing grade: $passingGrade.',
@@ -139,7 +144,8 @@ class _Overall extends StatelessWidget {
     final all = sem.courses.length;
     // Tap to see how it's counted, once there's an average to explain.
     return Pressable(
-      color: AppColors.fill,
+      color: AppColors.white,
+      shadow: AppColors.cardShadow,
       borderRadius: BorderRadius.circular(AppRadius.large),
       onTap: gwa == null ? null : () => context.push('/life/grades/average?sem=$semester'),
       child: Padding(

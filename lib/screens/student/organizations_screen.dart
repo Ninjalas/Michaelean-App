@@ -11,6 +11,7 @@ import '../../widgets/fade_switch.dart';
 import '../../widgets/org_row.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 
 /// The Organizations directory (spec §7.4), in three groups: the student's
 /// departmental society, school-wide clubs, and My Organizations.
@@ -102,16 +103,17 @@ class _OrganizationsScreenState extends State<OrganizationsScreen> {
     return [
       SectionHeader(title),
       if (orgs.isEmpty && empty != null) empty,
-      for (var i = 0; i < orgs.length; i++) ...[
-        if (i > 0) const Divider(height: 1, indent: OrgRow.textIndent),
-        OrgRow(
-          org: orgs[i],
-          pill: showMember && memberOf.contains(orgs[i].id)
-              ? const StatusPill('Member', tone: PillTone.green)
-              : null,
-          onTap: () => context.push(inTab(context, '/life/organizations/${orgs[i].id}')),
-        ),
-      ],
+      if (orgs.isNotEmpty)
+        SurfaceCard(indent: OrgRow.textIndent, children: [
+          for (var i = 0; i < orgs.length; i++)
+            OrgRow(
+              org: orgs[i],
+              pill: showMember && memberOf.contains(orgs[i].id)
+                  ? const StatusPill('Member', tone: PillTone.green)
+                  : null,
+              onTap: () => context.push(inTab(context, '/life/organizations/${orgs[i].id}')),
+            ),
+        ]),
     ];
   }
 }

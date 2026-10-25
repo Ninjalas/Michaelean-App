@@ -8,8 +8,9 @@ import '../utils/dates.dart';
 class TwoToneDate extends StatelessWidget {
   final DateTime date;
   final TextStyle? style; // defaults to the section-title style
+  final Color suffixColor; // the " / Friday" part; lighter on navy
 
-  const TwoToneDate(this.date, {super.key, this.style});
+  const TwoToneDate(this.date, {super.key, this.style, this.suffixColor = AppColors.muted});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class TwoToneDate extends StatelessWidget {
         style: style ?? Theme.of(context).textTheme.titleLarge,
         children: [
           TextSpan(text: formatDayMonth(date)),
-          TextSpan(text: ' / ${weekdayName(date)}', style: const TextStyle(color: AppColors.muted)),
+          TextSpan(text: ' / ${weekdayName(date)}', style: TextStyle(color: suffixColor)),
         ],
       ),
     );

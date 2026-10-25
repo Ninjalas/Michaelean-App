@@ -16,6 +16,7 @@ import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/segmented_pills.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/two_tone_date.dart';
 
 /// Events (spec §7.3, §9.2). Students: Discover | My events. Teachers who
@@ -205,21 +206,28 @@ class _EventsScreenState extends State<EventsScreen> {
       ];
     }
     final out = <Widget>[];
+    var rows = <Widget>[];
+    // Each day's events sit together in one white card under the date.
+    void endDay() {
+      if (rows.isNotEmpty) out.add(SurfaceCard(indent: ContentRow.textIndent, children: rows));
+      rows = [];
+    }
+
     DateTime? day;
     for (final d in events) {
       final s = d.event.start;
       final thisDay = DateTime(s.year, s.month, s.day);
       if (thisDay != day) {
+        endDay();
         day = thisDay;
         out.add(Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.lg + AppSpacing.sm),
+          padding: const EdgeInsets.only(top: AppSpacing.lg + AppSpacing.sm, bottom: AppSpacing.sm),
           child: TwoToneDate(s, style: Theme.of(context).textTheme.titleMedium),
         ));
-      } else {
-        out.add(const Divider(height: 1, indent: ContentRow.textIndent));
       }
-      out.add(_row(d));
+      rows.add(_row(d));
     }
+    endDay();
     return out;
   }
 

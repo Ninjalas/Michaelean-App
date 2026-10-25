@@ -11,6 +11,7 @@ import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 
 /// The student's recorded events, opened from Home's attendance stats so
 /// Back returns to Home (decided 2026-10-24). Profile shows the same list.
@@ -70,10 +71,11 @@ class _EventHistoryScreenState extends State<EventHistoryScreen> {
                           padding: const EdgeInsets.only(top: AppSpacing.lg),
                           child: Text('No recorded events yet.', style: muted),
                         ),
-                      for (var i = 0; i < list.length; i++) ...[
-                        if (i > 0) const Divider(height: 1, indent: ContentRow.textIndent),
-                        eventRecordRow(context, list[i]),
-                      ],
+                      if (list.isNotEmpty)
+                        SurfaceCard(indent: ContentRow.textIndent, children: [
+                          for (var i = 0; i < list.length; i++)
+                            eventRecordRow(context, list[i]),
+                        ]),
                     ],
                   );
                 }),

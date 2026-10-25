@@ -15,6 +15,7 @@ import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 import '../shared/events_screen.dart' show eventPill;
 
@@ -237,12 +238,9 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted)),
       );
 
-  List<Widget> _divided(List<Widget> rows, {double indent = 0}) => [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) Divider(height: 1, indent: indent),
-          rows[i],
-        ],
-      ];
+  /// A section's rows together in one white card (spec §2.1).
+  List<Widget> _divided(List<Widget> rows, {double indent = 0}) =>
+      rows.isEmpty ? const [] : [SurfaceCard(indent: indent, children: rows)];
 
   List<Widget> _about(OrganizationPage p) {
     final text = Theme.of(context).textTheme;

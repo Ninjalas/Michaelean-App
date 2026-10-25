@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/round_icon_button.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Edit Profile (spec §10): only presentation details. About is editable;
@@ -106,10 +107,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   Text('Set by the school', style: label),
                   const SizedBox(height: AppSpacing.sm),
-                  _locked('Name', user.fullName),
-                  _locked('Program', user.designation),
-                  _locked('ID', user.maskedId),
-                  _locked('Tags and memberships', '${user.tags.length} official tags'),
+                  SurfaceCard(children: [
+                    _locked('Name', user.fullName),
+                    _locked('Program', user.designation),
+                    _locked('ID', user.maskedId),
+                    _locked('Tags and memberships', '${user.tags.length} official tags'),
+                  ]),
                   const SizedBox(height: AppSpacing.sm),
                   Text("These come from school records and can't be changed here.",
                       style: text.bodyMedium?.copyWith(color: AppColors.muted)),

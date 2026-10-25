@@ -372,7 +372,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
                       height: 72,
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
-                        color: AppColors.fill,
+                        color: AppColors.track,
                         border: c == _cover ? Border.all(color: AppColors.navy, width: 3) : null,
                         borderRadius: BorderRadius.circular(AppRadius.small),
                       ),

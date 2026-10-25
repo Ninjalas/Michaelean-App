@@ -331,6 +331,37 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **New look, step 5 of 5: everything else.** The rest of the app now follows direction B (spec §2.1): rows sit together in white cards on the soft page.
+  - **List pages:** Events (each day in its own card under its date), Organizations, Classes (with class icon tiles), People and search, Privacy's blocked list, Clearance (requirements and past clearances), the class schedule and records, Event History, Going lists, class rosters and recent sessions, attendance review, registrations, the clearance desk, Manage club and Add member, and the grade table.
+  - **Detail pages** keep their photo or cover as the hero; their action tiles and summary cards were already white. **Forms:** Edit Profile's school-set details are a card too. **Pop-ups** (Settings, Notifications) were checked: their white cards read on the white sheet thanks to the soft shadow.
+  - **Fixes the new layout needed:** the Clearance progress bars' empty part was white (invisible on a white card), now track grey; roster and attendance-review rows cap the masked ID's width, so with large text on a small phone it shrinks instead of overflowing (the audit caught it).
+  - This finishes the five-step new look.
+  - Tests: `test/surfaces_test.dart` (Events, Organizations, Clearance and Grades rows sit in cards).
+
+- **New look, step 4 of 5: Student Life, Michaelean Life and Profile.** All three main tabs now open on the navy hero.
+  - **Student Life:** the title and subtitle in white, with this semester's **Grades card hanging over the navy's edge**. The card now names itself ("Grades ›") instead of sitting under a separate Grades heading; tapping it opens the Grades page. While loading, a plain white card holds its place.
+  - **Michaelean Life (teachers):** the same hero ("Teaching & Campus"), without a card over it, since teachers have no grades.
+  - **Profile:** "Profile" and the Settings button on the navy, with your **photo in a white ring hanging half over its edge**; the name and everything below follow as before.
+  - Tests: `test/home_hero_test.dart` checks the Profile photo straddling the navy's edge with Settings on it; `test/life_hub_test.dart` checks the Grades card straddling the edge above Class.
+
+- **New look, step 3 of 5: Home.** Home opens on the **navy hero**: emblem, wordmark and bell, then the greeting and date in white, with the **stats card hanging over the navy's bottom edge** (students: attendance and clearance; teachers: today at a glance). Once the greeting has scrolled away, a **compact navy bar** stays pinned at the top (photo, greeting, date, bell).
+  - **Up next** is now a white card with a thin red accent bar and a red `UP NEXT` label, since the header is Home's one navy hero (spec §2.2). The date chip is navy on a soft navy tint; Start attendance is the usual navy button.
+  - **Icon tiles:** text-only rows (Pending Tasks, Today's Classes, Schedule & Room Changes, Announcements) get a small navy tile on the left, e.g. a checklist for clearance tasks. Shared: `ContentRow(icon: …)`.
+  - Shared tweaks: `TwoToneDate` can lighten its "/ Sunday" part on navy; `Pressable` cards clip their content to the rounded corners.
+  - Tests: `test/home_hero_test.dart` (the hero from the very top, white greeting, the stats straddling the navy's edge, the red label, icon tiles, the compact bar appearing and leaving, the teacher's stats). `test/back_navigation_test.dart` now scrolls only when an item isn't already tappable, since scrolling a stat to the very top puts it under the pinned bar.
+
+- **New look, step 2 of 5: the shared navy hero header** (`widgets/navy_hero.dart`). Deep navy from the very top of the screen (behind the phone's status bar), a faint red glow from the emblem's red in the top-right corner, rounded bottom corners, and white text and icons inside by default. An optional card can hang 36 px over its bottom edge (Home's stats, in step 3). Not on any screen yet: Home gets it in step 3, Student Life, Michaelean Life and Profile in step 4.
+  - Tests: `test/navy_hero_test.dart` (navy reaches behind the status bar while the text starts below it; the glow; white text; the overlap hangs exactly 36 px; no overflow with large text on a small phone).
+
+- **New look, step 1 of 5: foundation (direction B, "Navy hero").** Decided 2026-10-25 and recorded in `docs/spec.md` §2: navy hero headers on the main tabs (steps 2–4), a soft blue-grey page with white cards, and red for attention plus a few small accents. Replaces the old "no coloured header" and "rows, not cards" rules.
+  - **New colours** (`theme/app_theme.dart`): `page` `#F4F5F9` (screen background), `track` `#E9EBF1` (controls on the page: unselected chips, day pills, the switch track, loading boxes, neutral pills), `trackText` `#5A5C66` (grey text on track; the usual grey is only 4.1:1 there), and `cardShadow` (an even softer shadow under white cards).
+  - **White cards:** the stats tile, Clearance and Grades cards, the GWA card, event action tiles, session and clearance summaries, "unavailable" boxes and Settings' grouped lists. Section lists on Home, Student Life, Profile, a student's profile, a club and Manage club now sit together in one white card (`widgets/surface_card.dart`).
+  - **Inputs** are white with a thin outline, so they show on the page and on white pop-ups; tappable form fields (date and time pickers) match.
+  - **Browser:** the top bar is navy (`theme-color`), and the installed app's splash uses the page colour.
+  - **Fixes the new layout needed:** club rows' request pill is capped so it can't push past a small screen with large text (the audit caught it).
+  - **Not yet:** Events, People, Classes and the other list pages still have rows straight on the page; they get cards in step 5.
+  - Tests: `test/theme_contrast_test.dart` checks that every text and background pair in the theme meets 4.5:1 (the screen audit checks tap targets, not contrast).
+
 - **Grades use SMCL's grading scale; Grades moves to the top of Student Life.** Decided 2026-10-25 (spec §7.6).
   - **SMCL's scale** (99–100 → 1.00 Excellent … 75–77 → 3.00 Barely Passing, 70–74 → 4.00 Conditional Fail, below 70 → 5.00 Failed) lives once in `models/grades.dart` (`smclScale`, `gradePointFor`). The US 4.00 GPA column of SMCL's table isn't shown.
   - **Each course average** shows its grade point under it (90 over 1.75). A 4.00 gets an amber `Conditional fail` tag, a 5.00 the red `Failed` tag.
@@ -724,7 +755,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-209 tests currently pass, at any time of day. They cover:
+219 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

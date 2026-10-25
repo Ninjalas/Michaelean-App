@@ -11,7 +11,7 @@ class StatItem {
   const StatItem(this.value, this.label, {required this.onTap});
 }
 
-/// One compact, always-visible row of stats on a soft gray tile
+/// One compact, always-visible row of stats on a white card
 /// (spec §6, §8). Numbers are navy; each stat taps through to its detail.
 class StatsRow extends StatelessWidget {
   final List<StatItem> items;
@@ -22,8 +22,9 @@ class StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.fill,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(AppRadius.large),
+        boxShadow: AppColors.cardShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
@@ -32,7 +33,7 @@ class StatsRow extends StatelessWidget {
             for (var i = 0; i < items.length; i++) ...[
               if (i > 0)
                 const VerticalDivider(
-                    width: 1.5, thickness: 1.5, indent: 14, endIndent: 14, color: AppColors.white),
+                    width: 1.5, thickness: 1.5, indent: 14, endIndent: 14, color: AppColors.hairline),
               Expanded(child: _Stat(items[i])),
             ],
           ],

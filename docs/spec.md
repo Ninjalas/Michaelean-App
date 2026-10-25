@@ -60,7 +60,9 @@ Screens must feel **full, not thin**. Not crowded, but rich:
 
 Also required: consistent spacing and radii, touch targets ≥ 48 × 48 px, safe-area and keyboard handling, responsive layouts across phone sizes, and loading, empty, unavailable, and error states.
 
-Avoid: card grids, rows of metric chips as decoration, gradient headers, floating action buttons, corporate admin layouts, nonfunctional controls.
+Avoid: card grids, rows of metric chips as decoration, multi-color gradient headers, corporate admin layouts, nonfunctional controls.
+
+**Direction B, "Navy hero" (decided 2026-10-25):** the main tabs (Home, Student Life / Michaelean Life, Profile) open on a **deep navy header** with a faint emblem-red glow in one corner and white text; a white card may overlap its bottom edge. Below it, a **soft blue-grey page** with **white cards** (very soft shadow) holding the rows, and navy icon tiles. Detail pages keep their photo or cover as the hero instead. Red stays rare: attention, plus a few brand accents (§2.2).
 
 **Light mode only** for now. Dark mode comes later; the theme file keeps it possible.
 
@@ -68,35 +70,37 @@ Avoid: card grids, rows of metric chips as decoration, gradient headers, floatin
 
 **Reference:** Luma iOS screenshots in `assets/images/luma_screens/` (from Mobbin). Follow Luma closely in layout and feel, but never copy its wordmark, icons, or branding. Michaelean uses the SMCL emblem and school colors.
 
-Not a reference: `luma_screens/image 3.png` (an earlier Michaelean concept with a gradient header and metric chips).
+Not a reference: `luma_screens/image 3.png` (an earlier Michaelean concept with a gradient header and metric chips). The navy hero above is a single solid navy with one soft glow, not that gradient.
 
 What Michaelean takes from Luma:
 
-- **Rows, not cards.** Rounded square thumbnail on the left; source avatar + name; title; meta lines with icons (clock, pin). Hairlines between rows. A small status pill overlapping the thumbnail.
+- **Rows inside white cards.** Rounded square thumbnail on the left; source avatar + name; title; meta lines with icons (clock, pin). Hairlines between rows. A small status pill overlapping the thumbnail. A section's rows sit together in one white rounded card on the soft page (not a grid of separate cards).
 - **Two-tone date headers:** `24 October` in ink, `/ Friday` in muted gray.
 - **Floating chrome.** Header with emblem + `Michaelean` wordmark on the left and the bell in a soft white pill on the right. Floating rounded pill bottom navigation, active tab in a filled pill. Floating circular back button.
 - **Detail pages.** Large rounded cover image, big title, date line, a row of tonal action buttons, then sections introduced by small muted labels over a hairline. On scroll, the title moves into a compact pill beside the back button. A light wash from the cover at the top of the page fades into white.
 - **Profiles.** Large photo, left-aligned name, inline stats, sections reusing the same rows. Settings as grouped, rounded inset lists.
 - **Pop-ups.** Rounded bottom sheets with a grab handle, round X, dimmed background, outside-tap and Back to close.
-- **Forms.** Borderless, light-gray, fully rounded inputs with muted labels above. One full-width pill button at the bottom; disabled state is plain gray.
+- **Forms.** White, fully rounded inputs with a thin hairline outline (they read on the soft page and on white sheets) and muted labels above. One full-width pill button at the bottom; disabled state is plain gray.
 - **Segmented controls** as pills. **Filter pills** that change color when active.
 - **Empty states:** outline icon in gray, short title, one muted sentence.
 
 ### 2.2 Color
 
-School colors from the SMCL emblem, in deeper, calmer shades. Navy is used **confidently**; red only for attention.
+School colors from the SMCL emblem, in deeper, calmer shades. Navy is used **confidently**; red for attention and a few small brand accents.
 
 | Token | Hex | Use |
 |---|---|---|
 | `navy` | `#242A5E` | The one bold color: primary buttons, active tab, links, stat numbers, selected states, identity tags, and the solid navy **Up next** card (white text) on Home. |
-| `red` | `#B3242E` | Attention only: `URGENT`, notification dot, Needs correction. One per screen region at most. |
-| `white` | `#FFFFFF` | Screen background, surfaces, sheets, pills. |
+| `red` | `#B3242E` | Attention: `URGENT`, notification dot, Needs correction, failing grades. Plus small brand accents only: the faint glow in the navy hero, a thin accent bar, a small label like `UP NEXT`. Never a whole card or a big fill. |
+| `page` | `#F4F5F9` | Screen background: a soft blue-grey, so white cards stand out. |
+| `white` | `#FFFFFF` | Cards, sheets, pills, inputs. |
 | `ink` | `#16171D` | Primary text. |
 | `muted` | `#6E7079` | Secondary text, meta, date suffix. |
 | `hairline` | `#ECECEE` | Dividers, indented to the text column in thumbnail lists. |
-| `fill` | `#F3F3F4` | Soft gray tiles, inputs, active nav pill, placeholders. |
+| `fill` | `#F3F3F4` | Soft gray inside white surfaces: thumbnails and avatar placeholders, neutral pills, the active nav pill. |
+| `track` | `#E9EBF1` | Controls on the page: unselected chips and day pills, the segmented switch's track, loading boxes. |
 
-Rule of thumb: **one navy hero per screen**; everything else stays white/gray and lets photos supply color.
+Rule of thumb: **one navy hero per screen** (on the main tabs, the header; so Home's Up next card becomes white with a red accent); everything else stays white on the soft page and lets photos supply color.
 
 Status tints (soft background + darker text): green for Cleared/Attended/Present, amber for In review/On hold/Full, navy for Invited/Registered, red for Needs correction/Cancelled/Absent, gray for Not started/Not applicable. Check WCAG AA contrast.
 
@@ -113,7 +117,7 @@ Both are free (OFL) and bundled as asset files so they work offline. Inter is al
 
 - 4-point spacing scale; 20 px screen margins; 24–32 px between sections.
 - Radius: 12 for thumbnails and small elements; 20 for cover images, sheets, modals, and the Up next card; full pill for buttons, inputs, tags, and the nav bar.
-- Depth: soft, large-blur, low-opacity shadows on floating elements (header pill, nav bar, back button, Up next card, sheets). Layers should read clearly: page → floating chrome → sheets.
+- Depth: soft, large-blur, low-opacity shadows on floating elements (header pill, nav bar, back button, Up next card, sheets), and an even softer one under white cards. Layers should read clearly: page → cards → floating chrome → sheets.
 
 ### 2.5 Motion
 

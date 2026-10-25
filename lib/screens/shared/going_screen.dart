@@ -9,6 +9,7 @@ import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// "Andrea, Carlo and 14 others are going" (or "went"). The viewer shows as
@@ -133,17 +134,17 @@ class _GoingScreenState extends State<GoingScreen> {
                                         AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
                                     children: [
                                       Text(goingLine(a), style: text.titleMedium),
-                                      for (var i = 0; i < a.shown.length; i++) ...[
-                                        if (i > 0)
-                                          const Divider(height: 1, indent: PersonRow.textIndent),
-                                        PersonRow(
-                                          person: a.shown[i],
-                                          onTap: () =>
-                                              context.push('$tab/people/${a.shown[i].id}'),
-                                          trailing: connectAction(
-                                              context, widget.campusService, a.shown[i]),
-                                        ),
-                                      ],
+                                      if (a.shown.isNotEmpty)
+                                        SurfaceCard(indent: PersonRow.textIndent, children: [
+                                          for (var i = 0; i < a.shown.length; i++)
+                                            PersonRow(
+                                              person: a.shown[i],
+                                              onTap: () =>
+                                                  context.push('$tab/people/${a.shown[i].id}'),
+                                              trailing: connectAction(
+                                                  context, widget.campusService, a.shown[i]),
+                                            ),
+                                        ]),
                                       if (a.others > 0) ...[
                                         const SizedBox(height: AppSpacing.md),
                                         Text(

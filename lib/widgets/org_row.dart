@@ -36,7 +36,14 @@ class OrgRow extends StatelessWidget {
                 ],
               ),
             ),
-            if (pill != null) ...[pill!, const SizedBox(width: AppSpacing.xs)],
+            // Capped and shrunk to fit, so with large text it never pushes past the edge.
+            if (pill != null) ...[
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 110),
+                child: FittedBox(fit: BoxFit.scaleDown, child: pill!),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+            ],
             const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
           ],
         ),

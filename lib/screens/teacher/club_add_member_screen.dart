@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/animated_rows.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Add member: the adviser searches the sample students and adds them one
@@ -118,7 +119,7 @@ class _ClubAddMemberScreenState extends State<ClubAddMemberScreen> {
                       Text('Sample students from the class lists.',
                           style: text.bodyMedium?.copyWith(color: AppColors.muted)),
                       // Someone you add folds away (spec §2.5).
-                      AnimatedRows(
+                      SurfaceCard(child: AnimatedRows(
                         separator: const Divider(height: 1, indent: 56),
                         children: [
                           for (final m in list)
@@ -148,7 +149,7 @@ class _ClubAddMemberScreenState extends State<ClubAddMemberScreen> {
                               ),
                             ),
                         ],
-                      ),
+                      )),
                     ],
                   );
                 }),

@@ -194,8 +194,11 @@ class _EditSessionScreenState extends State<EditSessionScreen> {
         Text(label, style: text.labelMedium?.copyWith(color: AppColors.muted)),
         const SizedBox(height: AppSpacing.sm),
         Material(
-          color: AppColors.fill,
-          borderRadius: BorderRadius.circular(AppRadius.large),
+          color: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.large),
+            side: const BorderSide(color: AppColors.hairline),
+          ),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(AppRadius.large),

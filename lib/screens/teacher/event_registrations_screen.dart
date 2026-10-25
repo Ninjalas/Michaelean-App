@@ -10,6 +10,7 @@ import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Who registered for an event, for its managers only (spec §9.2).
@@ -81,10 +82,11 @@ class _EventRegistrationsScreenState extends State<EventRegistrationsScreen> {
                                           padding: const EdgeInsets.only(top: AppSpacing.lg),
                                           child: Text('No registrations yet.', style: muted),
                                         ),
-                                      for (var i = 0; i < list.length; i++) ...[
-                                        if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
-                                        _row(list[i]),
-                                      ],
+                                      if (list.isNotEmpty)
+                                        SurfaceCard(indent: 40 + AppSpacing.md, children: [
+                                          for (var i = 0; i < list.length; i++)
+                                            _row(list[i]),
+                                        ]),
                                     ],
                                   ),
                   ),

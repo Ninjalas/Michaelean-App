@@ -9,6 +9,7 @@ import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/user_avatar.dart';
 
 /// Roster review before finalizing (spec §9.1 steps 4–5). Unchecked students
@@ -158,27 +159,35 @@ class _AttendanceReviewScreenState extends State<AttendanceReviewScreen> {
         if (unchecked.isEmpty)
           Text('Everyone was scanned.', style: text.bodyLarge?.copyWith(color: AppColors.muted))
         else
-          for (var i = 0; i < unchecked.length; i++) ...[
-            if (i > 0) const Divider(height: 1, indent: 40 + AppSpacing.md),
-            // Opens the student's profile over this page (spec §10.1).
-            Pressable(
-              onTap: () => context.push(
-                  '/attendance/${widget.sessionId}/review/people/${unchecked[i].id}'),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
-                child: Row(
-                  children: [
-                    UserAvatar(
-                        name: unchecked[i].name, imageAsset: unchecked[i].photoAsset, size: 40),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(child: Text(unchecked[i].name, style: text.bodyLarge)),
-                    Text(unchecked[i].maskedId,
-                        style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-                  ],
+          if (unchecked.isNotEmpty)
+            SurfaceCard(indent: 40 + AppSpacing.md, children: [
+              for (var i = 0; i < unchecked.length; i++)
+                // Opens the student's profile over this page (spec §10.1).
+                Pressable(
+                  onTap: () => context.push(
+                      '/attendance/${widget.sessionId}/review/people/${unchecked[i].id}'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+                    child: Row(
+                      children: [
+                        UserAvatar(
+                            name: unchecked[i].name, imageAsset: unchecked[i].photoAsset, size: 40),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(child: Text(unchecked[i].name, style: text.bodyLarge)),
+                        // Capped and shrunk to fit, so with large text it never pushes past the edge.
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 110),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(unchecked[i].maskedId,
+                                style: text.bodyMedium?.copyWith(color: AppColors.muted)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+            ]),
         const SizedBox(height: AppSpacing.lg),
       ],
     );

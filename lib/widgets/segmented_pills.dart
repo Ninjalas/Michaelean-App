@@ -24,7 +24,7 @@ class SegmentedPills<T> extends StatelessWidget {
       height: 56, // 48 px tap targets inside the 4 px track padding
       padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
-        color: AppColors.fill,
+        color: AppColors.track,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Stack(
@@ -61,7 +61,7 @@ class SegmentedPills<T> extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: value == selected ? AppColors.ink : AppColors.muted,
+                            color: value == selected ? AppColors.ink : AppColors.trackText,
                           ),
                         ),
                       ),

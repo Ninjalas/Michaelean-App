@@ -44,14 +44,14 @@ class _LoadingBoxesState extends State<LoadingBoxes> with SingleTickerProviderSt
             height: h,
             margin: const EdgeInsets.only(bottom: AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.fill,
+              color: AppColors.track,
               borderRadius: BorderRadius.circular(AppRadius.large),
             ),
           ),
       ],
     );
     if (!_shimmer.isAnimating) return boxes;
-    final light = Color.lerp(AppColors.fill, AppColors.white, 0.7)!;
+    final light = Color.lerp(AppColors.track, AppColors.white, 0.7)!;
     return AnimatedBuilder(
       animation: _shimmer,
       builder: (context, child) {
@@ -62,7 +62,7 @@ class _LoadingBoxesState extends State<LoadingBoxes> with SingleTickerProviderSt
           shaderCallback: (rect) => LinearGradient(
             begin: Alignment(x, -0.3),
             end: Alignment(x + 2, 0.3),
-            colors: [AppColors.fill, light, AppColors.fill],
+            colors: [AppColors.track, light, AppColors.track],
             stops: const [0.35, 0.5, 0.65],
           ).createShader(rect),
           child: child,

@@ -11,6 +11,7 @@ import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/segmented_pills.dart';
+import '../../widgets/surface_card.dart';
 
 /// Settings › Privacy (spec §10.1): who may see your upcoming events, event
 /// history, and connections, and the students you blocked. Saved in this
@@ -152,7 +153,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                               Text("You haven't blocked anyone.", style: muted)
                             else
                               // Unblocked students fold away (spec §2.5).
-                              AnimatedRows(
+                              SurfaceCard(child: AnimatedRows(
                                 separator: const Divider(height: 1, indent: PersonRow.textIndent),
                                 children: [
                                   for (final b in blocked)
@@ -166,7 +167,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                                       ),
                                     ),
                                 ],
-                              ),
+                              )),
                           ],
                         );
                       }),

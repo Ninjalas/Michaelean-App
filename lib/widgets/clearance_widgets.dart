@@ -37,8 +37,9 @@ class ClearanceUnavailable extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.screen),
       decoration: BoxDecoration(
-        color: AppColors.fill,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(AppRadius.large),
+        boxShadow: AppColors.cardShadow,
       ),
       child: Row(
         children: [

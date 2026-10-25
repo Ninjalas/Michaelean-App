@@ -30,7 +30,7 @@ class FilterChips<T> extends StatelessWidget {
                 button: true,
                 selected: value == selected,
                 child: Material(
-                  color: value == selected ? AppColors.navy : AppColors.fill,
+                  color: value == selected ? AppColors.navy : AppColors.track,
                   shape: const StadiumBorder(),
                   child: InkWell(
                     customBorder: const StadiumBorder(),

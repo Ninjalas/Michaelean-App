@@ -11,6 +11,7 @@ import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/surface_card.dart';
 
 /// The teacher's assigned classes (spec §9.1). Each opens its class page.
 class ClassesScreen extends StatefulWidget {
@@ -69,22 +70,24 @@ class _ClassesScreenState extends State<ClassesScreen> {
                                 style: text.bodyLarge?.copyWith(color: AppColors.muted)),
                           );
                         }
-                        return ListView.separated(
+                        return ListView(
                           padding: const EdgeInsets.fromLTRB(
                               AppSpacing.screen, 0, AppSpacing.screen, 120),
-                          itemCount: classes.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (_, i) {
-                            final c = classes[i];
-                            return ContentRow(
-                              source: c.section,
-                              title: c.subject,
-                              meta: '${c.weekdays.map(weekdayShort).join(' · ')}, '
-                                  '${formatMinutesRange(c.startMinute, c.endMinute)}',
-                              metaIcon: Icons.schedule_rounded,
-                              onTap: () => context.push(inTab(context, '/life/classes/${c.id}')),
-                            );
-                          },
+                          children: [
+                            SurfaceCard(indent: ContentRow.iconIndent, children: [
+                              for (final c in classes)
+                                ContentRow(
+                                  source: c.section,
+                                  title: c.subject,
+                                  icon: Icons.class_outlined,
+                                  meta: '${c.weekdays.map(weekdayShort).join(' · ')}, '
+                                      '${formatMinutesRange(c.startMinute, c.endMinute)}',
+                                  metaIcon: Icons.schedule_rounded,
+                                  onTap: () =>
+                                      context.push(inTab(context, '/life/classes/${c.id}')),
+                                ),
+                            ]),
+                          ],
                         );
                       }),
                     ),

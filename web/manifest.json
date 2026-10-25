@@ -3,7 +3,7 @@
     "short_name": "Michaelean",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFFFFF",
+    "background_color": "#F4F5F9",
     "theme_color": "#242A5E",
     "description": "Campus life for Saint Michael's College of Laguna (prototype).",
     "orientation": "portrait-primary",

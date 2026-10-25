@@ -12,10 +12,12 @@ import '../../widgets/content_row.dart';
 import '../teacher/create_menu.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/loading_boxes.dart';
+import '../../widgets/navy_hero.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stats_row.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/tab_reselect.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/two_tone_date.dart';
@@ -44,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _scroll.addListener(() {
-      final collapsed = _scroll.offset > 56; // the big greeting has scrolled away
+      final collapsed = _scroll.offset > 110; // the hero's greeting has scrolled away
       if (collapsed != _collapsed) setState(() => _collapsed = collapsed);
     });
   }
@@ -106,13 +108,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return CustomScrollView(
           controller: _scroll,
           slivers: [
-            _header(user, feed),
+            SliverToBoxAdapter(child: _hero(user, feed, failed: snap.hasError)),
             SliverPadding(
               // Room for the nav bar (and the + button above it).
               padding: EdgeInsets.fromLTRB(
-                  AppSpacing.screen, 0, AppSpacing.screen, canPost ? 192 : 120),
+                  AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, canPost ? 192 : 120),
               sliver: SliverList.list(children: [
-                _greeting(user),
                 // The placeholders fade into the feed (spec §2.5).
                 FadeSwitch(
                   loaded: feed != null || snap.hasError,
@@ -133,8 +134,26 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-    // Tapping Home again glides back to the top.
-    final scrollable = ScrollToTopOnTabTap(tab: 0, controller: _scroll, child: feedView);
+    // Tapping Home again glides back to the top. Once the greeting has
+    // scrolled away, a compact navy bar stays pinned at the top.
+    final scrollable = ScrollToTopOnTabTap(
+      tab: 0,
+      controller: _scroll,
+      child: Stack(
+        children: [
+          feedView,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSwitcher(
+              duration: AppMotion.of(context, AppMotion.fast),
+              child: _collapsed ? _compactBar(user) : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
+    );
     if (!canPost) return scrollable;
     return Stack(
       children: [
@@ -148,110 +167,142 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _header(UserProfile user, HomeFeed? feed) {
-    final text = Theme.of(context).textTheme;
-    return SliverAppBar(
-      pinned: true,
-      automaticallyImplyLeading: false,
-      toolbarHeight: 72,
-      titleSpacing: AppSpacing.screen,
-      // Solid white, no border (Luma-like). A blurred header painted the feed
-      // over itself on Flutter web, so blur is kept to the floating nav bar.
-      backgroundColor: AppColors.paper,
-      surfaceTintColor: Colors.transparent,
-      scrolledUnderElevation: 0,
-      title: AnimatedSwitcher(
-        duration: AppMotion.fast,
-        child: _collapsed
-            ? Row(
-                key: const ValueKey('compact'),
-                children: [
-                  UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 38),
-                  const SizedBox(width: AppSpacing.sm),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('${greetingFor(DateTime.now())}, ${user.firstName}',
-                            overflow: TextOverflow.ellipsis, style: text.titleMedium),
-                        TwoToneDate(DateTime.now(), style: text.bodyMedium),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            : Row(
-                key: const ValueKey('brand'),
-                children: [
-                  Image.asset('assets/images/SMCL_Emblem.png', height: 34,
-                      semanticLabel: "Saint Michael's College of Laguna emblem"),
-                  const SizedBox(width: AppSpacing.sm),
-                  Flexible(
-                    child: Text('Michaelean',
-                        overflow: TextOverflow.ellipsis,
-                        style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-                  ),
-                ],
-              ),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.screen),
-          child: RoundIconButton(
-            icon: Icons.notifications_none_rounded,
-            tooltip: _unread == 0 ? 'Notifications' : 'Notifications, $_unread unread',
-            showDot: _unread > 0,
-            onPressed: _openNotifications,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _greeting(UserProfile user) {
+  /// The navy hero (spec §2.1, direction B): emblem, wordmark and bell, the
+  /// greeting and date, and the stats card hanging over its bottom edge.
+  Widget _hero(UserProfile user, HomeFeed? feed, {required bool failed}) {
     final text = Theme.of(context).textTheme;
     final now = DateTime.now();
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.lg),
+    final stats = feed == null ? null : _stats(feed);
+    return NavyHero(
+      overlap: failed || (feed != null && stats == null)
+          ? null
+          // A plain white card holds the place until the numbers arrive.
+          : FadeSwitch(
+              loaded: feed != null,
+              child: stats ??
+                  Container(
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.large),
+                      boxShadow: AppColors.cardShadow,
+                    ),
+                  ),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${greetingFor(now)}, ${user.firstName}', style: text.headlineMedium),
+          Row(
+            children: [
+              Image.asset('assets/images/SMCL_Emblem.png', height: 34,
+                  semanticLabel: "Saint Michael's College of Laguna emblem"),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text('Michaelean',
+                    overflow: TextOverflow.ellipsis,
+                    style: text.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.white)),
+              ),
+              _bell(),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text('${greetingFor(now)}, ${user.firstName}',
+              style: text.headlineMedium?.copyWith(color: AppColors.white)),
           const SizedBox(height: 2),
-          TwoToneDate(now, style: text.bodyLarge),
+          TwoToneDate(now,
+              style: text.bodyLarge?.copyWith(color: AppColors.white),
+              suffixColor: AppColors.onNavyMuted),
         ],
       ),
     );
   }
 
-  List<Widget> _content(UserProfile user, HomeFeed feed) {
-    final now = DateTime.now();
+  /// Students: attendance and clearance; teachers: today at a glance.
+  Widget? _stats(HomeFeed feed) {
     final a = feed.attendance;
     final t = feed.today;
+    if (a != null) {
+      return StatsRow(items: [
+        StatItem('${a.classPercent}%', 'Class attendance',
+            onTap: () => context.push('/home/class')),
+        StatItem('${a.eventPercent}%', 'Event attendance',
+            onTap: () => context.push('/home/history')),
+        StatItem('${a.eventsCompleted}', 'Events completed',
+            onTap: () => context.push('/home/history')),
+        StatItem('${a.requirementsCleared}/${a.requirementsTotal}', 'Cleared',
+            onTap: () => context.push('/home/clearance')),
+      ]);
+    }
+    if (t != null) {
+      return StatsRow(items: [
+        StatItem('${t.classesToday}', 'Classes today',
+            onTap: () => context.push('/home/classes')),
+        StatItem('${t.sessionsToFinalize}', 'To finalize',
+            onTap: () => context.push('/home/classes')),
+        StatItem('${t.upcomingEvents}', 'Upcoming events',
+            onTap: () => context.push('/home/events')),
+      ]);
+    }
+    return null;
+  }
+
+  Widget _bell() => RoundIconButton(
+        icon: Icons.notifications_none_rounded,
+        tooltip: _unread == 0 ? 'Notifications' : 'Notifications, $_unread unread',
+        showDot: _unread > 0,
+        onPressed: _openNotifications,
+      );
+
+  /// Pinned at the top once the hero's greeting has scrolled away: navy,
+  /// with the avatar, greeting, date and the bell.
+  Widget _compactBar(UserProfile user) {
+    final text = Theme.of(context).textTheme;
+    final now = DateTime.now();
+    return Material(
+      key: const ValueKey('compact-bar'),
+      color: AppColors.navy,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(AppSpacing.screen,
+            MediaQuery.paddingOf(context).top + AppSpacing.sm, AppSpacing.screen, AppSpacing.sm),
+        child: Row(
+          children: [
+            UserAvatar(name: user.fullName, imageAsset: user.photoAsset, size: 38),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${greetingFor(now)}, ${user.firstName}',
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium?.copyWith(color: AppColors.white)),
+                  TwoToneDate(now,
+                      style: text.bodyMedium?.copyWith(color: AppColors.white),
+                      suffixColor: AppColors.onNavyMuted),
+                ],
+              ),
+            ),
+            _bell(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// A navy tile icon for a pending task, from where it leads.
+  static IconData _taskIcon(String? route) => switch (route) {
+        final r? when r.contains('clearance') => Icons.fact_check_outlined,
+        final r? when r.contains('events') => Icons.event_outlined,
+        final r? when r.startsWith('/attendance') => Icons.qr_code_scanner_rounded,
+        final r? when r.contains('classes') => Icons.class_outlined,
+        _ => Icons.assignment_outlined,
+      };
+
+  List<Widget> _content(UserProfile user, HomeFeed feed) {
+    final now = DateTime.now();
     final isTeacher = user.role == UserRole.teacher;
     return [
-      if (a != null)
-        StatsRow(items: [
-          StatItem('${a.classPercent}%', 'Class attendance',
-              onTap: () => context.push('/home/class')),
-          StatItem('${a.eventPercent}%', 'Event attendance',
-              onTap: () => context.push('/home/history')),
-          StatItem('${a.eventsCompleted}', 'Events completed',
-              onTap: () => context.push('/home/history')),
-          StatItem('${a.requirementsCleared}/${a.requirementsTotal}', 'Cleared',
-              onTap: () => context.push('/home/clearance')),
-        ]),
-      if (t != null)
-        StatsRow(items: [
-          StatItem('${t.classesToday}', 'Classes today',
-              onTap: () => context.push('/home/classes')),
-          StatItem('${t.sessionsToFinalize}', 'To finalize',
-              onTap: () => context.push('/home/classes')),
-          StatItem('${t.upcomingEvents}', 'Upcoming events',
-              onTap: () => context.push('/home/events')),
-        ]),
-      const SizedBox(height: AppSpacing.lg),
       UpNextCard(
         session: feed.nextClass,
         now: now,
@@ -270,10 +321,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (feed.tasks.isNotEmpty) ...[
         const SectionHeader('Pending Tasks'),
-        ..._divided([
+        ..._divided(indent: ContentRow.iconIndent, [
           for (final t in feed.tasks)
             ContentRow(
               title: t.title,
+              icon: _taskIcon(t.route),
               meta: t.detail,
               pill: _taskPill(t.status),
               onTap: () => t.route != null ? context.push(inTab(context, t.route!)) : _openSoon(t.title),
@@ -287,11 +339,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Text('No classes today.', style: Theme.of(context).textTheme.bodyLarge
               ?.copyWith(color: AppColors.muted))
         else
-          ..._divided([
+          ..._divided(indent: ContentRow.iconIndent, [
             for (final c in feed.todayClasses)
               ContentRow(
                 source: c.section,
                 title: c.subject,
+                icon: Icons.class_outlined,
                 meta: '${formatTime(c.start)} – ${formatTime(c.end)} · ${c.room}',
                 metaIcon: Icons.schedule_rounded,
                 pill: _classPill(c, now),
@@ -302,11 +355,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (feed.changes.isNotEmpty) ...[
         const SectionHeader('Schedule & Room Changes'),
-        ..._divided([
+        ..._divided(indent: ContentRow.iconIndent, [
           for (final p in feed.changes)
             ContentRow(
               source: p.source,
               title: p.title,
+              icon: Icons.edit_calendar_outlined,
               meta: formatTimeAgo(p.publishedAt, now),
               metaIcon: Icons.schedule_rounded,
               onTap: () => _openPost(p),
@@ -316,11 +370,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (feed.announcements.isNotEmpty) ...[
         const SectionHeader('Announcements'),
-        ..._divided([
+        ..._divided(indent: ContentRow.iconIndent, [
           for (final p in feed.announcements)
             ContentRow(
               source: p.source,
               title: p.title,
+              icon: Icons.campaign_outlined,
               meta: formatTimeAgo(p.publishedAt, now),
               metaIcon: Icons.schedule_rounded,
               pill: p.urgent ? const StatusPill('URGENT', tone: PillTone.red) : null,
@@ -412,15 +467,12 @@ class _HomeScreenState extends State<HomeScreen> {
         TaskStatus.inReview => const StatusPill('In review', tone: PillTone.amber),
       };
 
-  List<Widget> _divided(List<Widget> rows, {double indent = 0}) => [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) Divider(height: 1, indent: indent),
-          rows[i],
-        ],
-      ];
+  /// A section's rows together in one white card (spec §2.1).
+  List<Widget> _divided(List<Widget> rows, {double indent = 0}) =>
+      rows.isEmpty ? const [] : [SurfaceCard(indent: indent, children: rows)];
 
-  // Shaped like the stats, Up Next, and the first section.
-  Widget _loading() => const LoadingBoxes(heights: [64, 120, 220]);
+  // Shaped like Up Next and the first section (the stats wait in the hero).
+  Widget _loading() => const LoadingBoxes(heights: [120, 220]);
 
   Widget _error() => Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.section),

@@ -14,6 +14,7 @@ import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/surface_card.dart';
 
 /// A student's Class screen (spec §7.1), top to bottom: attendance this
 /// semester (overall and by subject), the schedule with a day strip that
@@ -285,13 +286,13 @@ class _ClassScreenState extends State<ClassScreen> {
             curve: AppMotion.curve,
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
             decoration: BoxDecoration(
-              color: selected ? AppColors.navy : AppColors.fill,
+              color: selected ? AppColors.navy : AppColors.track,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Column(
               children: [
                 Text(weekdayShort(day.weekday),
-                    style: TextStyle(fontSize: 12, color: selected ? fg : AppColors.muted)),
+                    style: TextStyle(fontSize: 12, color: selected ? fg : AppColors.trackText)),
                 const SizedBox(height: 2),
                 Text('${day.day}',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: fg)),
@@ -326,15 +327,16 @@ class _ClassScreenState extends State<ClassScreen> {
     }
     return [
       const SizedBox(height: AppSpacing.sm),
-      for (var i = 0; i < day.length; i++) ...[
-        if (i > 0) const Divider(height: 1),
-        ContentRow(
-          source: '${formatTime(day[i].start)} – ${formatTime(day[i].end)}',
-          title: day[i].subject,
-          meta: [day[i].room, if (day[i].teacher != null) day[i].teacher!].join(' · '),
-          metaIcon: Icons.place_outlined,
-        ),
-      ],
+      if (day.isNotEmpty)
+        SurfaceCard(children: [
+          for (var i = 0; i < day.length; i++)
+            ContentRow(
+              source: '${formatTime(day[i].start)} – ${formatTime(day[i].end)}',
+              title: day[i].subject,
+              meta: [day[i].room, if (day[i].teacher != null) day[i].teacher!].join(' · '),
+              metaIcon: Icons.place_outlined,
+            ),
+        ]),
     ];
   }
 
@@ -350,21 +352,22 @@ class _ClassScreenState extends State<ClassScreen> {
     final byId = {for (final r in records) r.session.id: r};
     final now = DateTime.now();
     return [
-      for (var i = 0; i < day.length; i++) ...[
-        if (i > 0) const Divider(height: 1),
-        ContentRow(
-          title: day[i].subject,
-          meta: formatTime(day[i].start),
-          metaIcon: Icons.schedule_rounded,
-          pill: switch (byId[day[i].id]?.mark) {
-            AttendanceMark.present => const StatusPill('Present', tone: PillTone.green),
-            AttendanceMark.absent => const StatusPill('Absent', tone: PillTone.red),
-            null => day[i].start.isAfter(now)
-                ? const StatusPill('Upcoming')
-                : const StatusPill('Not finalized yet'),
-          },
-        ),
-      ],
+      if (day.isNotEmpty)
+        SurfaceCard(children: [
+          for (var i = 0; i < day.length; i++)
+            ContentRow(
+              title: day[i].subject,
+              meta: formatTime(day[i].start),
+              metaIcon: Icons.schedule_rounded,
+              pill: switch (byId[day[i].id]?.mark) {
+                AttendanceMark.present => const StatusPill('Present', tone: PillTone.green),
+                AttendanceMark.absent => const StatusPill('Absent', tone: PillTone.red),
+                null => day[i].start.isAfter(now)
+                    ? const StatusPill('Upcoming')
+                    : const StatusPill('Not finalized yet'),
+              },
+            ),
+        ]),
     ];
   }
 
