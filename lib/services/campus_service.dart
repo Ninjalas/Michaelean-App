@@ -1,5 +1,6 @@
 import '../mock/mock_campus.dart';
 import '../mock/mock_classes.dart';
+import '../mock/mock_grades.dart';
 import '../mock/mock_home.dart' show mockPosts;
 import '../mock/mock_people.dart';
 import '../mock/mock_users.dart' show mockEventHistory, mockStudent, mockTeacher;
@@ -7,6 +8,7 @@ import '../models/attendance.dart';
 import '../models/campus.dart';
 import '../models/event_record.dart';
 import '../models/feed.dart';
+import '../models/grades.dart';
 import '../models/people.dart';
 import '../models/user_profile.dart';
 
@@ -28,6 +30,10 @@ abstract class CampusService {
 
   /// The current semester's first and last day (Mon–Sat class days).
   Future<({String name, DateTime start, DateTime end})> loadSemester(UserProfile user);
+
+  /// The student's own grades by semester, newest (current) first (spec
+  /// §7.6). Empty for teachers, who don't see grades yet.
+  Future<List<SemesterGrades>> loadGrades(UserProfile student);
 
   /// The student's finalized attendance records this semester, newest first
   /// (spec §7.2).
@@ -759,6 +765,14 @@ class MockCampusService implements CampusService {
   }
 
   // ---------- Event history and check-in ----------
+
+  @override
+  Future<List<SemesterGrades>> loadGrades(UserProfile student) async {
+    await _wait();
+    // shortcut: every previewed student gets the same sample grades; real
+    // grades come per student from the registrar later.
+    return student.role == UserRole.student ? mockGrades(clock()) : const [];
+  }
 
   @override
   Future<List<EventRecord>> loadEventHistory(UserProfile user) async {

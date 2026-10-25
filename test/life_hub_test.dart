@@ -72,6 +72,29 @@ void main() {
     expect(find.text('Clearance Verification'), findsOneWidget);
   });
 
+  testWidgets("Student Life's Grades card shows this semester and opens Grades",
+      (tester) async {
+    await openHub(tester, 'Student', 'Student Life');
+    // Grades is the first section, above Class.
+    expect(tester.getTopLeft(find.bySemanticsLabel('See all Grades')).dy,
+        lessThan(tester.getTopLeft(find.bySemanticsLabel('See all Class')).dy));
+    expect(find.text('Midterms out · 1 of 5 finals'), findsOneWidget);
+    // Only GE 104 has both grades (93, 95 → 94 → 1.50).
+    expect(find.text('1.50'), findsOneWidget);
+    expect(find.text('GWA so far, from 1 of 5 courses · 94.00%'), findsOneWidget);
+    await tester.tap(find.text('1.50'));
+    await tester.pumpAndSettle();
+    expect(find.text('Grades'), findsOneWidget); // the page's header
+    expect(find.text('CS 302'), findsOneWidget);
+  });
+
+  testWidgets('Michaelean Life has no Grades section (teachers: nothing yet)', (tester) async {
+    await openHub(tester, 'Teacher', 'Michaelean Life');
+    expect(find.bySemanticsLabel('See all Grades'), findsNothing);
+    await tester.scrollUntilVisible(find.bySemanticsLabel('See all Clearance'), 200, scrollable: page);
+    expect(find.text('Grades'), findsNothing);
+  });
+
   testWidgets('hub load failure shows Retry, never fake content', (tester) async {
     await openHub(tester, 'Student', 'Student Life', fail: true);
     expect(find.text("Couldn't load this page."), findsOneWidget);

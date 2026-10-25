@@ -147,7 +147,8 @@ void main() {
     // The page's own list (the events strip inside it also scrolls, sideways).
     await tester.scrollUntilVisible(find.text('People'), 200,
         scrollable: find.byType(Scrollable).first);
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -250));
+    // Bring the first Connect button to the top, clear of the nav bar.
+    await tester.ensureVisible(connect.first);
     await tester.pumpAndSettle();
     expect(find.text('People'), findsOneWidget);
     final name = tester

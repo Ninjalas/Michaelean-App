@@ -331,6 +331,41 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Grades use SMCL's grading scale; Grades moves to the top of Student Life.** Decided 2026-10-25 (spec §7.6).
+  - **SMCL's scale** (99–100 → 1.00 Excellent … 75–77 → 3.00 Barely Passing, 70–74 → 4.00 Conditional Fail, below 70 → 5.00 Failed) lives once in `models/grades.dart` (`smclScale`, `gradePointFor`). The US 4.00 GPA column of SMCL's table isn't shown.
+  - **Each course average** shows its grade point under it (90 over 1.75). A 4.00 gets an amber `Conditional fail` tag, a 5.00 the red `Failed` tag.
+  - **The GWA** is now worked out from the grade points (the registrar's way): it's the big number on the card (e.g. **2.26**), with the percentage average smaller beside it (85.76%). By units: each point × its units, ÷ the total units.
+  - **The pop-up** shows each step as `90 → 1.75 × 3 = 5.25`, the result (`38.50 ÷ 17 units = 2.26`), the percentage by the same method, and SMCL's scale for reference. With large text, the lines wrap instead of running off the screen (the audit caught this).
+  - **Student Life:** Grades is now the first section, above Class; its card shows the GWA and the percentage.
+  - **Sample data:** CS 203 (71) is now a 4.00 conditional fail, and MATH 202 in 2nd Sem 25–26 became 66 / 68 → 67, a 5.00, so both tags show.
+  - Tests: `test/grades_test.dart` checks every boundary of the scale and the grade-point GWA (38.50 ÷ 17 = 2.26; simple 2.21); the page, pop-up and Student Life tests use the new numbers and check the order of the sections.
+
+- **Grades, step 4 of 4: the Grades section in Student Life.** Student Life now ends with a **Grades** section (after Clearance): a grey card with this semester's name and overall average (GWA) so far, which grades are out ("Midterms out · 1 of 5 finals"), and what the number means ("Overall average so far (GWA), from 1 of 5 courses"). Tapping the card or `See all` opens the Grades page. Teachers' Michaelean Life has no Grades section (spec §7.6: nothing for teachers yet).
+  - In `screens/shared/life_hub_screen.dart` (`_GradesTile`); the hub now also loads grades for students.
+  - Tests: in `test/life_hub_test.dart` (the card's numbers, opening the page, no section for teachers). `test/people_screens_test.dart` now scrolls to the Connect button itself instead of a fixed distance, since the page got longer.
+  - This finishes the grades feature (spec §7.6).
+
+- **Grades, step 3 of 4: how the average is counted.** Tapping the overall average (it now has a › arrow, once there is an average) opens a pop-up, "How your average is counted", for that semester:
+  - A switch: **By units (GWA)** (the default; "courses with more units count more") or **Simple average** ("every course counts the same").
+  - Every step of the sum from the averages shown on the page: by units, `90 × 3 … 270` per course, the total (1458, 17 units) and `1458 ÷ 17 units = 85.76`; simple, the averages, `518 ÷ 6 courses = 86.33`.
+  - Courses not counted yet are listed ("Not counted yet (a grade isn't out): CS 302, …").
+  - A router page (`/life/grades/average?sem=N`), like the other pop-ups, so Back closes it; it reloads the grades by semester number, so it also works after a browser reload. In `screens/student/grades_screen.dart` (`AverageSheet`).
+  - Tests: in `test/grades_screen_test.dart` (the full working for a past semester both ways, closing it, and this semester's "not counted yet"); the screen audit covers the pop-up.
+
+- **Grades, step 2 of 4: the Grades page** (`/life/grades`, `screens/student/grades_screen.dart`). Semester chips at the top (short names like "1st Sem 25–26"; they scroll sideways as semesters pile up), the overall average by units (GWA) in a grey card ("Based on 1 of 5 courses · 3 units" while finals are still coming), then the table: Course · Units · Midterm · Final · Average.
+  - A grade not out yet shows "—"; grades below 75 are red and a failed course gets a red `Failed` tag. Numbers use equal-width digits so the columns line up; with large text, cells shrink to fit instead of overflowing.
+  - Screen readers hear one row at a time ("CS 203, 3 units, midterm 72, final 70, average 71, failed").
+  - Labelled "Sample grades, not official records". Teachers see "No grades to show."
+  - **Shared widget:** `FilterChips` (`widgets/filter_chips.dart`), moved out of Discover so both pages use the same chips.
+  - Not yet: tapping the average (step 3) and the Student Life section that opens this page (step 4). For now the page is reached by its address.
+  - Tests: `test/grades_screen_test.dart` (this semester with "—"s and 94.00; a past semester with 85.76, red grades and Failed; the row read aloud; the heading lines up; teachers); the screen audit covers the page for both roles.
+
+- **Grades, step 1 of 4: decisions and data.** The grades feature is decided and recorded in `docs/spec.md` §7.6: students see their own grades (course code, units, midterm, final, average) in Student Life › Grades; whole-number grades, passing 75; course average rounded; an overall average to 2 decimals that explains itself (by units or simple); current and past semesters; only the student sees them. Nothing on screen yet.
+  - **Model:** `models/grades.dart`: `CourseGrade` (its `average` waits for both grades; `failed` below 75) and `SemesterGrades` (`overall(byUnits | simple)`, counting only finished courses, from the averages as shown).
+  - **Sample data:** `mock/mock_grades.dart`, labelled as invented. This semester matches the student's timetable (midterms out; only GE 104's final so far); two complete past semesters, one with a failed course. Semester names follow the school year (June–May).
+  - **Service:** `CampusService.loadGrades(student)`, newest semester first; teachers get none.
+  - Tests: `test/grades_test.dart` (rounding, waiting for both grades, the 75 line, 1458 ÷ 17 = 85.76 by units and 86.33 simple, the sample semesters).
+
 - **More animations, step 5 of 5: Home's stats count up.** The numbers on Home's stats (94%, 3, 3/7, …) **count up from 0** the first time they show (300 ms). Only the first number in a stat counts ("0/7" → "3/7"). A reload with the same numbers doesn't replay it; a number that changes eases from the old value to the new one. Digits are equal-width, so the number doesn't wobble while counting. Screen readers hear the final number. Instant with reduce motion. In `widgets/stats_row.dart`. Tests: `test/stats_count_test.dart`.
   - This finishes the five-step animation plan (nav bar, press feedback, shimmer, page slide, count-up).
 
@@ -689,7 +724,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-190 tests currently pass, at any time of day. They cover:
+209 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

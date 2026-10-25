@@ -38,6 +38,9 @@ const studentRoutes = [
   '/life/clearance',
   '/life/clearance/lib',
   '/life/clearance/dcs-lab',
+  '/life/grades',
+  '/life/grades/average?sem=0',
+  '/life/grades/average?sem=2',
   // Opened from Home, they stay in Home (decided 2026-10-24).
   '/home/class',
   '/home/clearance/lib',
@@ -85,6 +88,7 @@ List<String> teacherRoutes() {
     '/life/events/ev2/registrations',
     '/life/events/ev2/checkin',
     '/life/verify',
+    '/life/grades', // teachers: no grades yet
     '/life/verify/mock-student-1',
     '/life/clubs/org6',
     '/life/clubs/org6/add',

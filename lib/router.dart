@@ -26,6 +26,7 @@ import 'screens/shared/settings_sheet.dart';
 import 'screens/student/class_screen.dart';
 import 'screens/student/clearance_item_screen.dart';
 import 'screens/student/clearance_screen.dart';
+import 'screens/student/grades_screen.dart';
 import 'screens/student/organization_screen.dart';
 import 'screens/student/organizations_screen.dart';
 import 'screens/teacher/attendance_review_screen.dart';
@@ -352,6 +353,26 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               builder: (context, state) => LifeHubScreen(campusService: campusService),
               routes: [
                 for (final make in shared.values) make(),
+                // The student's own grades (spec §7.6).
+                GoRoute(
+                  path: 'grades',
+                  builder: (context, state) => GradesScreen(campusService: campusService),
+                  routes: [
+                    // How the overall average is counted, for one semester.
+                    GoRoute(
+                      path: 'average',
+                      parentNavigatorKey: rootKey, // pop-up covers the nav bar too
+                      pageBuilder: (context, state) => AppSheetPage(
+                        key: state.pageKey,
+                        title: 'How your average is counted',
+                        child: AverageSheet(
+                          campusService: campusService,
+                          semester: int.tryParse(state.uri.queryParameters['sem'] ?? '') ?? 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 // Staff verification (spec §9.3).
                 GoRoute(
                   path: 'verify',

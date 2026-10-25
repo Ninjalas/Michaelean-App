@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/campus.dart';
 import '../../models/feed.dart';
+import '../../models/grades.dart';
 import '../../models/people.dart';
 import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
@@ -42,6 +43,7 @@ class _HubData {
   final ClearanceOffice? office;
   final List<AdvisedClub> clubs; // teachers: clubs they advise
   final List<PersonSummary> suggestions; // students: people you may know
+  final SemesterGrades? grades; // students: this semester's grades
 
   const _HubData({
     required this.classes,
@@ -51,6 +53,7 @@ class _HubData {
     this.office,
     this.clubs = const [],
     this.suggestions = const [],
+    this.grades,
   });
 }
 
@@ -73,19 +76,21 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
   Future<_HubData> _load(UserProfile user) async {
     final s = widget.campusService;
     if (user.role == UserRole.student) {
-      final (classes, events, orgs, clearance, suggestions) = await (
+      final (classes, events, orgs, clearance, suggestions, grades) = await (
         s.loadClasses(user),
         s.loadUpcomingEvents(user),
         s.loadMyOrganizations(user),
         s.loadClearance(user),
         s.loadSuggestions(user),
+        s.loadGrades(user),
       ).wait;
       return _HubData(
           classes: classes,
           events: events,
           organizations: orgs,
           clearance: clearance,
-          suggestions: suggestions);
+          suggestions: suggestions,
+          grades: grades.firstOrNull);
     }
     final (classes, events, office, clubs) = await (
       s.loadClasses(user),
@@ -156,6 +161,11 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
   List<Widget> _student(_HubData d) {
     final now = DateTime.now();
     return [
+      // First: this semester's GWA so far, and which grades are out (spec §7.6).
+      if (d.grades != null) ...[
+        _pad(SectionHeader('Grades', onSeeAll: () => context.push('/life/grades'))),
+        _pad(_GradesTile(sem: d.grades!, onTap: () => context.push('/life/grades'))),
+      ],
       _pad(SectionHeader('Class', onSeeAll: () => context.push('/life/class'))),
       ..._studentClasses(d.classes, now),
 
@@ -544,6 +554,61 @@ class _ClearanceProgress extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               StatusPill('${s.needsCorrection} needs correction', tone: PillTone.red),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// This semester at a glance: its GWA (1.00–5.00) so far, with the
+/// percentage, and which grades are out. Taps through to the Grades page.
+class _GradesTile extends StatelessWidget {
+  final SemesterGrades sem;
+  final VoidCallback onTap;
+
+  const _GradesTile({required this.sem, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final muted = text.bodyMedium?.copyWith(color: AppColors.muted);
+    final all = sem.courses.length;
+    final midterms = sem.courses.where((c) => c.midterm != null).length;
+    final finals = sem.courses.where((c) => c.finalGrade != null).length;
+    final done = sem.finished.length;
+    final gwa = sem.gwa(AverageMethod.byUnits);
+    return Pressable(
+      color: AppColors.fill,
+      borderRadius: BorderRadius.circular(AppRadius.large),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screen),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(sem.name, style: text.titleMedium)),
+                Text(gwa == null ? '—' : gwa.toStringAsFixed(2),
+                    style: text.headlineSmall?.copyWith(fontSize: 22, color: AppColors.navy)),
+              ],
+            ),
+            Text(
+              finals == all
+                  ? 'All grades out'
+                  : midterms == all
+                      ? 'Midterms out · $finals of $all finals'
+                      : '$midterms of $all midterms out',
+              style: muted,
+            ),
+            Text(
+              gwa == null
+                  ? 'Your GWA shows once a course has both grades.'
+                  : '${done == all ? 'GWA' : 'GWA so far, from $done of $all courses'}'
+                      ' · ${sem.percent(AverageMethod.byUnits)!.toStringAsFixed(2)}%',
+              style: muted,
+            ),
           ],
         ),
       ),

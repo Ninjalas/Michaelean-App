@@ -238,6 +238,7 @@ Layout: **live previews**. Each feature shows a real peek at its content, with `
 - **Events:** a horizontal strip of upcoming events with photos.
 - **Organizations:** the student's organizations (logos).
 - **Clearance:** progress, or `Clearance Unavailable`.
+- **Grades** (first, above Class): this semester's GWA so far, and which grades are out (§7.6).
 
 The hub is for browsing; Home is for today and alerts. They don't repeat each other.
 
@@ -314,6 +315,24 @@ Action required means the student has something to do for the first time. Needs 
 Not applicable differs from Not started. Overdue does not automatically mean rejected or cleared. Evidence is required only when specified.
 
 Authorized staff scan the student's QR, review the records or documents, and explicitly record an outcome. A QR scan or evidence upload never approves clearance automatically. Staff process only requirements they are authorized to manage.
+
+### 7.6 Grades (decided 2026-10-25)
+
+A student's own grades, read-only, from Student Life › Grades, the **first section** of Student Life (`See all` opens the full page). Updated 2026-10-25 with SMCL's grading scale.
+
+- **Table per semester:** Course code · Units · Midterm · Final · Average. Nothing else (no course titles, teachers, or remarks).
+- **Grades are whole numbers** (e.g. 82, 99, 100). **Passing is 75**: a grade below 75 shows in red.
+- **Course average** = (midterm + final) ÷ 2, rounded to a whole number (90.5 → 91). Under it, in small text, its **SMCL grade point**.
+- **SMCL grading scale** (percentage → grade point, description): 99–100 → 1.00 Excellent · 96–98 → 1.25 Superior · 93–95 → 1.50 Very Good · 90–92 → 1.75 Good · 87–89 → 2.00 Very Satisfactory · 84–86 → 2.25 Satisfactory · 81–83 → 2.50 Fair / Average · 78–80 → 2.75 Low Pass · 75–77 → 3.00 Barely Passing · 70–74 → 4.00 Conditional Fail · below 70 → 5.00 Failed. (SMCL's table also lists US 4.00 GPA equivalents; not shown.)
+- **Tags:** a course at 4.00 gets an amber `Conditional fail` tag; at 5.00 a red `Failed` tag.
+- **Not out yet:** a missing grade shows `—`; the course average waits for both grades.
+- **GWA**, 2 decimals, at the top, worked out **from the course grade points** (the registrar's way): the big number is the 1.00–5.00 GWA (lower is better), with the percentage average smaller beside it. It counts only courses with an average and says so (`Based on 3 of 5 courses`). Tapping it opens a sheet explaining how it's counted, with a switch:
+  - **By units (GWA):** each course's grade point × its units, added up, ÷ the total units of those courses. The default.
+  - **Simple average:** each course counts the same.
+  - The sheet shows every step (`90 → 1.75 × 3 = 5.25`), the result, the percentage average by the same method, and SMCL's scale for reference. The steps use the averages and points as displayed, so they add up exactly.
+- **Semesters:** opens on the current semester; pills switch to past semesters.
+- **Privacy:** only the student sees their grades. Never on profiles, in Connect, or to other students. Labelled `Sample grades, not official records` in the prototype.
+- **Teachers:** nothing yet. Entering or viewing class grades is a later feature.
 
 ## 8. Teacher Home
 

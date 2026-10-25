@@ -11,6 +11,7 @@ import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/filter_chips.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/segmented_pills.dart';
@@ -185,42 +186,12 @@ class _EventsScreenState extends State<EventsScreen> {
       _Filter.department: 'Department',
       _Filter.orgs: 'My Orgs',
     };
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      clipBehavior: Clip.none,
+    return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: Row(
-        children: [
-          for (final f in _Filter.values)
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.sm),
-              child: Semantics(
-                button: true,
-                selected: f == _filter,
-                child: Material(
-                  color: f == _filter ? AppColors.navy : AppColors.fill,
-                  shape: const StadiumBorder(),
-                  child: InkWell(
-                    customBorder: const StadiumBorder(),
-                    onTap: () => setState(() => _filter = f),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 40),
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                      alignment: Alignment.center,
-                      child: Text(
-                        labels[f]!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: f == _filter ? AppColors.white : AppColors.ink,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
+      child: FilterChips(
+        options: [for (final f in _Filter.values) (f, labels[f]!)],
+        selected: _filter,
+        onChanged: (f) => setState(() => _filter = f),
       ),
     );
   }
