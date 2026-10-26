@@ -509,8 +509,12 @@ class _TeacherClassRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
+            // Capped, with the label shrinking to fit, so large text never
+            // pushes the button past the card's edge.
             if (!ended)
-              FilledButton(
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 150),
+                child: FilledButton(
                 onPressed: onStartAttendance,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.navyTint,
@@ -519,7 +523,8 @@ class _TeacherClassRow extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
-                child: const Text('Start attendance'),
+                child: const FittedBox(child: Text('Start attendance')),
+              ),
               )
             else if (c.finalized)
               const StatusPill('Finalized', tone: PillTone.green)

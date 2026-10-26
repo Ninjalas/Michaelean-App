@@ -95,7 +95,8 @@ void main() {
 
     final row = find.text('Robotics club meets today');
     await tester.scrollUntilVisible(row, 200, scrollable: find.byType(Scrollable).first);
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200)); // clear of the nav bar
+    // Mid-screen: clear of the pinned navy bar and the nav bar, whatever the feed holds.
+    await Scrollable.ensureVisible(tester.element(row), alignment: 0.5);
     await tester.pumpAndSettle();
     await tester.tap(row);
     await tester.pumpAndSettle();

@@ -6,6 +6,8 @@ import '../../services/home_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
+import '../../widgets/photo_carousel.dart';
+import '../../widgets/rich_caption.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -101,11 +103,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 else if (p == null)
                   Text("This post isn't available.", style: text.titleMedium)
                 else ...[
-                  if (p.imageAsset != null) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadius.large),
-                      child: Image.asset(p.imageAsset!, width: double.infinity),
-                    ),
+                  if (p.images.isNotEmpty) ...[
+                    PhotoCarousel(p.images),
                     const SizedBox(height: AppSpacing.lg),
                   ],
                   Row(
@@ -124,7 +123,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   const SizedBox(height: AppSpacing.md),
                   Text(p.title, style: text.headlineMedium),
                   const SizedBox(height: AppSpacing.md),
-                  Text(p.body, style: text.bodyLarge),
+                  RichCaption(p.body, style: text.bodyLarge),
                   const SizedBox(height: AppSpacing.section),
                   if (p.authorId != null) ...[
                     if (p.sentTo != null)

@@ -35,6 +35,9 @@ void main() {
     await signIn(tester, 'Student');
     await tester.tap(find.text('Student Life'));
     await tester.pumpAndSettle();
+    // On days with classes the Class section is taller: scroll to the link first.
+    await tester.ensureVisible(find.bySemanticsLabel('See all Events'));
+    await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('See all Events'));
     await tester.pumpAndSettle();
 

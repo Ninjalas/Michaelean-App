@@ -331,6 +331,23 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Department news now shows real posts too** (decided 2026-10-26). Four posts from the Computer Science Society's Facebook page (`assets/computer_science_society_posts.docx`) are posted as the **Department of Computer Studies**, for DCS students: Ma'am Aliza Lyca Gonzales-Lacson's MSCS, HUEFest 2026, the "LOOK" hackathon story (4 photos), and the DCS Innovation Contest (4 photos). They show in DCS students' Home feed, newest first.
+  - They replace the three invented text-only department/society posts (thesis consultation hours, coding challenge registration, assembly moved). The urgent CSS venue change and the CS 302 room change stay, as the samples of urgent notices and schedule changes.
+  - **Links** (the contest's Google Form and guide) show in navy like on Facebook but don't open anything in this preview.
+  - Emoji, bold captions and the photo carousel work as for School News; this time the emoji showed correctly in Claude's browser pane. Dates are estimates from the events.
+  - Photos are in `assets/images/dcs/`, declared one by one.
+  - Tests: in `test/school_posts_test.dart` (the four posts, their audience and photos, the removed and kept samples, links in navy); two older tests now scroll by content instead of a fixed distance.
+
+- **School News now shows SMCL's real posts** (decided 2026-10-26). The four invented School News stories are replaced by seven real posts from SMCL's official Facebook page, from `assets/school_posts.docx`: the Archangels volleyball team, the iACADEMY hackathon, the psychometricians' 100% passing rate, Michaelmas 2026, the Milagros L. Limaco paper presentation and its keynote speaker, and the PITLC delegation in Baguio. Posted as **Saint Michael's College of Laguna** with the emblem, newest first; the newest is Home's featured story. The hackathon post (**Michaelean Innovation and Excellence**) is dated 21 October so it's the featured one; Beyond the Cold took its 9 October date.
+  - **Captions** keep the school's wording: Facebook's styled bold letters became plain letters shown in the app's bold font (`widgets/rich_caption.dart`), hashtags are navy, and the small emoji pictures in the document became real emoji. Titles drop their emoji.
+  - **Several photos per post:** the two psychology posts (same caption, two graphics) are one post whose photos swipe sideways, with a "1/2" counter and dots (`widgets/photo_carousel.dart`, `Post.extraImages`).
+  - **Times** everywhere: "Just now", "5m ago", "3h ago" or "1d ago" for about the last day, then the date ("16 October", with the year if it isn't this year).
+  - The volleyball post's date is from the Facebook page; the others are estimates from their events (in `mock/mock_home.dart`).
+  - Photos are in `assets/images/news/`, declared one by one. The conversion was done once by a script; to add more posts, edit `mock_home.dart`.
+  - **Not verified:** emoji rely on Flutter downloading an emoji font from Google on first use; Claude's browser pane didn't download it, so emoji showed as boxes there. Check on a real phone.
+  - Also fixed, found because today is a weekday: the teacher's "Start attendance" button in Michaelean Life overflowed with large text inside the new cards (now capped), and an events test now scrolls to its link.
+  - Tests: `test/school_posts_test.dart` (time rules; the seven posts, newest first, every photo present and declared; bold and navy hashtags; swiping the psychology post's photos).
+
 - **New look, step 5 of 5: everything else.** The rest of the app now follows direction B (spec §2.1): rows sit together in white cards on the soft page.
   - **List pages:** Events (each day in its own card under its date), Organizations, Classes (with class icon tiles), People and search, Privacy's blocked list, Clearance (requirements and past clearances), the class schedule and records, Event History, Going lists, class rosters and recent sessions, attendance review, registrations, the clearance desk, Manage club and Add member, and the grade table.
   - **Detail pages** keep their photo or cover as the hero; their action tiles and summary cards were already white. **Forms:** Edit Profile's school-set details are a card too. **Pop-ups** (Settings, Notifications) were checked: their white cards read on the white sheet thanks to the soft shadow.
@@ -755,7 +772,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-219 tests currently pass, at any time of day. They cover:
+226 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

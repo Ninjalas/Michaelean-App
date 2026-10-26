@@ -33,6 +33,26 @@ flutter:
     - assets/images/events/css_commitevent.jpg
     - assets/images/events/css_startupevent.jpg
     - assets/images/events/css_unpackingevent.jpg
+    # School News: real posts from SMCL's Facebook page (mock_home.dart).
+    - assets/images/news/hackathon_angelic_innovators.jpg
+    - assets/images/news/limaco_keynote_speaker.jpg
+    - assets/images/news/limaco_paper_presentation.jpg
+    - assets/images/news/michaelmas_2026.jpg
+    - assets/images/news/pitlc_baguio.jpg
+    - assets/images/news/psychometricians_100.jpg
+    - assets/images/news/psychometricians_just_in.jpg
+    - assets/images/news/volleyball_archangels.jpg
+    # Department news: real posts from the Computer Science Society's page.
+    - assets/images/dcs/dcs_innovation_contest_1.jpg
+    - assets/images/dcs/dcs_innovation_contest_2.jpg
+    - assets/images/dcs/dcs_innovation_contest_3.jpg
+    - assets/images/dcs/dcs_innovation_contest_4.jpg
+    - assets/images/dcs/dcs_lyca_mscs.jpg
+    - assets/images/dcs/hackathon_byjc_1.jpg
+    - assets/images/dcs/hackathon_byjc_2.jpg
+    - assets/images/dcs/hackathon_byjc_3.jpg
+    - assets/images/dcs/hackathon_byjc_4.jpg
+    - assets/images/dcs/huefest_2026.jpg
     - assets/fonts/Inter-OFL.txt # shown in About › Open-source licenses
 
   fonts:

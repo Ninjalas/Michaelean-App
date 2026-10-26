@@ -11,7 +11,8 @@ void main() {
     final feed = await service.loadHome(mockStudent);
     final ids = feed.campusFeed.map((p) => p.id).toList();
 
-    expect(ids, containsAll(['o1', 'o2', 'd1', 'e1']));
+    // Society posts and the department's real posts (decided 2026-10-26).
+    expect(ids, containsAll(['o1', 'o2', 'd-huefest', 'd-lyca-mscs']));
     expect(ids, isNot(contains('x1'))); // School of Nursing
     expect(ids, isNot(contains('x2'))); // Dance Company (not a member)
   });

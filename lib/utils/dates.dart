@@ -16,14 +16,16 @@ String weekdayName(DateTime d) => _weekdays[d.weekday - 1];
 /// "20 October 2026"
 String formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
 
-/// "Just now", "5m ago", "2h ago", "3d ago", then a date.
+/// "Just now", "5m ago", "2h ago", or "1d ago" for about the last day;
+/// anything older shows its date, "16 October" (with the year when it isn't
+/// this year), as decided 2026-10-26.
 String formatTimeAgo(DateTime time, DateTime now) {
   final diff = now.difference(time);
   if (diff.inMinutes < 1) return 'Just now';
   if (diff.inHours < 1) return '${diff.inMinutes}m ago';
   if (diff.inDays < 1) return '${diff.inHours}h ago';
-  if (diff.inDays < 7) return '${diff.inDays}d ago';
-  return formatDate(time);
+  if (diff.inDays < 2) return '1d ago';
+  return time.year == now.year ? formatDayMonth(time) : formatDate(time);
 }
 
 /// "9:00 AM"

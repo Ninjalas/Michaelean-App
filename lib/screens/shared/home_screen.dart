@@ -436,7 +436,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(AppRadius.large),
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: Image.asset(p.imageAsset!, fit: BoxFit.cover),
+                  child: Image.asset(p.imageAsset!,
+                      fit: BoxFit.cover, alignment: Alignment.topCenter), // keep the headline
                 ),
               ),
             const SizedBox(height: AppSpacing.md),

@@ -16,6 +16,9 @@ class Post {
   final String source; // e.g. "Registrar's Office", "Computer Science Society"
   final String? sourceImage; // org logo, if any
   final String? imageAsset;
+
+  /// More photos after [imageAsset], like a Facebook post with several.
+  final List<String> extraImages;
   final DateTime publishedAt;
   final bool urgent;
 
@@ -44,6 +47,7 @@ class Post {
     required this.source,
     this.sourceImage,
     this.imageAsset,
+    this.extraImages = const [],
     required this.publishedAt,
     this.urgent = false,
     this.audience,
@@ -53,6 +57,9 @@ class Post {
     this.sentTo,
     this.edited = false,
   });
+
+  /// Every photo, in order.
+  List<String> get images => [?imageAsset, ...extraImages];
 }
 
 /// Uses the same names as the clearance statuses (spec §7.5).
