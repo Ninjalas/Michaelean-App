@@ -251,10 +251,6 @@ const mockOrganizations = [
       OrgMeeting(title: 'Rehearsal', when: 'Every Tuesday and Thursday · 4:00 PM',
           place: 'Music Room'),
     ],
-    officers: [
-      OrgOfficer(name: 'Bea Villareal', position: 'President'),
-      OrgOfficer(name: 'Hans Navarro', position: 'Section leader'),
-    ],
   ),
   Organization(
     id: 'org3',
@@ -265,9 +261,6 @@ const mockOrganizations = [
     meetings: [
       OrgMeeting(title: 'Practice', when: 'Every Monday and Wednesday · 5:00 PM',
           place: 'Main Auditorium'),
-    ],
-    officers: [
-      OrgOfficer(name: 'Gabrielle Ocampo', position: 'Captain'),
     ],
   ),
   Organization(
@@ -304,10 +297,12 @@ const mockOrganizations = [
   ),
 ];
 
-/// MOCK club member lists for the clubs that have an adviser in this
-/// preview: student id → officer position (null for a plain member). Names
-/// come from the sample class rosters. Mark advises both clubs (mock
-/// assumption, decided 2026-10-23). Other clubs keep using membership tags.
+/// MOCK club member lists: student id → officer position (null for a plain
+/// member). Names come from the sample class rosters. Mark advises CSS and
+/// the Robotics Club (mock assumption, decided 2026-10-23). The other
+/// school-wide clubs got lists so a teacher can invite all their members
+/// (decided 2026-10-30); their member counts follow the lists. The Nursing
+/// Students Association has no sample students, so it keeps its tag rule.
 const mockClubMembers = <String, Map<String, String?>>{
   'org1': {
     'mock-student-1': null, // Nicolas
@@ -319,6 +314,34 @@ const mockClubMembers = <String, Map<String, String?>>{
     'stu-BSCS2A1': null,
     'stu-BSCS2A2': null,
     'stu-BSCS3B1': null,
+  },
+  'org2': {
+    'mock-student-1': null, // Nicolas
+    'stu-BSCS3A3': 'President', // Bea Villareal
+    'stu-BSCS3A8': 'Section leader', // Hans Navarro
+    'stu-BSCS2A3': null,
+    'stu-BSCS2A8': null,
+    'stu-BSCS3B5': null,
+    'stu-BSCS3B7': null,
+  },
+  'org3': {
+    'stu-BSCS3A7': 'Captain', // Gabrielle Ocampo
+    'stu-BSCS3A11': null,
+    'stu-BSCS2A5': null,
+    'stu-BSCS2A6': null,
+    'stu-BSCS2A9': null,
+    'stu-BSCS3B4': null,
+    'stu-BSCS3B9': null,
+    'stu-BSCS3B11': null,
+  },
+  'org4': {
+    'stu-BSCS3A6': 'President', // Francis Tan
+    'stu-BSCS3A10': null,
+    'stu-BSCS2A4': null,
+    'stu-BSCS2A7': null,
+    'stu-BSCS2A12': null,
+    'stu-BSCS3B6': null,
+    'stu-BSCS3B10': null,
   },
   'org6': {
     'stu-BSCS3A4': 'President', // Diego Ramos

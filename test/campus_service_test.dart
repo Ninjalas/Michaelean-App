@@ -229,19 +229,19 @@ void main() {
 
     test('inviting a section registers its students automatically', () async {
       final s = fresh();
-      expect(await s.inviteSections(mockTeacher, 'ev2', ['BSCS 3A']), 7); // 5 already registered
+      expect(await s.invite(mockTeacher, 'ev2', sections: ['BSCS 3A']), 7); // 5 already registered
       final regs = (await s.loadRegistrations(mockTeacher, 'ev2'))!;
       expect(regs, hasLength(12));
       expect(regs.where((r) => r.invited), hasLength(7));
       final mine = await s.loadEvent(mockStudent, 'ev2');
       expect((mine!.registered, mine.invited), (true, true));
-      expect(() => s.inviteSections(mockTeacher, 'ev7', ['BSCS 3A']), throwsStateError); // draft
-      expect(() => s.inviteSections(mockTeacher, 'ev2', ['BSCS 1Z']), throwsStateError);
+      expect(() => s.invite(mockTeacher, 'ev7', sections: ['BSCS 3A']), throwsStateError); // draft
+      expect(() => s.invite(mockTeacher, 'ev2', sections: ['BSCS 1Z']), throwsStateError);
     });
 
     test('cancelling an event hides it from Discover but keeps registrations', () async {
       final s = fresh();
-      await s.inviteSections(mockTeacher, 'ev2', ['BSCS 3A']);
+      await s.invite(mockTeacher, 'ev2', sections: ['BSCS 3A']);
       await s.cancelEvent(mockTeacher, 'ev2');
       final discover = await s.loadEvents(mockStudent, EventList.discover);
       expect(discover.map((d) => d.event.id), isNot(contains('ev2')));
@@ -349,7 +349,7 @@ void main() {
 
     test('check-in marks registered students once, then finalizing adds records', () async {
       final s = fresh();
-      await s.inviteSections(mockTeacher, 'ev2', ['BSCS 3A']); // registers the mock student
+      await s.invite(mockTeacher, 'ev2', sections: ['BSCS 3A']); // registers the mock student
       expect((await s.recordEventScan(mockTeacher, 'ev2', mockStudent.qrToken)).outcome,
           ScanOutcome.notOpenYet); // three days away
       Future<ScanOutcome> scan(String token) async =>

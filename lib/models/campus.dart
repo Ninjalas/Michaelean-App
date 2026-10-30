@@ -155,6 +155,45 @@ class SupportContact {
   });
 }
 
+/// A section or club on the Invite page, and the students in it.
+typedef InviteGroup = ({String id, String name, String detail, List<String> studentIds});
+
+/// A student on the Invite page; [unavailable] says why they can't be
+/// invited ("Already going", "Not a member of …"), else null.
+class InviteCandidate {
+  final String id;
+  final String name;
+  final String maskedId;
+  final String section;
+  final String? photoAsset;
+  final String? unavailable;
+
+  const InviteCandidate({
+    required this.id,
+    required this.name,
+    required this.maskedId,
+    required this.section,
+    this.photoAsset,
+    this.unavailable,
+  });
+}
+
+/// Who a teacher may invite to an event they manage (decided 2026-10-30):
+/// their sections, every club with a member list, and any sample student.
+class InviteOptions {
+  final List<InviteGroup> sections;
+  final List<InviteGroup> clubs;
+  final List<InviteCandidate> students; // everyone, by name
+  final int? spotsLeft; // null → no limit
+
+  const InviteOptions({
+    required this.sections,
+    required this.clubs,
+    required this.students,
+    this.spotsLeft,
+  });
+}
+
 /// A registered student, as the event's managers see them.
 class EventRegistrant {
   final String id; // opens their profile

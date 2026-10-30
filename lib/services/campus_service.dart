@@ -101,9 +101,16 @@ abstract class CampusService {
   /// Registered students, for the event's managers; null for anyone else.
   Future<List<EventRegistrant>?> loadRegistrations(UserProfile user, String eventId);
 
-  /// Invites whole sections; invited students are registered automatically
-  /// (spec §7.3). Returns how many students were newly registered.
-  Future<int> inviteSections(UserProfile user, String eventId, List<String> sections);
+  /// What the event's managers can pick on the Invite page; null for anyone else.
+  Future<InviteOptions?> loadInviteOptions(UserProfile user, String eventId);
+
+  /// Invites whole sections, whole clubs, and single students at once
+  /// (decided 2026-10-30). Invited students are registered automatically
+  /// (spec §7.3) and get a bell notice in this preview. Only eligible
+  /// students; nobody if the spots left don't cover everyone. Returns how
+  /// many students were newly registered.
+  Future<int> invite(UserProfile user, String eventId,
+      {List<String> sections, List<String> orgIds, List<String> studentIds});
 
   /// The user's official event records, newest first (Profile's Event
   /// History). Registration alone never appears here.
@@ -730,32 +737,113 @@ class MockCampusService implements CampusService {
     ]..sort((a, b) => a.name.compareTo(b.name));
   }
 
-  @override
-  Future<int> inviteSections(UserProfile user, String eventId, List<String> sections) async {
-    await _wait();
+  /// The event, if [user] may invite to it now.
+  CampusEvent _invitable(UserProfile user, String eventId) {
     final e = _events[eventId];
     if (e == null || !_manages(user, e)) throw StateError("You can't manage this event.");
     if (e.status != EventStatus.published || !e.start.isAfter(clock())) {
       throw StateError('Only upcoming published events can take invitations.');
     }
-    // Mock assumption: a teacher invites only sections they teach, and every
-    // student in them belongs to the teacher's department.
+    return e;
+  }
+
+  /// Why a sample student can't be invited to [e], or null.
+  String? _cantInvite(CampusEvent e, OrgMember m) {
+    if (_registered[e.id]?.contains(m.id) ?? false) return 'Already going';
+    if (_eligible(_asProfile(m), e)) return null;
+    final club = mockOrganizations.any((o) => o.name == e.audience);
+    return club ? 'Not a member of ${e.audience}' : 'Not in ${e.audience}';
+  }
+
+  @override
+  Future<InviteOptions?> loadInviteOptions(UserProfile user, String eventId) async {
+    await _wait();
+    final CampusEvent e;
+    try {
+      e = _invitable(user, eventId);
+    } on StateError {
+      return null;
+    }
+    // One row per section, with the subjects taught there.
+    final subjects = <String, List<String>>{};
+    for (final c in _classesOf(user)) {
+      subjects.putIfAbsent(c.section, () => []).add(c.subject);
+    }
+    return InviteOptions(
+      sections: [
+        for (final MapEntry(key: section, value: taught) in subjects.entries)
+          (
+            id: section,
+            name: section,
+            detail: taught.join(' · '),
+            studentIds: [for (final s in mockRosters[section] ?? const <RosterStudent>[]) s.id],
+          ),
+      ],
+      clubs: [
+        for (final o in _orgs)
+          if (_members[o.id] case final members?)
+            (
+              id: o.id,
+              name: o.name,
+              detail: '${members.length} members',
+              studentIds: members.keys.toList(),
+            ),
+      ],
+      students: [
+        for (final m in _people)
+          InviteCandidate(
+            id: m.id,
+            name: m.name,
+            maskedId: m.maskedId,
+            section: m.section,
+            photoAsset: m.photoAsset,
+            unavailable: _cantInvite(e, m),
+          ),
+      ]..sort((a, b) => a.name.compareTo(b.name)),
+      spotsLeft: e.capacity == null ? null : e.capacity! - _going(e),
+    );
+  }
+
+  @override
+  Future<int> invite(UserProfile user, String eventId,
+      {List<String> sections = const [],
+      List<String> orgIds = const [],
+      List<String> studentIds = const []}) async {
+    await _wait();
+    final e = _invitable(user, eventId);
     final mine = _classesOf(user).map((c) => c.section).toSet();
     if (!sections.every(mine.contains)) throw StateError('You can only invite your sections.');
-    if (e.audience != null && !user.tags.any((t) => t.label == e.audience)) {
-      throw StateError("These students aren't eligible for this event.");
-    }
-    final registered = _registered.putIfAbsent(eventId, () => {});
-    final added = {
+    final picked = {
       for (final s in sections)
-        for (final st in mockRosters[s] ?? const <RosterStudent>[])
-          if (!registered.contains(st.id)) st.id,
+        for (final st in mockRosters[s] ?? const <RosterStudent>[]) st.id,
+      for (final id in orgIds)
+        ...(_members[id]?.keys ?? (throw StateError('No member list for this club.'))),
+      ...studentIds,
     };
-    if (e.capacity != null && _going(e) + added.length > e.capacity!) {
-      throw StateError('Not enough spots left for everyone in these sections.');
+    final people = [for (final id in picked) _student(id) ?? (throw StateError('No such student.'))];
+    // Whole groups skip who can't come; a student picked by name must be invitable.
+    final added = [for (final m in people) if (_cantInvite(e, m) == null) m];
+    for (final id in studentIds) {
+      final why = _cantInvite(e, _student(id)!);
+      if (why != null && why != 'Already going') throw StateError("Can't invite: $why.");
     }
-    registered.addAll(added);
-    _invited.putIfAbsent(eventId, () => {}).addAll(added);
+    if (e.capacity != null && _going(e) + added.length > e.capacity!) {
+      throw StateError('Not enough spots left for everyone you picked.');
+    }
+    _registered.putIfAbsent(eventId, () => {}).addAll(added.map((m) => m.id));
+    _invited.putIfAbsent(eventId, () => {}).addAll(added.map((m) => m.id));
+    for (final m in added) {
+      _notices.putIfAbsent(m.id, () => []).insert(
+            0,
+            AppNotification(
+              id: 'invite-${++_noticeCount}',
+              kind: NotificationKind.event,
+              title: '${user.fullName} registered you for ${e.title}.',
+              time: clock(),
+              route: '/life/events/${e.id}',
+            ),
+          );
+    }
     return added.length;
   }
 

@@ -283,6 +283,7 @@ Rules:
 - Registration is not attendance or completion. Only official attendance confirmation counts toward history and metrics.
 - Leaving an organization hides member-exclusive events from discovery but preserves registrations and history.
 - Authorized teachers can invite eligible students. Teacher invitations register recipients automatically, without accept/decline. Cancellations notify affected students.
+- **Who can be invited** (decided 2026-10-30): an event's managers invite their **sections**, **all members of any club** with a member list, or **single students** found by name, on one page with three tabs; picks add up and each student counts once. Only eligible students (members-only events take only members); already-registered students aren't counted; nobody is invited if the spots left don't cover everyone. Invited students get a bell notice (preview only).
 - Attendee visibility follows the eventual privacy rules (open decision).
 
 ### 7.4 Organizations

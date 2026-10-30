@@ -111,7 +111,7 @@ void main() {
     await tester.tap(find.text('BSCS 3B'));
     await tester.pump(const Duration(seconds: 5)); // the publish snackbar goes away
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Invite Section'));
+    await tester.tap(find.text('Invite 12 Students'));
     await tester.pumpAndSettle();
     expect(find.textContaining('12 students registered in this preview only'), findsOneWidget);
     // Teachers see everyone named: two names, then the other ten.

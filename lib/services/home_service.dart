@@ -228,7 +228,8 @@ class MockHomeService implements HomeService {
             time: d.event.postedAt!,
             route: '/life/events/${d.event.id}',
           ),
-      // Accepted, declined, added, or removed by a club adviser.
+      // Accepted, declined, added, or removed by a club adviser; registered by
+      // a teacher's invitation.
       ...await campus.loadMembershipNotices(user),
       // Connect requests waiting, and requests accepted.
       ...await campus.loadConnectNotices(user),

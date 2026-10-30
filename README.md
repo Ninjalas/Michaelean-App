@@ -331,6 +331,12 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Invite whole clubs and single students to an event** (decided 2026-10-30). An event's Invite page now has three tabs: **Sections** (yours, as before), **Clubs** (every school-wide club, all its members), and **Students** (search any sample student by name). Picks add up and each student counts once; the button says e.g. "Invite 6 Students".
+  - **Eligible students only:** for a members-only event, others are greyed out with the reason ("Not a member of Dance Company"); a club or section counts only who can come ("6 members · 5 can be invited"). "Already going" students aren't counted. If the spots left don't cover everyone, nobody is invited and the page says how many spots are left.
+  - Invited students are still registered automatically and can't decline, and now get a **bell notice** ("Mark Villanueva registered you for Department Assembly."), which opens the event. Preview only; nothing is really sent.
+  - **Sample member lists** for SMCL Chorale (7), Dance Company (8), and Campus Ministry Volunteers (7), made from the sample class lists, so "all members" means exactly who's listed. Their member counts and officers now follow the lists (before: invented counts like 64). The Nursing Students Association has no sample students, so it isn't offered.
+  - Service: `loadInviteOptions` and `invite(sections:, orgIds:, studentIds:)` replace `inviteSections`.
+  - Tests: `test/invite_test.dart` (a section and a club counted once, a single student and their notice, members-only events, spots, the club lists, the page adding up a club and a student); older invite tests use the new call.
 - **Posts can have photos** (decided 2026-10-30). Announcements, School News, and club posts get an **Add photos** button: up to **4 photos**, picked from the device. On a phone it asks **Choose from gallery** or **Take a photo**; on a computer it opens the file chooser. Each thumbnail has an **X** to remove it; **hold and drag** to change the order (the first is the cover). The post shows them in the swipeable carousel, and lists show the cover. Campus updates stay text only.
   - **Preview only:** photos are kept in the app's memory (`lib/services/photo_store.dart`), never sent anywhere, and gone when the app reloads, like the posts themselves. The form says so.
   - New package **`image_picker`** (by the Flutter team): opens the gallery or camera on phones and the file chooser on the web. Photos are shrunk to 1600 px wide on the device.
@@ -786,7 +792,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-234 tests currently pass, at any time of day. They cover:
+239 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).
