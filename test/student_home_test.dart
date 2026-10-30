@@ -71,9 +71,9 @@ void main() {
 
   testWidgets('the bell dot shows only while something is unread', (tester) async {
     await openStudentHome(tester); // a fresh device (flutter_test_config.dart)
-    // Today's three start unread, plus two Connect requests; yesterday's
-    // recap was already read.
-    expect(find.byTooltip('Notifications, 5 unread'), findsOneWidget);
+    // 6 posts, 3 new events, a clearance notice, and 2 Connect requests
+    // (test/bell_test.dart has the details).
+    expect(find.byTooltip('Notifications, 12 unread'), findsOneWidget);
 
     // Opening one marks it read.
     await tester.tap(bell);
@@ -82,12 +82,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Notifications, 4 unread'), findsOneWidget);
+    expect(find.byTooltip('Notifications, 11 unread'), findsOneWidget);
 
     // Still read after the app is closed and opened again.
     await tester.pumpWidget(const SizedBox());
     await openStudentHome(tester);
-    expect(find.byTooltip('Notifications, 4 unread'), findsOneWidget);
+    expect(find.byTooltip('Notifications, 11 unread'), findsOneWidget);
 
     // Mark all as read clears the dot.
     await tester.tap(bell);

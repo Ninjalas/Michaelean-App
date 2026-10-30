@@ -38,6 +38,10 @@ class CampusEvent {
   /// not the same as hosting it.
   final Set<String> managerIds;
 
+  /// When it was published, so the bell can tell new events (decided
+  /// 2026-10-30). Null for drafts and for events from before this preview.
+  final DateTime? postedAt;
+
   const CampusEvent({
     required this.id,
     required this.title,
@@ -54,6 +58,7 @@ class CampusEvent {
     this.updateNote,
     this.audience,
     this.managerIds = const {},
+    this.postedAt,
   });
 
   CampusEvent copyWith({EventStatus? status}) => CampusEvent(
@@ -72,6 +77,7 @@ class CampusEvent {
         updateNote: updateNote,
         audience: audience,
         managerIds: managerIds,
+        postedAt: postedAt,
       );
 }
 

@@ -29,6 +29,7 @@ List<CampusEvent> mockEvents(DateTime now) {
       capacity: 150,
       description: 'Sample description. The society meets to introduce this '
           "semester's officers, plans, and committees. Bring your questions.",
+      postedAt: now.subtract(const Duration(days: 1)),
     ),
     CampusEvent(
       id: 'ev2',
@@ -41,6 +42,7 @@ List<CampusEvent> mockEvents(DateTime now) {
       managerIds: {mockTeacher.id},
       description: 'Sample description. Updates from the department for all '
           'Computer Studies students.',
+      postedAt: now.subtract(const Duration(days: 3)),
     ),
     CampusEvent(
       id: 'ev3',
@@ -51,6 +53,7 @@ List<CampusEvent> mockEvents(DateTime now) {
       venue: 'Main Grounds',
       description: 'Sample description. The parade of teams and the opening '
           'of the intramurals week.',
+      postedAt: now.subtract(const Duration(hours: 5)),
     ),
     // Registration already closed (deadline passed).
     CampusEvent(
@@ -66,6 +69,7 @@ List<CampusEvent> mockEvents(DateTime now) {
       deadline: at(-1, 17),
       capacity: 40,
       description: 'Sample description. Teams of three solve problems in four hours.',
+      postedAt: now.subtract(const Duration(days: 10)), // too old for the bell
     ),
     // Full: every spot is taken.
     CampusEvent(
@@ -77,6 +81,7 @@ List<CampusEvent> mockEvents(DateTime now) {
       venue: 'Library Commons',
       capacity: 60,
       description: 'Sample description. Donors must be 18 or older.',
+      postedAt: now.subtract(const Duration(days: 2)),
     ),
     // Not for the mock student: he isn't a Dance Company member.
     CampusEvent(
@@ -87,6 +92,7 @@ List<CampusEvent> mockEvents(DateTime now) {
       end: at(4, 20),
       venue: 'Main Auditorium',
       audience: 'Dance Company',
+      postedAt: now.subtract(const Duration(days: 2)),
     ),
     // A draft: only its managers see it.
     CampusEvent(

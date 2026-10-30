@@ -175,8 +175,8 @@ void main() {
         urgent: true,
         sentTo: 'Everyone at SMCL'));
     await signIn(tester, 'Student', home: home);
-    // 3 sample notices, 2 Connect requests, and this one.
-    expect(find.byTooltip('Notifications, 6 unread'), findsOneWidget);
+    // The sample notices (test/bell_test.dart counts them) plus this one.
+    expect(find.byTooltip('Notifications, 13 unread'), findsOneWidget);
 
     await tester.tap(find.byTooltip(RegExp('^Notifications')));
     await tester.pumpAndSettle();
@@ -185,7 +185,8 @@ void main() {
     expect(find.text('Campus closed tomorrow'), findsOneWidget); // the post opens
   });
 
-  test('urgent announcements notify their audience; edits and deletes follow', () async {
+  test('announcements made in this preview notify their audience; edits and deletes follow',
+      () async {
     final campus = MockCampusService(delay: Duration.zero);
     final home = MockHomeService(delay: Duration.zero, campus: campus);
     final studentClasses =
@@ -193,8 +194,9 @@ void main() {
     final teacherClasses = await campus.loadAssignedClasses(mockTeacher);
     final theirs = teacherClasses.firstWhere((c) => studentClasses.contains(c.id));
     final notTheirs = teacherClasses.firstWhere((c) => !studentClasses.contains(c.id));
+    // Only posts made in this preview, not the sample ones.
     Future<List<AppNotification>> bell(user) async => (await home.loadNotifications(user))
-        .where((n) => n.id.startsWith('post-'))
+        .where((n) => n.id.startsWith('post-mine-'))
         .toList();
 
     final urgent = await home.savePost(mockTeacher,
@@ -206,31 +208,26 @@ void main() {
     await home.savePost(mockTeacher,
         kind: PostKind.announcement, title: 'Not urgent', body: 'Sample.', sentTo: 'test');
 
+    // Every announcement notifies now, urgent or not (decided 2026-10-30).
     var mine = await bell(mockStudent);
-    expect(mine.map((n) => n.title), ['Urgent: Quiz moved']);
-    expect(mine.single.read, isFalse);
+    expect(mine.map((n) => n.title),
+        unorderedEquals(['Urgent: Quiz moved', 'New announcement: Not urgent']));
+    expect(mine.every((n) => !n.read), isTrue);
     expect(await bell(mockTeacher), isEmpty); // the author isn't notified
 
     // Read it, then the teacher edits: it comes back unread with the new title.
-    await home.markNotificationsRead(mockStudent, [mine.single.id]);
-    expect((await bell(mockStudent)).single.read, isTrue);
+    AppNotification quiz(List<AppNotification> l) => l.singleWhere((n) => n.title.contains('Quiz'));
+    await home.markNotificationsRead(mockStudent, [quiz(mine).id]);
+    expect(quiz(await bell(mockStudent)).read, isTrue);
     await home.savePost(mockTeacher,
         postId: urgent.id, kind: PostKind.announcement, title: 'Quiz moved to Friday',
         body: 'Sample.', classId: theirs.id, urgent: true, sentTo: 'test');
     mine = await bell(mockStudent);
-    expect(mine.single.title, 'Updated: Quiz moved to Friday');
-    expect(mine.single.read, isFalse);
+    expect(quiz(mine).title, 'Updated: Quiz moved to Friday');
+    expect(quiz(mine).read, isFalse);
 
-    // Switching Urgent off removes it; so does deleting the post.
-    await home.savePost(mockTeacher,
-        postId: urgent.id, kind: PostKind.announcement, title: 'Quiz moved to Friday',
-        body: 'Sample.', classId: theirs.id, sentTo: 'test');
-    expect(await bell(mockStudent), isEmpty);
-    final again = await home.savePost(mockTeacher,
-        kind: PostKind.announcement, title: 'Fire drill', body: 'Sample.',
-        urgent: true, sentTo: 'test');
-    expect(await bell(mockStudent), hasLength(1));
-    await home.deletePost(mockTeacher, again.id);
-    expect(await bell(mockStudent), isEmpty);
+    // Deleting the post removes its notice.
+    await home.deletePost(mockTeacher, urgent.id);
+    expect((await bell(mockStudent)).map((n) => n.title), ['New announcement: Not urgent']);
   });
 }

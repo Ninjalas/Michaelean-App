@@ -331,6 +331,14 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **The bell now shows what's new on campus** (decided 2026-10-30). Instead of a hand-written list, the bell builds its notices from the posts and events themselves, from the **last 7 days**, for students and teachers:
+  - new **announcements** ("New announcement: …"), **department news** for your department, and **club posts** for clubs you belong to ("Computer Science Society: …"). Urgent ones start with "Urgent:" and show even if that type is switched off.
+  - **new events you can join** ("New event: Blood Donation Drive · Wed, 11 Nov"), which open the event page. Not events you manage or already registered for. Events now record when they were published (`postedAt`), including ones a teacher publishes in this preview.
+  - **School News stays out** of the bell (it's on Home). The real DCS posts are older than 7 days, so they don't show either.
+  - Every announcement made in this preview now notifies its audience, not only urgent ones. Never your own posts.
+  - Settings › Notifications has a new **New events** switch; "School news" is now labelled **Department news**.
+  - Fixed: the teacher notice "Department assembly moved" pointed to a post deleted earlier; it now opens the Department Assembly event.
+  - Tests: `test/bell_test.dart` (what each role sees, the 7-day limit, members only, registered and managed events, a newly published event); three older tests use the new counts.
 - **Department news now shows real posts too** (decided 2026-10-26). Four posts from the Computer Science Society's Facebook page (`assets/computer_science_society_posts.docx`) are posted as the **Department of Computer Studies**, for DCS students: Ma'am Aliza Lyca Gonzales-Lacson's MSCS, HUEFest 2026, the "LOOK" hackathon story (4 photos), and the DCS Innovation Contest (4 photos). They show in DCS students' Home feed, newest first.
   - They replace the three invented text-only department/society posts (thesis consultation hours, coding challenge registration, assembly moved). The urgent CSS venue change and the CS 302 room change stay, as the samples of urgent notices and schedule changes.
   - **Links** (the contest's Google Form and guide) show in navy like on Facebook but don't open anything in this preview.
@@ -772,7 +780,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-226 tests currently pass, at any time of day. They cover:
+230 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

@@ -20,7 +20,8 @@ class NotificationSettingsScreen extends StatefulWidget {
 class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
   static const _types = [
     (NotificationKind.announcement, 'Announcements', Icons.campaign_outlined),
-    (NotificationKind.news, 'School news', Icons.article_outlined),
+    (NotificationKind.news, 'Department news', Icons.article_outlined),
+    (NotificationKind.event, 'New events', Icons.event_outlined),
     (NotificationKind.organization, 'Organizations', Icons.groups_outlined),
     (NotificationKind.schedule, 'Schedule changes', Icons.event_note_outlined),
     (NotificationKind.attendance, 'Attendance', Icons.how_to_reg_outlined),

@@ -336,9 +336,9 @@ List<AppNotification> mockTeacherNotifications(DateTime now) => [
       AppNotification(
         id: 'm6',
         kind: NotificationKind.schedule,
-        title: 'Department assembly moved to Friday afternoon',
+        title: 'Department Assembly is in 3 days: check the details',
         time: now.subtract(const Duration(hours: 9)),
-        postId: 'e2',
+        route: '/life/events/ev2',
       ),
       AppNotification(
         id: 'm7',
@@ -349,35 +349,14 @@ List<AppNotification> mockTeacherNotifications(DateTime now) => [
       ),
     ];
 
+/// Notices that aren't a post or an event; those are built from the posts and
+/// events themselves (home_service.dart).
 List<AppNotification> mockNotifications(DateTime now) => [
-      AppNotification(
-        id: 'm1',
-        kind: NotificationKind.organization,
-        title: "Computer Science Society: Venue change for Friday's meeting",
-        time: now.subtract(const Duration(hours: 1)),
-        postId: 'o1',
-        urgent: true, // the post is marked URGENT
-      ),
-      AppNotification(
-        id: 'm2',
-        kind: NotificationKind.announcement,
-        title: 'New announcement: Midterm examination schedule posted',
-        time: now.subtract(const Duration(hours: 2)),
-        postId: 'a1',
-      ),
       AppNotification(
         id: 'm3',
         kind: NotificationKind.clearance,
         title: 'Library clearance needs correction',
         time: now.subtract(const Duration(hours: 6)),
         route: '/life/clearance/lib',
-      ),
-      AppNotification(
-        id: 'm4',
-        kind: NotificationKind.organization,
-        title: 'Recap posted: hands-on Git and collaboration seminar',
-        time: now.subtract(const Duration(days: 1)),
-        postId: 'o2',
-        read: true, // seen yesterday
       ),
     ];

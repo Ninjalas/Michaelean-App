@@ -13,6 +13,10 @@ String formatDayMonth(DateTime d) => '${d.day} ${_months[d.month - 1]}';
 
 String weekdayName(DateTime d) => _weekdays[d.weekday - 1];
 
+/// "Fri, 6 Nov"
+String formatShortDate(DateTime d) =>
+    '${weekdayShort(d.weekday)}, ${d.day} ${_months[d.month - 1].substring(0, 3)}';
+
 /// "20 October 2026"
 String formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
 

@@ -230,6 +230,8 @@ Rules:
 
 **Notifications:** the bell opens a tall bottom sheet grouped by `Today / Earlier`. Each item has an icon or avatar, one line, and a time. Tapping navigates to the related screen without modifying any record. Back, X, and outside tap close it.
 
+**What the bell holds** (decided 2026-10-30, both roles): it builds its notices from the posts and events themselves, from the **last 7 days**: new **announcements**, **department news** for the user's department, **club posts** for clubs the user belongs to, and **new events the user can join** (the Events page's Discover list; not events they manage or already registered for), shown as `New event: <name> · Fri, 6 Nov` and opening the event page. Never the user's own posts. **School News is not in the bell** (it stays on Home). Urgent posts are marked `Urgent:` and show even when their type is switched off. Other notices (clearance, attendance, memberships, Connect) stay as before. Settings › Notifications has a `New events` switch; the `news` type is labelled `Department news`. Events record when they were published (`postedAt`) for this.
+
 ## 7. Student Life
 
 Purpose: the student's feature hub for browsing campus services.

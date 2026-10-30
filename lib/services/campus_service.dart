@@ -687,6 +687,7 @@ class MockCampusService implements CampusService {
       updateNote: moved ? 'The time or venue changed.' : old?.updateNote,
       audience: audience,
       managerIds: old?.managerIds ?? {user.id},
+      postedAt: old?.postedAt ?? (published ? clock() : null),
     );
   }
 

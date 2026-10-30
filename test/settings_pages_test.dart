@@ -62,7 +62,11 @@ void main() {
     Finder inBell(String t) =>
         find.descendant(of: find.byType(NotificationsSheet), matching: find.textContaining(t));
     expect(inBell('Venue change'), findsOneWidget);
-    expect(inBell('Recap posted'), findsNothing);
+    expect(inBell('Recap:'), findsNothing);
+    // The note is at the end of a longer list now.
+    await tester.scrollUntilVisible(find.text('1 hidden by your notification settings.'), 200,
+        scrollable: find.descendant(
+            of: find.byType(NotificationsSheet), matching: find.byType(Scrollable)));
     expect(find.text('1 hidden by your notification settings.'), findsOneWidget);
   });
 

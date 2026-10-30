@@ -8,6 +8,7 @@ import '../models/feed.dart';
 import '../models/user_profile.dart';
 import 'campus_service.dart';
 import 'notification_prefs.dart';
+import '../utils/dates.dart';
 
 /// Where Home content comes from. Screens use this, not mock data directly.
 abstract class HomeService {
@@ -184,25 +185,49 @@ class MockHomeService implements HomeService {
   Future<List<AppNotification>> loadNotifications(UserProfile user) async {
     await Future.delayed(delay);
     if (fail) throw Exception('Mock load failure');
+    final now = clock();
     final canSee = _audienceOf(user, await campus.loadClasses(user));
+    final myTags = user.tags.map((t) => t.label).toSet();
+    // The bell shows what's new from the last 7 days (decided 2026-10-30).
+    final since = now.subtract(const Duration(days: 7));
+    bool isNew(DateTime t) => t.isAfter(since) && !t.isAfter(now);
+    const postKinds = {
+      PostKind.announcement: NotificationKind.announcement,
+      PostKind.departmentNews: NotificationKind.news,
+      PostKind.organizationNews: NotificationKind.organization,
+    };
+    final events = await campus.loadEvents(user, EventList.discover);
     final all = [
       ...user.role == UserRole.student
-          ? mockNotifications(clock())
-          : mockTeacherNotifications(clock()),
-      // Urgent announcements and club posts made in this preview notify their
-      // audience (not the author). Deleting the post or switching Urgent off
-      // removes it.
-      for (final p in _posted)
-        if (p.urgent && p.authorId != user.id && canSee(p))
+          ? mockNotifications(now)
+          : mockTeacherNotifications(now),
+      // New announcements, department news, and club posts (members only) the
+      // user may see, not their own. Deleting a post removes its notice.
+      for (final p in _allPosts(now))
+        if (postKinds.containsKey(p.kind) &&
+            p.authorId != user.id &&
+            canSee(p) &&
+            (p.kind != PostKind.organizationNews || myTags.contains(p.source)) &&
+            isNew(_notifiedAt[p.id] ?? p.publishedAt))
           AppNotification(
             // A new id per version, so an edit shows as unread again.
             id: 'post-${p.id}-v${_postVersions[p.id] ?? 0}',
-            kind: p.orgId != null ? NotificationKind.organization : NotificationKind.announcement,
-            title: '${p.edited ? 'Updated' : 'Urgent'}: '
-                '${p.orgId != null ? '${p.source}: ' : ''}${p.title}',
+            kind: postKinds[p.kind]!,
+            title: _noticeTitle(p),
             time: _notifiedAt[p.id] ?? p.publishedAt,
             postId: p.id,
-            urgent: true,
+            urgent: p.urgent,
+          ),
+      // New events the user can join (the Events page's Discover list), not
+      // the ones they manage or already registered for.
+      for (final d in events)
+        if (d.event.postedAt != null && isNew(d.event.postedAt!) && !d.canManage && !d.registered)
+          AppNotification(
+            id: 'event-${d.event.id}',
+            kind: NotificationKind.event,
+            title: 'New event: ${d.event.title} · ${formatShortDate(d.event.start)}',
+            time: d.event.postedAt!,
+            route: '/life/events/${d.event.id}',
           ),
       // Accepted, declined, added, or removed by a club adviser.
       ...await campus.loadMembershipNotices(user),
@@ -211,6 +236,14 @@ class MockHomeService implements HomeService {
     ]..sort((a, b) => b.time.compareTo(a.time));
     final read = await _readFor(user.id);
     return [for (final n in all) n.read || read.contains(n.id) ? n.markedRead() : n];
+  }
+
+  /// "New announcement: …", "Computer Science Society: …", "Urgent: …", or "Updated: …".
+  static String _noticeTitle(Post p) {
+    final from = p.kind == PostKind.announcement ? '' : '${p.source}: ';
+    if (p.edited) return 'Updated: $from${p.title}';
+    if (p.urgent) return 'Urgent: $from${p.title}';
+    return p.kind == PostKind.announcement ? 'New announcement: ${p.title}' : '$from${p.title}';
   }
 
   /// Read notification ids per user: loaded once from this device, then kept here.
