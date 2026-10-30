@@ -206,14 +206,6 @@ Map<String, Set<String>> mockRegistrations() => {
       'ev9': {'stu-BSCS3A6', 'stu-BSCS3A7', 'stu-BSCS3B1'},
     };
 
-/// Cover photos a teacher can pick in the event form (bundled assets).
-const mockEventCovers = [
-  _cssCover,
-  'assets/images/events/css_commitevent.jpg',
-  'assets/images/events/css_startupevent.jpg',
-  'assets/images/events/css_unpackingevent.jpg',
-];
-
 /// Organizations. Officers, meetings, and descriptions are invented sample
 /// data. Kinds and departments are mock assumptions, not official records.
 const mockOrganizations = [

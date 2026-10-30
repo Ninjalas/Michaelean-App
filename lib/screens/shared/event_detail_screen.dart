@@ -11,6 +11,7 @@ import '../../utils/dates.dart';
 import '../../utils/tab_path.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/fade_switch.dart';
+import '../../widgets/post_image.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/status_pill.dart';
 import '../../widgets/user_avatar.dart';
@@ -264,7 +265,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           child: AspectRatio(
             aspectRatio: 1,
             child: e.coverAsset != null
-                ? Image.asset(e.coverAsset!, fit: BoxFit.cover)
+                ? PostImage(e.coverAsset!, fit: BoxFit.cover)
                 : const ColoredBox(
                     color: AppColors.navyTint,
                     child: Icon(Icons.event_outlined, size: 64, color: AppColors.navy),

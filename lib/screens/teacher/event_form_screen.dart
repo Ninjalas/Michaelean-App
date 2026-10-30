@@ -8,6 +8,8 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/photo_source.dart';
+import '../../widgets/post_image.dart';
 
 /// Create or edit an event (spec §9.2): one scrolling page in Luma's form
 /// style, with Save draft and Publish at the bottom. Editing a published
@@ -214,61 +216,19 @@ class _EventFormScreenState extends State<EventFormScreen> {
     if (picked != null) setState(() => _deadline = picked);
   }
 
+  /// A cover photo from the device (decided 2026-10-30); kept in this
+  /// preview's memory only.
   Future<void> _pickCover() async {
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true, // as tall as the photo grid needs
-      builder: (sheet) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Cover photo', style: Theme.of(sheet).textTheme.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                mainAxisSpacing: AppSpacing.sm,
-                crossAxisSpacing: AppSpacing.sm,
-                children: [
-                  _coverOption(sheet, null),
-                  for (final c in widget.campusService.eventCovers) _coverOption(sheet, c),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (picked != null) setState(() => _cover = picked.isEmpty ? null : picked);
+    try {
+      final picked = await pickPhotos(context, limit: 1);
+      if (picked.isNotEmpty && mounted) setState(() => _cover = picked.first);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Couldn't add the photo. Try another one.")));
+      }
+    }
   }
-
-  Widget _coverOption(BuildContext sheet, String? asset) => Semantics(
-        button: true,
-        selected: asset == _cover,
-        label: asset == null ? 'No photo' : 'Cover photo option',
-        child: InkWell(
-          onTap: () => Navigator.pop(sheet, asset ?? ''),
-          borderRadius: BorderRadius.circular(AppRadius.small),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.small),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.track,
-                border: asset == _cover ? Border.all(color: AppColors.navy, width: 3) : null,
-                borderRadius: BorderRadius.circular(AppRadius.small),
-              ),
-              child: asset == null
-                  ? const Icon(Icons.hide_image_outlined, color: AppColors.muted)
-                  : Image.asset(asset, fit: BoxFit.cover),
-            ),
-          ),
-        ),
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -357,7 +317,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadius.large),
                     child: _cover != null
-                        ? Image.asset(_cover!, fit: BoxFit.cover)
+                        ? PostImage(_cover!, fit: BoxFit.cover)
                         : const ColoredBox(
                             color: AppColors.navyTint,
                             child: Icon(Icons.event_outlined, size: 56, color: AppColors.navy),
@@ -367,13 +327,25 @@ class _EventFormScreenState extends State<EventFormScreen> {
                     right: AppSpacing.sm,
                     bottom: AppSpacing.sm,
                     child: IconButton.filled(
-                      tooltip: 'Choose cover photo',
+                      tooltip: _cover == null ? 'Add cover photo' : 'Change cover photo',
                       onPressed: _pickCover,
                       style: IconButton.styleFrom(
                           backgroundColor: AppColors.white, foregroundColor: AppColors.ink),
                       icon: const Icon(Icons.add_photo_alternate_outlined),
                     ),
                   ),
+                  if (_cover != null)
+                    Positioned(
+                      right: AppSpacing.sm,
+                      top: AppSpacing.sm,
+                      child: IconButton.filled(
+                        tooltip: 'Remove cover photo',
+                        onPressed: () => setState(() => _cover = null),
+                        style: IconButton.styleFrom(
+                            backgroundColor: AppColors.white, foregroundColor: AppColors.ink),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -95,9 +95,6 @@ abstract class CampusService {
 
   Future<void> cancelEvent(UserProfile user, String eventId);
 
-  /// Cover photos a teacher can pick for an event.
-  List<String> get eventCovers;
-
   /// Registered students, for the event's managers; null for anyone else.
   Future<List<EventRegistrant>?> loadRegistrations(UserProfile user, String eventId);
 
@@ -697,9 +694,6 @@ class MockCampusService implements CampusService {
       postedAt: old?.postedAt ?? (published ? clock() : null),
     );
   }
-
-  @override
-  List<String> get eventCovers => mockEventCovers;
 
   @override
   Future<void> cancelEvent(UserProfile user, String eventId) async {

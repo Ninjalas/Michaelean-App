@@ -18,6 +18,7 @@ import '../../widgets/fade_switch.dart';
 import '../../widgets/loading_boxes.dart';
 import '../../widgets/navy_hero.dart';
 import '../../widgets/org_row.dart';
+import '../../widgets/post_image.dart';
 import '../../widgets/person_row.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/section_header.dart';
@@ -441,7 +442,7 @@ class _EventCard extends StatelessWidget {
               child: AspectRatio(
                 aspectRatio: 4 / 3,
                 child: event.coverAsset != null
-                    ? Image.asset(event.coverAsset!, fit: BoxFit.cover)
+                    ? PostImage(event.coverAsset!, fit: BoxFit.cover)
                     : const ColoredBox(
                         color: AppColors.track,
                         child: Icon(Icons.event_outlined, size: 40, color: AppColors.muted),

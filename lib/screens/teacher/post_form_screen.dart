@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,11 +7,11 @@ import '../../models/feed.dart';
 import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/home_service.dart';
-import '../../services/photo_store.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/photo_source.dart';
 import '../../widgets/post_image.dart';
 import '../../widgets/status_pill.dart';
 
@@ -149,38 +148,9 @@ class _PostFormScreenState extends State<PostFormScreen> {
 
   List<String> get _postPhotos => _canHavePhotos ? _photos : const [];
 
-  /// On a phone, asks gallery or camera; elsewhere opens the file chooser.
   Future<void> _addPhotos() async {
-    final phone = defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS;
-    var camera = false;
-    if (phone) {
-      final choice = await showModalBottomSheet<bool>(
-        context: context,
-        builder: (c) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose from gallery'),
-                onTap: () => Navigator.pop(c, false),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Take a photo'),
-                onTap: () => Navigator.pop(c, true),
-              ),
-            ],
-          ),
-        ),
-      );
-      if (choice == null) return;
-      camera = choice;
-    }
     try {
-      final added =
-          await PhotoStore.pick(limit: maxPostPhotos - _photos.length, camera: camera);
+      final added = await pickPhotos(context, limit: maxPostPhotos - _photos.length);
       if (mounted) setState(() => _photos = [..._photos, ...added]);
     } catch (_) {
       if (mounted) setState(() => _error = "Couldn't add the photo. Try another one.");

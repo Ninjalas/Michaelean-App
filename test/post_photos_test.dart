@@ -1,5 +1,6 @@
 // Posts can have up to 4 uploaded photos (decided 2026-10-30): announcements,
-// School News, and club posts; not campus updates. Uploads stay in memory.
+// School News, and club posts; not campus updates. Event covers are uploaded
+// too. Uploads stay in memory.
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -7,8 +8,10 @@ import 'dart:typed_data';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:michaelean_app/main.dart';
 import 'package:michaelean_app/mock/mock_users.dart';
+import 'package:michaelean_app/screens/shared/event_detail_screen.dart';
 import 'package:michaelean_app/models/feed.dart';
 import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
@@ -128,6 +131,44 @@ void main() {
     expect(usedCamera, isTrue);
     expect(strip(tester), hasLength(4));
     expect(find.bySemanticsLabel('Add photos'), findsNothing);
+  });
+
+  testWidgets("an event's cover is uploaded, shown, and can be removed", (tester) async {
+    fakePicker(tester, 1);
+    await openForm(tester, 'Announcement'); // signs in as the teacher
+    final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
+    router.pop();
+    await tester.pumpAndSettle();
+    router.push('/life/events/ev2/edit'); // Department Assembly, which Mark manages
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Add cover photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose from gallery'));
+    await tester.pumpAndSettle();
+    final cover = tester.widget<PostImage>(find.byType(PostImage)).path;
+    expect(PhotoStore.isUpload(cover), isTrue);
+    expect(find.byTooltip('Change cover photo'), findsOneWidget);
+
+    // Remove it, then add it back.
+    await tester.tap(find.byTooltip('Remove cover photo'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PostImage), findsNothing);
+    await tester.tap(find.byTooltip('Add cover photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose from gallery'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Save Changes'), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+    // The event page shows the uploaded cover.
+    router.push('/life/events/ev2');
+    await tester.pumpAndSettle();
+    final onPage = find.descendant(
+        of: find.byType(EventDetailScreen), matching: find.byType(PostImage));
+    expect(PhotoStore.isUpload(tester.widget<PostImage>(onPage).path), isTrue);
   });
 
   testWidgets('campus updates stay text only', (tester) async {

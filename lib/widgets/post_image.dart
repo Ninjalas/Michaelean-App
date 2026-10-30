@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/photo_store.dart';
 import '../theme/app_theme.dart';
 
-/// A post photo: a bundled asset, or one uploaded in this preview
+/// A post photo or event cover: a bundled asset, or one uploaded in this preview
 /// ([PhotoStore]). An upload that's gone (the app reloaded) shows a plain tile.
 class PostImage extends StatelessWidget {
   final String path;

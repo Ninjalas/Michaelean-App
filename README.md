@@ -331,6 +331,9 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Event covers are uploaded too** (decided 2026-10-30). In the event form (new or editing), the cover's button opens the same picker as posts (phone: gallery or camera; computer: file chooser) instead of the 4 sample covers. An **X** on the cover removes it. The event page, lists, and Michaelean Life show the uploaded cover. Kept in memory only, like post photos.
+  - The gallery/camera menu is now one shared helper (`lib/widgets/photo_source.dart`) used by posts and events. The sample covers (`mockEventCovers`, `eventCovers`) are gone.
+  - Tests: one more in `test/post_photos_test.dart` (add, remove, re-add, save, and the event page shows it).
 - **Invite whole clubs and single students to an event** (decided 2026-10-30). An event's Invite page now has three tabs: **Sections** (yours, as before), **Clubs** (every school-wide club, all its members), and **Students** (search any sample student by name). Picks add up and each student counts once; the button says e.g. "Invite 6 Students".
   - **Eligible students only:** for a members-only event, others are greyed out with the reason ("Not a member of Dance Company"); a club or section counts only who can come ("6 members · 5 can be invited"). "Already going" students aren't counted. If the spots left don't cover everyone, nobody is invited and the page says how many spots are left.
   - Invited students are still registered automatically and can't decline, and now get a **bell notice** ("Mark Villanueva registered you for Department Assembly."), which opens the event. Preview only; nothing is really sent.
@@ -792,7 +795,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-239 tests currently pass, at any time of day. They cover:
+240 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

@@ -354,7 +354,7 @@ Same layout and components as Student Home (§6), with teacher content:
 
 Header collapses on scroll as on Student Home. No publishing button on Home; management lives in Michaelean Life.
 
-**Post photos** (decided 2026-10-30): announcements, School News, and club posts can have up to 4 photos uploaded from the device (phone: gallery or camera; computer: file chooser), removed with an X and reordered by hold-and-drag; the first is the cover. Campus updates are text only. In the prototype, uploads stay in memory only and are never sent anywhere.
+**Post photos** (decided 2026-10-30): announcements, School News, and club posts can have up to 4 photos uploaded from the device (phone: gallery or camera; computer: file chooser), removed with an X and reordered by hold-and-drag; the first is the cover. Campus updates are text only. **Event covers** are uploaded the same way (one photo; X to remove). In the prototype, uploads stay in memory only and are never sent anywhere.
 
 ## 9. Michaelean Life
 
