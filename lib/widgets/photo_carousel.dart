@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'post_image.dart';
 
 /// A post's photos: one shows at its own shape; several swipe sideways, with
 /// a "1/2" counter and dots, like a Facebook post with more than one photo.
@@ -23,7 +24,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
     if (images.length == 1) {
       return ClipRRect(
         borderRadius: radius,
-        child: Image.asset(images.first, width: double.infinity),
+        child: PostImage(images.first, width: double.infinity),
       );
     }
     return Column(
@@ -41,7 +42,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
                       Semantics(
                         label: 'Photo ${i + 1} of ${images.length}',
                         image: true,
-                        child: Image.asset(images[i], fit: BoxFit.cover),
+                        child: PostImage(images[i], fit: BoxFit.cover),
                       ),
                   ],
                 ),

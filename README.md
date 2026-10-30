@@ -331,6 +331,12 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Posts can have photos** (decided 2026-10-30). Announcements, School News, and club posts get an **Add photos** button: up to **4 photos**, picked from the device. On a phone it asks **Choose from gallery** or **Take a photo**; on a computer it opens the file chooser. Each thumbnail has an **X** to remove it; **hold and drag** to change the order (the first is the cover). The post shows them in the swipeable carousel, and lists show the cover. Campus updates stay text only.
+  - **Preview only:** photos are kept in the app's memory (`lib/services/photo_store.dart`), never sent anywhere, and gone when the app reloads, like the posts themselves. The form says so.
+  - New package **`image_picker`** (by the Flutter team): opens the gallery or camera on phones and the file chooser on the web. Photos are shrunk to 1600 px wide on the device.
+  - `PostImage` (`lib/widgets/post_image.dart`) shows a bundled photo or an uploaded one, so Home, lists, and the post page work with both. The 4 sample cover photos are gone from the form.
+  - Not tested: the camera itself (only works on a real phone).
+  - Tests: `test/post_photos_test.dart` (add from gallery and camera, remove, drag to reorder, the 4-photo limit, the post's carousel, campus updates without photos); one older test scrolls past the photos to the preview.
 - **The bell now shows what's new on campus** (decided 2026-10-30). Instead of a hand-written list, the bell builds its notices from the posts and events themselves, from the **last 7 days**, for students and teachers:
   - new **announcements** ("New announcement: …"), **department news** for your department, and **club posts** for clubs you belong to ("Computer Science Society: …"). Urgent ones start with "Urgent:" and show even if that type is switched off.
   - **new events you can join** ("New event: Blood Donation Drive · Wed, 11 Nov"), which open the event page. Not events you manage or already registered for. Events now record when they were published (`postedAt`), including ones a teacher publishes in this preview.
@@ -780,7 +786,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-230 tests currently pass, at any time of day. They cover:
+234 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,18 +8,21 @@ import '../../models/feed.dart';
 import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/home_service.dart';
+import '../../services/photo_store.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/content_row.dart';
+import '../../widgets/post_image.dart';
 import '../../widgets/status_pill.dart';
 
 /// Write or edit a post from Home's "+" menu: an announcement, School News,
 /// or a campus update. A live preview shows the row as it will appear on
 /// Home. With [orgId], it's a club post by the club's adviser, for its
-/// members or everyone. Posts are kept in this preview only. Only urgent
-/// announcements and club posts notify, and only in this preview's bell; the
-/// confirmation says so.
+/// members or everyone. Announcements, School News, and club posts can have
+/// up to 4 photos, uploaded from the device (kept in memory only). Posts are
+/// kept in this preview only. Only urgent announcements and club posts
+/// notify, and only in this preview's bell; the confirmation says so.
 class PostFormScreen extends StatefulWidget {
   final HomeService homeService;
   final CampusService campusService;
@@ -59,7 +63,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
   List<_Audience> _audiences = const [];
   String _to = 'all';
   bool _urgent = false;
-  String? _cover;
+  List<String> _photos = []; // the first is the cover
   bool _saving = false;
   String? _error;
 
@@ -103,7 +107,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
       _title.text = post.title;
       _body.text = post.body;
       _urgent = post.urgent;
-      _cover = post.imageAsset;
+      _photos = [...post.images];
       _to = post.classId != null
           ? 'class:${post.classId}'
           : post.audience != null
@@ -139,6 +143,50 @@ class _PostFormScreenState extends State<PostFormScreen> {
 
   bool get _notifies => _canBeUrgent && _urgent;
 
+  /// Campus updates stay text only (decided 2026-10-30).
+  bool get _canHavePhotos =>
+      _kind == PostKind.announcement || _kind == PostKind.schoolNews || _club != null;
+
+  List<String> get _postPhotos => _canHavePhotos ? _photos : const [];
+
+  /// On a phone, asks gallery or camera; elsewhere opens the file chooser.
+  Future<void> _addPhotos() async {
+    final phone = defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    var camera = false;
+    if (phone) {
+      final choice = await showModalBottomSheet<bool>(
+        context: context,
+        builder: (c) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from gallery'),
+                onTap: () => Navigator.pop(c, false),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Take a photo'),
+                onTap: () => Navigator.pop(c, true),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (choice == null) return;
+      camera = choice;
+    }
+    try {
+      final added =
+          await PhotoStore.pick(limit: maxPostPhotos - _photos.length, camera: camera);
+      if (mounted) setState(() => _photos = [..._photos, ...added]);
+    } catch (_) {
+      if (mounted) setState(() => _error = "Couldn't add the photo. Try another one.");
+    }
+  }
+
   String? get _problem {
     if (_title.text.trim().isEmpty) return 'Add a title.';
     if (_body.text.trim().isEmpty) return 'Add a message.';
@@ -167,7 +215,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
         classId: to.classId,
         sentTo: to.label,
         urgent: _notifies,
-        imageAsset: _kind == PostKind.schoolNews ? _cover : null,
+        images: _postPhotos,
       );
     } catch (e) {
       // Never claim success when the save failed.
@@ -293,11 +341,16 @@ class _PostFormScreenState extends State<PostFormScreen> {
             onChanged: (v) => setState(() => _urgent = v),
           ),
         ],
-        if (_kind == PostKind.schoolNews) ...[
-          _label('Cover photo'),
-          _covers(),
+        if (_canHavePhotos) ...[
+          _label('Photos · ${_photos.length} of $maxPostPhotos'),
+          _photoStrip(),
           const SizedBox(height: AppSpacing.xs),
-          Text('Sample photos only; uploading comes later.', style: muted),
+          Text(
+              _photos.length > 1
+                  ? 'Hold a photo and drag it to change the order. The first is the cover. '
+                      'Kept in this preview only, never uploaded anywhere.'
+                  : 'Kept in this preview only, never uploaded anywhere.',
+              style: muted),
         ],
         _label('Preview'),
         DecoratedBox(
@@ -340,7 +393,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
       title: title.isEmpty ? 'Your title appears here' : title,
       meta: 'Just now · ${_audience.label}',
       metaIcon: Icons.schedule_rounded,
-      imageAsset: _kind == PostKind.schoolNews ? _cover : null,
+      imageAsset: _postPhotos.firstOrNull,
       placeholderIcon: switch (_kind) {
         PostKind.schoolNews => Icons.article_outlined,
         PostKind.campusUpdate || PostKind.organizationNews => Icons.campaign_outlined,
@@ -352,40 +405,82 @@ class _PostFormScreenState extends State<PostFormScreen> {
     );
   }
 
-  Widget _covers() => SizedBox(
-        height: 72,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: [
-            for (final c in [null, ...widget.homeService.postCovers])
-              Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.sm),
-                child: Semantics(
-                  button: true,
-                  selected: c == _cover,
-                  label: c == null ? 'No photo' : 'Cover photo option',
-                  child: InkWell(
-                    onTap: () => setState(() => _cover = c),
-                    borderRadius: BorderRadius.circular(AppRadius.small),
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        color: AppColors.track,
-                        border: c == _cover ? Border.all(color: AppColors.navy, width: 3) : null,
-                        borderRadius: BorderRadius.circular(AppRadius.small),
+  /// Thumbnails to remove or reorder, then an Add button while there's room.
+  Widget _photoStrip() {
+    const size = 88.0;
+    final radius = BorderRadius.circular(AppRadius.small);
+    return SizedBox(
+      height: size,
+      child: ReorderableListView(
+        scrollDirection: Axis.horizontal,
+        buildDefaultDragHandles: false,
+        onReorderItem: (from, to) => setState(() => _photos.insert(to, _photos.removeAt(from))),
+        footer: _photos.length < maxPostPhotos
+            ? Semantics(
+                button: true,
+                label: 'Add photos',
+                child: InkWell(
+                  onTap: _addPhotos,
+                  borderRadius: radius,
+                  child: Container(
+                    width: size,
+                    height: size,
+                    decoration: BoxDecoration(color: AppColors.track, borderRadius: radius),
+                    child: const ExcludeSemantics(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate_outlined, color: AppColors.trackText),
+                          SizedBox(height: AppSpacing.xs),
+                          Text('Add', style: TextStyle(color: AppColors.trackText)),
+                        ],
                       ),
-                      child: c == null
-                          ? const Icon(Icons.hide_image_outlined, color: AppColors.muted)
-                          : Image.asset(c, fit: BoxFit.cover),
                     ),
                   ),
                 ),
+              )
+            : null,
+        children: [
+          for (var i = 0; i < _photos.length; i++)
+            Padding(
+              key: ValueKey(_photos[i]),
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: Stack(
+                children: [
+                  ReorderableDelayedDragStartListener(
+                    index: i,
+                    child: Semantics(
+                      image: true,
+                      label: i == 0 ? 'Photo 1, the cover' : 'Photo ${i + 1}',
+                      child: ClipRRect(
+                        borderRadius: radius,
+                        child: PostImage(_photos[i], width: size, height: size, fit: BoxFit.cover),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: IconButton(
+                      tooltip: 'Remove photo ${i + 1}',
+                      onPressed: () => setState(() => _photos.removeAt(i)),
+                      icon: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.ink.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close_rounded, size: 16, color: AppColors.white),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-          ],
-        ),
-      );
+            ),
+        ],
+      ),
+    );
+  }
 
   Widget _label(String s) => Padding(
         padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),

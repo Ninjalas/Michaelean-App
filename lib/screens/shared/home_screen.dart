@@ -13,6 +13,7 @@ import '../teacher/create_menu.dart';
 import '../../widgets/fade_switch.dart';
 import '../../widgets/loading_boxes.dart';
 import '../../widgets/navy_hero.dart';
+import '../../widgets/post_image.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/section_header.dart';
@@ -436,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(AppRadius.large),
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: Image.asset(p.imageAsset!,
+                  child: PostImage(p.imageAsset!,
                       fit: BoxFit.cover, alignment: Alignment.topCenter), // keep the headline
                 ),
               ),

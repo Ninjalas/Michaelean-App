@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import '../mock/mock_campus.dart' show mockEventCovers;
 import '../mock/mock_home.dart';
 import '../models/attendance.dart';
 import '../models/campus.dart';
@@ -22,9 +21,6 @@ abstract class HomeService {
   /// Unread notifications the bell shows (switched-off types don't count).
   Future<int> countUnread(UserProfile user);
 
-  /// Sample photos a post can use as its cover.
-  List<String> get postCovers;
-
   /// Posts to the campus feed, or edits [postId] (the user's own post). Needs
   /// [Permission.postToCampusFeed], or for a club post ([orgId]) being that
   /// club's adviser. Preview only. [audience] is a tag label and [classId] a
@@ -40,7 +36,7 @@ abstract class HomeService {
     String? classId,
     required String sentTo,
     bool urgent = false,
-    String? imageAsset,
+    List<String> images = const [], // the first is the cover
   });
 
   /// Deletes the user's own post.
@@ -50,6 +46,9 @@ abstract class HomeService {
   /// see them all), newest first.
   Future<List<Post>> loadClubPosts(UserProfile user, String orgId);
 }
+
+/// Photos one post can have (decided 2026-10-30).
+const maxPostPhotos = 4;
 
 /// The class happening now or next; null when nothing is scheduled ahead.
 ClassSession? nextClass(List<ClassSession> classes, DateTime now) {
@@ -295,9 +294,6 @@ class MockHomeService implements HomeService {
   List<Post> _allPosts(DateTime now) => [..._posted, ...mockPosts(now)];
 
   @override
-  List<String> get postCovers => mockEventCovers;
-
-  @override
   Future<Post> savePost(
     UserProfile user, {
     String? postId,
@@ -309,7 +305,7 @@ class MockHomeService implements HomeService {
     String? classId,
     required String sentTo,
     bool urgent = false,
-    String? imageAsset,
+    List<String> images = const [],
   }) async {
     await Future.delayed(delay);
     if (fail) throw Exception('Mock save failure');
@@ -324,6 +320,7 @@ class MockHomeService implements HomeService {
     if (title.trim().isEmpty || body.trim().isEmpty) {
       throw ArgumentError('Add a title and a message.');
     }
+    if (images.length > maxPostPhotos) throw ArgumentError('Add up to $maxPostPhotos photos.');
     final i = postId == null ? -1 : _posted.indexWhere((p) => p.id == postId);
     if (postId != null && (i < 0 || _posted[i].authorId != user.id)) {
       throw StateError('You can only edit your own posts.');
@@ -336,7 +333,8 @@ class MockHomeService implements HomeService {
       source: club?.name ?? user.fullName,
       sourceImage: club != null ? club.logoAsset : user.photoAsset,
       orgId: club?.id,
-      imageAsset: imageAsset,
+      imageAsset: images.firstOrNull,
+      extraImages: images.skip(1).toList(),
       publishedAt: i < 0 ? clock() : _posted[i].publishedAt,
       urgent: urgent,
       audience: audience,

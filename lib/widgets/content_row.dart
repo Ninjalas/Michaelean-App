@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'post_image.dart';
 import 'pressable.dart';
 import 'user_avatar.dart';
 
@@ -57,7 +58,7 @@ class ContentRow extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.small),
             child: imageAsset != null
-                ? Image.asset(imageAsset!, width: thumbSize, height: thumbSize, fit: BoxFit.cover)
+                ? PostImage(imageAsset!, width: thumbSize, height: thumbSize, fit: BoxFit.cover)
                 : Container(
                     width: thumbSize,
                     height: thumbSize,

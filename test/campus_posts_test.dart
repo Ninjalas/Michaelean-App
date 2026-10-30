@@ -70,6 +70,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('CS 310 · Web Development · BSCS 3B').last);
     await tester.pumpAndSettle();
+    // The preview is below the photos.
+    await tester.scrollUntilVisible(find.text('Just now · CS 310 · Web Development · BSCS 3B'), 200,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Just now · CS 310 · Web Development · BSCS 3B'), findsOneWidget); // preview
     await tester.tap(find.widgetWithText(FilledButton, 'Post'));
     await tester.pumpAndSettle();
