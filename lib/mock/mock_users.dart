@@ -54,6 +54,8 @@ const mockTeacher = UserProfile(
     Permission.processClearance,
     // Mock assumption (decided 2026-10-23): he may post to the campus feed.
     Permission.postToCampusFeed,
+    // Mock assumption (decided 2026-10-30): he holds consultations.
+    Permission.holdConsultations,
   },
 );
 

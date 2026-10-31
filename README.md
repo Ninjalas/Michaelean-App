@@ -331,6 +331,17 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Consultations** (suggested by the professors, decided 2026-10-30). Teachers fill in a consultation form with a student, and both sign it with an e-signature.
+  - **Michaelean Life › Consultations** (teachers with the new `holdConsultations` permission; Mark has it): your consultations, newest first. **+** starts one: the student **shows their QR** (mock scanner: sample QR buttons, no camera, nothing verifies identity), or you **find them by name**.
+  - **The form:** header filled in for you (date and time, student name and section, masked ID), **paired Reason / Intervention rows** (add up to 5), and **Expected outcome**.
+  - **Signatures:** everyone uploads a photo of their signature in **Settings › My e-signature**. A teacher **needs one to start a consultation**: without it, **+** shows "Add your e-signature before starting a consultation" with an **Add e-signature** button (decided 2026-10-31). The student's is added **when they scan their QR**, and only if they have one on file ("Nicolas needs to add an e-signature first" otherwise; the form stays unsigned). Found by name? The saved form shows **Scan QR to Sign**, and only that student's QR signs it.
+  - **A form keeps the signatures it was made with,** through edits and later changes in Settings. Teachers may remove theirs; that only stops new consultations.
+  - **Editing anytime;** a form changed after the student signed says "Edited after the student signed".
+  - **Export to Excel:** downloads that one consultation as a filled-in sheet in SMCL navy, following the professors' layout, with both signature pictures (`lib/utils/consultation_excel.dart`). A simple design until the school's official template arrives. Marked as a preview, not an official record.
+  - **Student Life › Consultations:** students read the ones held with them (no editing or export). Only that teacher and that student see a consultation.
+  - New package **`excel_plus`** (MIT): writes .xlsx files with pictures, and downloads them in the browser. Its pictures are re-pinned by two corners (with **`archive`**, which came with excel_plus) because iPhone's Files preview put one-corner pictures at the top-left (fixed 2026-10-31); merged boxes keep their full borders.
+  - Mock: no sample consultations (each needs real uploaded signatures); signatures and forms live in memory only.
+  - Tests: `test/consultation_test.dart` (signing by scan and later, the wrong QR, editing after signing, who sees it, row checks, the Excel cells and pictures, the screens for both roles, uploading a signature); the screen audit covers the new pages.
 - **Event covers are uploaded too** (decided 2026-10-30). In the event form (new or editing), the cover's button opens the same picker as posts (phone: gallery or camera; computer: file chooser) instead of the 4 sample covers. An **X** on the cover removes it. The event page, lists, and Michaelean Life show the uploaded cover. Kept in memory only, like post photos.
   - The gallery/camera menu is now one shared helper (`lib/widgets/photo_source.dart`) used by posts and events. The sample covers (`mockEventCovers`, `eventCovers`) are gone.
   - Tests: one more in `test/post_photos_test.dart` (add, remove, re-add, save, and the event page shows it).
@@ -795,7 +806,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-240 tests currently pass, at any time of day. They cover:
+253 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

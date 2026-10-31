@@ -5,6 +5,8 @@ import 'screens/shared/about_screen.dart';
 import 'screens/shared/account_security_screen.dart';
 import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
+import 'screens/shared/consultation_detail_screen.dart';
+import 'screens/shared/consultations_screen.dart';
 import 'screens/shared/edit_profile_screen.dart';
 import 'screens/shared/event_detail_screen.dart';
 import 'screens/shared/event_history_screen.dart';
@@ -23,6 +25,7 @@ import 'screens/shared/privacy_screen.dart';
 import 'screens/shared/profile_screen.dart';
 import 'screens/shared/qr_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
+import 'screens/shared/signature_screen.dart';
 import 'screens/student/class_screen.dart';
 import 'screens/student/clearance_item_screen.dart';
 import 'screens/student/clearance_screen.dart';
@@ -42,6 +45,8 @@ import 'screens/teacher/create_menu.dart';
 import 'screens/teacher/edit_session_screen.dart';
 import 'screens/teacher/event_checkin_screen.dart';
 import 'screens/teacher/event_form_screen.dart';
+import 'screens/teacher/consultation_form_screen.dart';
+import 'screens/teacher/consultation_scan_screen.dart';
 import 'screens/teacher/event_invite_screen.dart';
 import 'screens/teacher/event_registrations_screen.dart';
 import 'screens/teacher/post_form_screen.dart';
@@ -353,6 +358,59 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               builder: (context, state) => LifeHubScreen(campusService: campusService),
               routes: [
                 for (final make in shared.values) make(),
+                // Consultation forms (decided 2026-10-30): a teacher's own, or a
+                // student's, read-only.
+                GoRoute(
+                  path: 'consultations',
+                  builder: (context, state) => ConsultationsScreen(campusService: campusService),
+                  routes: [
+                    // Before ':id', so "new" and "signature" aren't taken for ids.
+                    // Settings › My e-signature, reached from the New Consultation
+                    // gate so Back returns there.
+                    GoRoute(
+                      path: 'signature',
+                      parentNavigatorKey: rootKey,
+                      builder: (context, state) => SignatureScreen(campusService: campusService),
+                    ),
+                    GoRoute(
+                      path: 'new',
+                      parentNavigatorKey: rootKey, // full page over the nav bar
+                      builder: (context, state) =>
+                          ConsultationScanScreen(campusService: campusService),
+                      routes: [
+                        GoRoute(
+                          path: 'form',
+                          parentNavigatorKey: rootKey,
+                          builder: (context, state) => ConsultationFormScreen(
+                            campusService: campusService,
+                            studentId: state.uri.queryParameters['student'],
+                            scanned: state.uri.queryParameters['scanned'] == '1',
+                          ),
+                        ),
+                      ],
+                    ),
+                    GoRoute(
+                      path: ':id',
+                      parentNavigatorKey: rootKey, // its buttons sit where the nav bar floats
+                      builder: (context, state) => ConsultationDetailScreen(
+                          campusService: campusService, id: state.pathParameters['id']!),
+                      routes: [
+                        GoRoute(
+                          path: 'edit',
+                          parentNavigatorKey: rootKey,
+                          builder: (context, state) => ConsultationFormScreen(
+                              campusService: campusService, id: state.pathParameters['id']!),
+                        ),
+                        GoRoute(
+                          path: 'scan',
+                          parentNavigatorKey: rootKey,
+                          builder: (context, state) => ConsultationScanScreen(
+                              campusService: campusService, signId: state.pathParameters['id']!),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 // The student's own grades (spec §7.6).
                 GoRoute(
                   path: 'grades',
@@ -464,6 +522,9 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     path: 'personal', builder: (context, state) => const PersonalInfoScreen()),
                 GoRoute(
                     path: 'security', builder: (context, state) => const AccountSecurityScreen()),
+                GoRoute(
+                    path: 'signature',
+                    builder: (context, state) => SignatureScreen(campusService: campusService)),
                 GoRoute(
                     path: 'notifications',
                     builder: (context, state) => const NotificationSettingsScreen()),

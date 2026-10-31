@@ -7,6 +7,8 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
+  archive: ^4.5.2
+  excel_plus: ^2.29.1
   flutter:
     sdk: flutter
   go_router: ^18.1.0

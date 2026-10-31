@@ -22,6 +22,7 @@ enum Permission {
   processClearance,
   manageOrganizationContent,
   postToCampusFeed, // announcements, school news, campus updates from Home's + button
+  holdConsultations, // consultation forms with students (decided 2026-10-30)
 }
 
 class UserProfile {

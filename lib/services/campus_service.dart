@@ -6,6 +6,7 @@ import '../mock/mock_people.dart';
 import '../mock/mock_users.dart' show mockEventHistory, mockStudent, mockTeacher;
 import '../models/attendance.dart';
 import '../models/campus.dart';
+import '../models/consultation.dart';
 import '../models/event_record.dart';
 import '../models/feed.dart';
 import '../models/grades.dart';
@@ -260,6 +261,42 @@ abstract class CampusService {
   /// staff member's office. A reason is required unless Cleared.
   Future<void> recordOutcome(UserProfile user, String studentId, String itemId,
       ClearanceStatus outcome, {String? reason});
+
+  // ---------- Consultations (decided 2026-10-30) ----------
+
+  /// The user's e-signature (an uploaded photo's path), or null.
+  Future<String?> loadSignature(UserProfile user);
+
+  /// Saves the user's e-signature, or removes it with null. Preview only.
+  Future<void> saveSignature(UserProfile user, String? photo);
+
+  /// Any sample student whose name contains [query], for a consultation.
+  Future<List<OrgMember>> findStudents(UserProfile teacher, String query);
+
+  /// The user's consultations, newest first: a teacher's own, or a student's.
+  /// Nobody else sees them.
+  Future<List<Consultation>> loadConsultations(UserProfile user);
+
+  /// One consultation, if [user] is its teacher or its student.
+  Future<Consultation?> loadConsultation(UserProfile user, String id);
+
+  /// Saves a new consultation with [studentId], or edits [id] (the teacher's
+  /// own; anytime). A new one needs the teacher's e-signature, and keeps it
+  /// for good. [scanned]: the student showed their QR just now, which adds
+  /// their e-signature if they have one. Needs [Permission.holdConsultations].
+  Future<Consultation> saveConsultation(
+    UserProfile teacher, {
+    String? id,
+    required String studentId,
+    required List<ConsultationRow> rows,
+    required String expectedOutcome,
+    bool scanned = false,
+  });
+
+  /// The student showed their QR after the form was saved: adds their
+  /// e-signature, which they must have on file. MOCK scan: [scannedStudentId] must be the consultation's
+  /// student; nothing verifies identity.
+  Future<Consultation> signConsultation(UserProfile teacher, String id, String scannedStudentId);
 }
 
 class MockCampusService implements CampusService {
@@ -1780,6 +1817,149 @@ class MockCampusService implements CampusService {
       throw ArgumentError('Give a reason so the student knows what to fix.');
     }
     _clearance.putIfAbsent(studentId, () => {})[itemId] = (outcome, why.isEmpty ? null : why);
+  }
+
+  // ---------- Consultations (decided 2026-10-30) ----------
+
+  final _signatures = <String, String>{}; // user id → photo path, this preview only
+  final _consultations = <String, Consultation>{}; // no samples: each needs real signatures
+  var _nextConsultation = 0;
+
+  @override
+  Future<String?> loadSignature(UserProfile user) async {
+    await _wait();
+    return _signatures[user.id];
+  }
+
+  @override
+  Future<void> saveSignature(UserProfile user, String? photo) async {
+    await _wait();
+    if (photo == null) {
+      _signatures.remove(user.id);
+    } else {
+      _signatures[user.id] = photo;
+    }
+  }
+
+  void _requireConsulting(UserProfile teacher) {
+    if (!teacher.can(Permission.holdConsultations)) {
+      throw StateError("You can't hold consultations.");
+    }
+  }
+
+  @override
+  Future<List<OrgMember>> findStudents(UserProfile teacher, String query) async {
+    await _wait();
+    _requireConsulting(teacher);
+    final q = query.trim().toLowerCase();
+    return [for (final m in _people) if (m.name.toLowerCase().contains(q)) m]
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  bool _canSeeConsultation(UserProfile user, Consultation c) =>
+      c.teacherId == user.id || c.studentId == user.id;
+
+  @override
+  Future<List<Consultation>> loadConsultations(UserProfile user) async {
+    await _wait();
+    return [for (final c in _consultations.values) if (_canSeeConsultation(user, c)) c]
+      ..sort((a, b) => b.heldAt.compareTo(a.heldAt));
+  }
+
+  @override
+  Future<Consultation?> loadConsultation(UserProfile user, String id) async {
+    await _wait();
+    final c = _consultations[id];
+    return c != null && _canSeeConsultation(user, c) ? c : null;
+  }
+
+  @override
+  Future<Consultation> saveConsultation(
+    UserProfile teacher, {
+    String? id,
+    required String studentId,
+    required List<ConsultationRow> rows,
+    required String expectedOutcome,
+    bool scanned = false,
+  }) async {
+    await _wait();
+    _requireConsulting(teacher);
+    final old = id == null ? null : _consultations[id];
+    if (id != null && (old == null || old.teacherId != teacher.id)) {
+      throw StateError('You can only edit your own consultations.');
+    }
+    final student = _student(old?.studentId ?? studentId);
+    if (student == null) throw StateError('No such student.');
+    final kept = [
+      for (final r in rows)
+        if (r.reason.trim().isNotEmpty || r.intervention.trim().isNotEmpty)
+          (reason: r.reason.trim(), intervention: r.intervention.trim()),
+    ];
+    if (kept.isEmpty) throw ArgumentError('Add at least one reason.');
+    if (kept.any((r) => r.reason.isEmpty)) throw ArgumentError('Every row needs a reason.');
+    if (kept.length > maxConsultationRows) {
+      throw ArgumentError('Add up to $maxConsultationRows reasons.');
+    }
+    // A new form needs the teacher's e-signature (decided 2026-10-31); it
+    // keeps that one for good, through edits and later changes in Settings.
+    final teacherSignature = old?.teacherSignature ?? _signatures[teacher.id];
+    if (teacherSignature == null) {
+      throw StateError('Add your e-signature before starting a consultation.');
+    }
+    final now = clock();
+    // The student's QR signs only when they have an e-signature on file.
+    final signs = scanned && !(old?.studentSigned ?? false) && _signatures[student.id] != null;
+    final c = Consultation(
+      id: old?.id ?? 'cons-new-${++_nextConsultation}',
+      teacherId: teacher.id,
+      teacherName: teacher.fullName,
+      studentId: student.id,
+      studentName: student.name,
+      studentSection: student.section,
+      studentMaskedId: student.maskedId,
+      heldAt: old?.heldAt ?? now,
+      rows: kept,
+      expectedOutcome: expectedOutcome.trim(),
+      teacherSignature: teacherSignature,
+      studentSignedAt: signs ? now : old?.studentSignedAt,
+      studentSignature: signs ? _signatures[student.id] : old?.studentSignature,
+      editedAfterSigning: (old?.editedAfterSigning ?? false) || (old?.studentSigned ?? false),
+    );
+    return _consultations[c.id] = c;
+  }
+
+  @override
+  Future<Consultation> signConsultation(
+      UserProfile teacher, String id, String scannedStudentId) async {
+    await _wait();
+    _requireConsulting(teacher);
+    final old = _consultations[id];
+    if (old == null || old.teacherId != teacher.id) {
+      throw StateError('You can only sign your own consultations.');
+    }
+    if (old.studentSigned) throw StateError('The student already signed.');
+    if (scannedStudentId != old.studentId) {
+      throw StateError("This QR isn't ${old.studentName}'s.");
+    }
+    if (_signatures[old.studentId] == null) {
+      throw StateError('${old.studentName} needs to add an e-signature first '
+          '(Settings › My e-signature).');
+    }
+    return _consultations[id] = Consultation(
+      id: old.id,
+      teacherId: old.teacherId,
+      teacherName: old.teacherName,
+      studentId: old.studentId,
+      studentName: old.studentName,
+      studentSection: old.studentSection,
+      studentMaskedId: old.studentMaskedId,
+      heldAt: old.heldAt,
+      rows: old.rows,
+      expectedOutcome: old.expectedOutcome,
+      teacherSignature: old.teacherSignature,
+      studentSignedAt: clock(),
+      studentSignature: _signatures[old.studentId],
+    );
   }
 }
 

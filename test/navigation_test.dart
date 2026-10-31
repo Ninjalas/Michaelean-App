@@ -52,6 +52,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Log Out'), 100, scrollable: find.byType(Scrollable).last);
     await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
     expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);

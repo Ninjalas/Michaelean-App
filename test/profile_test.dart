@@ -91,12 +91,15 @@ void main() {
     for (final item in [
       'Personal Information',
       'Account & Security',
+      'My e-signature',
       'Notifications',
       'Help & Support',
       'About Michaelean',
       'Preview tools',
       'Log Out',
     ]) {
+      // The pop-up scrolls; rows near the end are built once scrolled to.
+      await tester.scrollUntilVisible(find.text(item), 100, scrollable: find.byType(Scrollable).last);
       expect(find.text(item), findsOneWidget);
     }
     await tester.binding.handlePopRoute();
@@ -105,6 +108,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Log Out'), 100, scrollable: find.byType(Scrollable).last);
     await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
     expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);

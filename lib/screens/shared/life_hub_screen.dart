@@ -247,6 +247,11 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
           ],
         ))),
 
+      // Consultation forms teachers held with the student (decided 2026-10-30).
+      _pad(SectionHeader('Consultations',
+          onSeeAll: () => context.push('/life/consultations'))),
+      _pad(_muted('Records of consultations with your teachers.')),
+
       _pad(SectionHeader('Clearance', onSeeAll: () => context.push('/life/clearance'))),
       _pad(d.clearance == null
           ? const ClearanceUnavailable()
@@ -354,6 +359,15 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       // Any student's full profile (teachers see everything, spec §10.1).
       _pad(SectionHeader('People', onSeeAll: () => context.push('/life/people'))),
       _pad(_muted('Search any student to open their profile.')),
+
+      // Consultation forms with students (decided 2026-10-30).
+      if (!user.can(Permission.holdConsultations))
+        ..._denied('Consultations', "You aren't set up to hold consultations.")
+      else ...[
+        _pad(SectionHeader('Consultations',
+            onSeeAll: () => context.push('/life/consultations'))),
+        _pad(_muted('Fill in a consultation form; the student shows their QR to sign.')),
+      ],
 
       if (!user.can(Permission.processClearance))
         ..._denied('Clearance', "You aren't assigned to a clearance area.")

@@ -400,6 +400,17 @@ Rules:
 - Teachers manage only events they are authorized to manage.
 - No real publishing, registration, or notifications in the frontend phase.
 
+### 9.2a Consultations
+
+Decided 2026-10-30 (suggested by the professors). Teachers with the consultation permission fill in a consultation form with any student; only that teacher and that student see it.
+
+- **Start:** the student shows their QR (the prototype's scanner is a mock and verifies nothing), or the teacher finds the student by name.
+- **Form:** header (date and time, student name and section, masked student ID); open-ended **Reason / Intervention** pairs (up to 5, like the paper form's lines); **Expected outcome**.
+- **E-signatures:** each user uploads a photo of their signature in Settings › My e-signature. **A teacher must have one to start a consultation** (decided 2026-10-31); New Consultation otherwise asks them to add one first. The student's is added when they scan their QR, then or later (only that student's QR signs it, and only once they have an e-signature on file). A form **keeps the signatures it was made with**, through edits and later changes in Settings. A teacher may remove theirs; that only stops new consultations.
+- **Editing:** anytime; a form changed after the student signed is marked "Edited after the student signed".
+- **Export:** one consultation as a filled-in Excel form with both signature pictures. A simple SMCL-navy layout until the school's official template is provided.
+- **Students:** read their consultations in Student Life › Consultations (no editing or export).
+
 ### 9.3 Clearance Verification
 
 Provide: assigned office or clearance area, pending requirements, Scan Student QR, relevant student identification details, individual requirement selection, outcome recording (Cleared, Needs Correction, On Hold), reason or notes, confirmation.

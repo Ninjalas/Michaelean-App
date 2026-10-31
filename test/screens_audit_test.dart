@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:michaelean_app/main.dart';
+import 'package:michaelean_app/mock/mock_users.dart';
 import 'package:michaelean_app/services/campus_service.dart';
 import 'package:michaelean_app/services/home_service.dart';
 import 'package:michaelean_app/services/user_service.dart';
@@ -41,6 +42,9 @@ const studentRoutes = [
   '/life/grades',
   '/life/grades/average?sem=0',
   '/life/grades/average?sem=2',
+  '/life/consultations',
+  '/life/consultations/cons-new-1', // read-only for the student
+  '/profile/signature',
   // Opened from Home, they stay in Home (decided 2026-10-24).
   '/home/class',
   '/home/clearance/lib',
@@ -90,6 +94,13 @@ List<String> teacherRoutes() {
     '/life/verify',
     '/life/grades', // teachers: no grades yet
     '/life/verify/mock-student-1',
+    '/life/consultations',
+    '/life/consultations/new',
+    '/life/consultations/new/form?student=mock-student-1&scanned=1',
+    '/life/consultations/cons-new-1',
+    '/life/consultations/cons-new-1/edit',
+    '/life/consultations/cons-new-1/scan',
+    '/profile/signature',
     '/life/clubs/org6',
     '/life/clubs/org6/add',
     '/life/clubs/org6/info',
@@ -114,6 +125,16 @@ List<String> teacherRoutes() {
 
 Future<void> signIn(WidgetTester tester, String role, {bool fail = false}) async {
   final campus = MockCampusService(delay: Duration.zero, fail: fail);
+  // One consultation (cons-new-1), Mark with Nicolas, for its pages.
+  if (!fail) {
+    await tester.runAsync(() async {
+      await campus.saveSignature(mockTeacher, 'upload:audit');
+      await campus.saveConsultation(mockTeacher,
+          studentId: mockStudent.id,
+          rows: [(reason: 'Sample reason', intervention: 'Sample intervention')],
+          expectedOutcome: 'Sample outcome');
+    });
+  }
   await tester.pumpWidget(MichaeleanApp(
     userService: MockUserService(campus: campus),
     homeService: MockHomeService(delay: Duration.zero, fail: fail, campus: campus),

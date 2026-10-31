@@ -59,6 +59,8 @@ class _SettingsSheetState extends State<SettingsSheet> {
               onTap: () => _open('/profile/personal')),
           InsetRow('Account & Security', Icons.lock_outline_rounded,
               onTap: () => _open('/profile/security')),
+          // Signs consultation forms (decided 2026-10-30).
+          InsetRow('My e-signature', Icons.draw_outlined, onTap: () => _open('/profile/signature')),
           // Who sees your events and connections (spec §10.1); students only.
           if (role == UserRole.student)
             InsetRow('Privacy', Icons.shield_outlined, onTap: () => _open('/profile/privacy')),
