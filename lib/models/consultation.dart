@@ -6,6 +6,12 @@ typedef ConsultationRow = ({String reason, String intervention});
 /// decided 2026-10-31).
 const maxConsultationRows = 6;
 
+/// The most text that fits the printed form (decided 2026-10-31): a
+/// table cell and Expected Outcome hold two lines, Venue one, even in ALL CAPS.
+const maxConsultationCellLength = 80;
+const maxConsultationOutcomeLength = 170;
+const maxConsultationVenueLength = 30;
+
 /// The departments ticked at the top of the official form, in its order.
 const consultationDepartments = ['DBA', 'DCS', 'SEAS', 'DHMAC', 'SN', 'SHS', 'JHS', 'GS'];
 

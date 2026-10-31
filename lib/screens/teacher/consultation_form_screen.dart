@@ -239,8 +239,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
         TextField(
           controller: _venue,
           onChanged: (_) => setState(() {}),
-          maxLength: 80,
-          decoration: const InputDecoration(hintText: 'e.g. Faculty Room', counterText: ''),
+          maxLength: maxConsultationVenueLength,
+          decoration: const InputDecoration(hintText: 'e.g. Faculty Room'),
         ),
         const SizedBox(height: AppSpacing.lg),
         for (final (i, r) in _rows.indexed) ...[
@@ -264,8 +264,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
             onChanged: (_) => setState(() {}),
             minLines: 2,
             maxLines: 5,
-            maxLength: 500,
-            decoration: const InputDecoration(hintText: 'Reason for consultation', counterText: ''),
+            maxLength: maxConsultationCellLength, // what fits the form's two lines
+            decoration: const InputDecoration(hintText: 'Reason for consultation'),
           ),
           const SizedBox(height: AppSpacing.sm),
           TextField(
@@ -273,8 +273,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
             onChanged: (_) => setState(() {}),
             minLines: 2,
             maxLines: 5,
-            maxLength: 500,
-            decoration: const InputDecoration(hintText: 'Intervention made', counterText: ''),
+            maxLength: maxConsultationCellLength,
+            decoration: const InputDecoration(hintText: 'Intervention made'),
           ),
           const SizedBox(height: AppSpacing.lg),
         ],
@@ -294,9 +294,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
           controller: _outcome,
           minLines: 2,
           maxLines: 5,
-          maxLength: 500,
-          decoration:
-              const InputDecoration(hintText: 'What should happen next?', counterText: ''),
+          maxLength: maxConsultationOutcomeLength,
+          decoration: const InputDecoration(hintText: 'What should happen next?'),
         ),
         const SizedBox(height: AppSpacing.lg),
         Text('Signatures', style: label),

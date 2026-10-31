@@ -69,6 +69,20 @@ void main() {
       expect((await save(rows: 6)).rows, hasLength(6));
       expect(() => save(rows: 7), throwsArgumentError);
       expect((await save(department: 'SEAS')).department, 'SEAS');
+      // Only what fits the printed form.
+      expect(() => save(venue: 'x' * (maxConsultationVenueLength + 1)), throwsArgumentError);
+      expect(
+          () => s.saveConsultation(mockTeacher,
+              studentId: mockStudent.id, department: 'DCS', venue: 'Room 1',
+              rows: [(reason: 'r', intervention: 'x' * (maxConsultationCellLength + 1))],
+              expectedOutcome: ''),
+          throwsArgumentError);
+      expect(
+          () => s.saveConsultation(mockTeacher,
+              studentId: mockStudent.id, department: 'DCS', venue: 'Room 1',
+              rows: [(reason: 'r', intervention: '')],
+              expectedOutcome: 'x' * (maxConsultationOutcomeLength + 1)),
+          throwsArgumentError);
     });
 
     test('a teacher without an e-signature cannot start one', () async {

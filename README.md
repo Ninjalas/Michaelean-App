@@ -331,6 +331,7 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Consultation text fits the printed form** (decided 2026-10-31, from a design review). The PDF and Excel cut text after two lines per box, so a long reason could vanish from the printout without warning. The form now limits each **reason and intervention to 80 characters**, **Expected outcome to 170**, and **Venue to 30**, with a counter under each box; the service refuses longer text too. The limits are what fits even in ALL CAPS with wide letters (checked in the PDF and in desktop Excel).
 - **Consultations export to PDF and Excel, two per A4 page** (decided 2026-10-31). Like the paper, each A4 page (portrait) holds **two forms stacked**, with a **dashed cut line** between them. Both files have the same layout.
   - **Several at once:** on Michaelean Life › Consultations, tap **Select**, tick consultations, then **Export PDF** or **Export Excel**. Every two fill a page, oldest first; an odd count leaves a **blank form** at the bottom of the last page (to fill in by hand). The bar shows "2 selected · 1 page".
   - **One at a time:** a consultation's page has **Export PDF** and **Export Excel**; the form goes on the top half and the bottom half is blank.

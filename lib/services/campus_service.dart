@@ -1925,6 +1925,14 @@ class MockCampusService implements CampusService {
     }
     if (!consultationDepartments.contains(department)) throw ArgumentError('Pick a department.');
     if (venue.trim().isEmpty) throw ArgumentError('Add the venue.');
+    // Longer text would be cut off on the printed form.
+    if (venue.trim().length > maxConsultationVenueLength ||
+        expectedOutcome.trim().length > maxConsultationOutcomeLength ||
+        kept.any((r) =>
+            r.reason.length > maxConsultationCellLength ||
+            r.intervention.length > maxConsultationCellLength)) {
+      throw ArgumentError('Some text is too long for the form.');
+    }
     // A new form needs the teacher's e-signature (decided 2026-10-31); it
     // keeps that one for good, through edits and later changes in Settings.
     final teacherSignature = old?.teacherSignature ?? _signatures[teacher.id];
