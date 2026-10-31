@@ -265,6 +265,37 @@ void main() {
       expect(find.textContaining('Mock scanner'), findsOneWidget);
     });
 
+    testWidgets('first e-signature: Start consultation opens the scanner', (tester) async {
+      final real = PhotoStore.picker;
+      PhotoStore.picker = ({required int limit, required bool camera}) async => [_png];
+      addTearDown(() => PhotoStore.picker = real);
+      await open(tester, 'Teacher', '/life/consultations', setUp: (_) async {});
+      await tester.tap(find.byTooltip('New consultation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add e-signature'));
+      await tester.pumpAndSettle();
+      expect(find.text('Start consultation'), findsNothing); // nothing uploaded yet
+      await tester.tap(find.text('Upload signature'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose from gallery'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start consultation'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Mock scanner'), findsOneWidget);
+      // Back skips the old "add your e-signature" page and returns to the list.
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add your e-signature before starting a consultation.'), findsNothing);
+      expect(find.byTooltip('New consultation'), findsOneWidget);
+    });
+
+    testWidgets('Settings › My e-signature has no Start consultation button', (tester) async {
+      await open(tester, 'Teacher', '/profile/signature'); // the teacher has a signature
+      expect(find.text('Change signature'), findsOneWidget);
+      expect(find.text('Start consultation'), findsNothing);
+    });
+
     testWidgets('students read their consultations; no editing', (tester) async {
       await open(tester, 'Student', '/life/consultations', setUp: (campus) async {
         await campus.saveSignature(mockTeacher, 'upload:teacher');

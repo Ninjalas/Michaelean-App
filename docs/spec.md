@@ -354,7 +354,7 @@ Same layout and components as Student Home (§6), with teacher content:
 
 Header collapses on scroll as on Student Home. No publishing button on Home; management lives in Michaelean Life.
 
-**Post photos** (decided 2026-10-30): announcements, School News, and club posts can have up to 4 photos uploaded from the device (phone: gallery or camera; computer: file chooser), removed with an X and reordered by hold-and-drag; the first is the cover. Campus updates are text only. **Event covers** are uploaded the same way (one photo; X to remove). In the prototype, uploads stay in memory only and are never sent anywhere.
+**Post photos** (decided 2026-10-30, changed 2026-10-31): School News, campus updates, and club posts can have up to 4 photos uploaded from the device (phone: gallery or camera; computer: file chooser), removed with an X and reordered by hold-and-drag; the first is the cover. Announcements are text only. **Event covers** are uploaded the same way (one photo; X to remove). In the prototype, uploads stay in memory only and are never sent anywhere.
 
 ## 9. Michaelean Life
 
@@ -406,7 +406,7 @@ Decided 2026-10-30 (suggested by the professors). Teachers with the consultation
 
 - **Start:** the student shows their QR (the prototype's scanner is a mock and verifies nothing), or the teacher finds the student by name.
 - **Form:** header (date and time, student name and section, masked student ID); open-ended **Reason / Intervention** pairs (up to 5, like the paper form's lines); **Expected outcome**.
-- **E-signatures:** each user uploads a photo of their signature in Settings › My e-signature. **A teacher must have one to start a consultation** (decided 2026-10-31); New Consultation otherwise asks them to add one first. The student's is added when they scan their QR, then or later (only that student's QR signs it, and only once they have an e-signature on file). A form **keeps the signatures it was made with**, through edits and later changes in Settings. A teacher may remove theirs; that only stops new consultations.
+- **E-signatures:** each user uploads a photo of their signature in Settings › My e-signature. **A teacher must have one to start a consultation** (decided 2026-10-31); New Consultation otherwise asks them to add one first; after uploading it there, **Start consultation** opens the scanner. The student's is added when they scan their QR, then or later (only that student's QR signs it, and only once they have an e-signature on file). A form **keeps the signatures it was made with**, through edits and later changes in Settings. A teacher may remove theirs; that only stops new consultations.
 - **Editing:** anytime; a form changed after the student signed is marked "Edited after the student signed".
 - **Export:** one consultation as a filled-in Excel form with both signature pictures. A simple SMCL-navy layout until the school's official template is provided.
 - **Students:** read their consultations in Student Life › Consultations (no editing or export).

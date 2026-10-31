@@ -370,7 +370,8 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     GoRoute(
                       path: 'signature',
                       parentNavigatorKey: rootKey,
-                      builder: (context, state) => SignatureScreen(campusService: campusService),
+                      builder: (context, state) =>
+                          SignatureScreen(campusService: campusService, forConsultation: true),
                     ),
                     GoRoute(
                       path: 'new',

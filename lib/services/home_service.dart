@@ -36,7 +36,7 @@ abstract class HomeService {
     String? classId,
     required String sentTo,
     bool urgent = false,
-    List<String> images = const [], // the first is the cover
+    List<String> images = const [], // the first is the cover; not for announcements
   });
 
   /// Deletes the user's own post.
@@ -322,6 +322,10 @@ class MockHomeService implements HomeService {
       throw ArgumentError('Add a title and a message.');
     }
     if (images.length > maxPostPhotos) throw ArgumentError('Add up to $maxPostPhotos photos.');
+    // Announcements are text only (decided 2026-10-31).
+    if (images.isNotEmpty && kind == PostKind.announcement && club == null) {
+      throw ArgumentError("Announcements can't have photos.");
+    }
     final i = postId == null ? -1 : _posted.indexWhere((p) => p.id == postId);
     if (postId != null && (i < 0 || _posted[i].authorId != user.id)) {
       throw StateError('You can only edit your own posts.');

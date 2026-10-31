@@ -331,10 +331,12 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Photos moved from announcements to campus updates** (decided 2026-10-31). **Campus updates** now get the Add photos option (like School News); **announcements are text only**, in the form and in the service. Club posts keep their photos. The sample "Updated campus map" announcement no longer shows the map.
+- **Start consultation after the first e-signature** (decided 2026-10-31). Uploading a signature from the New Consultation gate shows a **Start consultation** button that opens a fresh scanner page; Back from there returns to the Consultations list.
 - **Consultations** (suggested by the professors, decided 2026-10-30). Teachers fill in a consultation form with a student, and both sign it with an e-signature.
   - **Michaelean Life › Consultations** (teachers with the new `holdConsultations` permission; Mark has it): your consultations, newest first. **+** starts one: the student **shows their QR** (mock scanner: sample QR buttons, no camera, nothing verifies identity), or you **find them by name**.
   - **The form:** header filled in for you (date and time, student name and section, masked ID), **paired Reason / Intervention rows** (add up to 5), and **Expected outcome**.
-  - **Signatures:** everyone uploads a photo of their signature in **Settings › My e-signature**. A teacher **needs one to start a consultation**: without it, **+** shows "Add your e-signature before starting a consultation" with an **Add e-signature** button (decided 2026-10-31). The student's is added **when they scan their QR**, and only if they have one on file ("Nicolas needs to add an e-signature first" otherwise; the form stays unsigned). Found by name? The saved form shows **Scan QR to Sign**, and only that student's QR signs it.
+  - **Signatures:** everyone uploads a photo of their signature in **Settings › My e-signature**. A teacher **needs one to start a consultation**: without it, **+** shows "Add your e-signature before starting a consultation" with an **Add e-signature** button (decided 2026-10-31). Once it's uploaded there, a **Start consultation** button opens a fresh scanner page. The student's is added **when they scan their QR**, and only if they have one on file ("Nicolas needs to add an e-signature first" otherwise; the form stays unsigned). Found by name? The saved form shows **Scan QR to Sign**, and only that student's QR signs it.
   - **A form keeps the signatures it was made with,** through edits and later changes in Settings. Teachers may remove theirs; that only stops new consultations.
   - **Editing anytime;** a form changed after the student signed says "Edited after the student signed".
   - **Export to Excel:** downloads that one consultation as a filled-in sheet in SMCL navy, following the professors' layout, with both signature pictures (`lib/utils/consultation_excel.dart`). A simple design until the school's official template arrives. Marked as a preview, not an official record.
@@ -806,7 +808,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-253 tests currently pass, at any time of day. They cover:
+255 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

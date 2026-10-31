@@ -1,6 +1,6 @@
-// Posts can have up to 4 uploaded photos (decided 2026-10-30): announcements,
-// School News, and club posts; not campus updates. Event covers are uploaded
-// too. Uploads stay in memory.
+// Posts can have up to 4 uploaded photos (decided 2026-10-30): School News,
+// campus updates, and club posts; announcements are text only (2026-10-31).
+// Event covers are uploaded too. Uploads stay in memory.
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -75,20 +75,25 @@ void main() {
   test('the service keeps the photos in order and refuses more than 4', () async {
     final home = MockHomeService(delay: Duration.zero);
     final p = await home.savePost(mockTeacher,
-        kind: PostKind.announcement, title: 'T', body: 'B', sentTo: 'test',
+        kind: PostKind.campusUpdate, title: 'T', body: 'B', sentTo: 'test',
         images: ['upload:a', 'upload:b']);
     expect(p.imageAsset, 'upload:a'); // the cover
     expect(p.images, ['upload:a', 'upload:b']);
     expect(
         () => home.savePost(mockTeacher,
-            kind: PostKind.announcement, title: 'T', body: 'B', sentTo: 'test',
+            kind: PostKind.campusUpdate, title: 'T', body: 'B', sentTo: 'test',
             images: List.filled(5, 'upload:a')),
         throwsArgumentError);
+    expect(
+        () => home.savePost(mockTeacher,
+            kind: PostKind.announcement, title: 'T', body: 'B', sentTo: 'test',
+            images: ['upload:a']),
+        throwsArgumentError); // announcements are text only
   });
 
   testWidgets('add, remove, and reorder photos; the post shows them', (tester) async {
     fakePicker(tester, 3);
-    await openForm(tester, 'Announcement');
+    await openForm(tester, 'Campus update');
     await tester.enterText(find.widgetWithText(TextField, 'Title'), 'Lab photos');
     await tester.enterText(find.widgetWithText(TextField, 'What should people know?'), 'Sample.');
     await addPhotos(tester);
@@ -171,8 +176,8 @@ void main() {
     expect(PhotoStore.isUpload(tester.widget<PostImage>(onPage).path), isTrue);
   });
 
-  testWidgets('campus updates stay text only', (tester) async {
-    await openForm(tester, 'Campus update');
+  testWidgets('announcements are text only', (tester) async {
+    await openForm(tester, 'Announcement');
     expect(find.bySemanticsLabel('Add photos'), findsNothing);
   });
 }

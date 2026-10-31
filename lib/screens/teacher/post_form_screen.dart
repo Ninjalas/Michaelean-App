@@ -18,7 +18,7 @@ import '../../widgets/status_pill.dart';
 /// Write or edit a post from Home's "+" menu: an announcement, School News,
 /// or a campus update. A live preview shows the row as it will appear on
 /// Home. With [orgId], it's a club post by the club's adviser, for its
-/// members or everyone. Announcements, School News, and club posts can have
+/// members or everyone. School News, campus updates, and club posts can have
 /// up to 4 photos, uploaded from the device (kept in memory only). Posts are
 /// kept in this preview only. Only urgent announcements and club posts
 /// notify, and only in this preview's bell; the confirmation says so.
@@ -142,9 +142,9 @@ class _PostFormScreenState extends State<PostFormScreen> {
 
   bool get _notifies => _canBeUrgent && _urgent;
 
-  /// Campus updates stay text only (decided 2026-10-30).
+  /// Announcements stay text only (decided 2026-10-31).
   bool get _canHavePhotos =>
-      _kind == PostKind.announcement || _kind == PostKind.schoolNews || _club != null;
+      _kind == PostKind.schoolNews || _kind == PostKind.campusUpdate || _club != null;
 
   List<String> get _postPhotos => _canHavePhotos ? _photos : const [];
 

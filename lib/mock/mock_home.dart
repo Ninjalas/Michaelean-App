@@ -35,7 +35,6 @@ List<Post> mockPosts(DateTime now) => [
         body: 'Sample announcement. Use the updated map to find halls, the '
             'library commons, and the conference center.',
         source: 'Campus Services',
-        imageAsset: 'assets/images/SMCL_MAP.png',
         publishedAt: now.subtract(const Duration(days: 1, hours: 3)),
       ),
       Post(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
@@ -10,11 +11,13 @@ import '../../widgets/post_image.dart';
 
 /// Settings › My e-signature (decided 2026-10-30): a photo of the user's
 /// signature on paper, used on consultation forms. Kept in this preview's
-/// memory only.
+/// memory only. Opened from New Consultation ([forConsultation]), it offers
+/// Start consultation once there's a signature (decided 2026-10-31).
 class SignatureScreen extends StatefulWidget {
   final CampusService campusService;
+  final bool forConsultation;
 
-  const SignatureScreen({super.key, required this.campusService});
+  const SignatureScreen({super.key, required this.campusService, this.forConsultation = false});
 
   @override
   State<SignatureScreen> createState() => _SignatureScreenState();
@@ -111,11 +114,28 @@ class _SignatureScreenState extends State<SignatureScreen> {
                               ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      FilledButton.icon(
-                        onPressed: _busy ? null : _upload,
-                        icon: const Icon(Icons.add_photo_alternate_outlined),
-                        label: Text(photo == null ? 'Upload signature' : 'Change signature'),
-                      ),
+                      if (widget.forConsultation && photo != null) ...[
+                        Text('Your e-signature is saved. You can start your consultation now.',
+                            style: muted),
+                        const SizedBox(height: AppSpacing.sm),
+                        // A fresh New Consultation page, which finds the signature as it
+                        // opens, instead of going back to the one asking for it.
+                        FilledButton.icon(
+                          onPressed: _busy ? null : () => context.go('/life/consultations/new'),
+                          icon: const Icon(Icons.qr_code_scanner_rounded),
+                          label: const Text('Start consultation'),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        OutlinedButton(
+                          onPressed: _busy ? null : _upload,
+                          child: const Text('Change signature'),
+                        ),
+                      ] else
+                        FilledButton.icon(
+                          onPressed: _busy ? null : _upload,
+                          icon: const Icon(Icons.add_photo_alternate_outlined),
+                          label: Text(photo == null ? 'Upload signature' : 'Change signature'),
+                        ),
                       if (photo != null) ...[
                         const SizedBox(height: AppSpacing.sm),
                         OutlinedButton(
