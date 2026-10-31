@@ -483,7 +483,9 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text("Couldn't load your feed."),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton(
-              onPressed: () => setState(() => _feed = _load()),
+              onPressed: () => setState(() {
+                  _feed = _load();
+                }),
               child: const Text('Retry'),
             ),
           ],

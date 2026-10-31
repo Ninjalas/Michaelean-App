@@ -62,8 +62,10 @@ class _GradesScreenState extends State<GradesScreen> {
                           const Text("Couldn't load your grades."),
                           const SizedBox(height: AppSpacing.md),
                           OutlinedButton(
-                            onPressed: () => setState(() => _data = widget.campusService
-                                .loadGrades(SessionScope.of(context).user!)),
+                            onPressed: () => setState(() {
+                                _data = widget.campusService
+                                    .loadGrades(SessionScope.of(context).user!);
+                              }),
                             child: const Text('Retry'),
                           ),
                         ],

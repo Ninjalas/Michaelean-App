@@ -418,7 +418,9 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
             const Text("Couldn't load this page."),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton(
-              onPressed: () => setState(() => _data = _load(SessionScope.of(context).user!)),
+              onPressed: () => setState(() {
+                  _data = _load(SessionScope.of(context).user!);
+                }),
               child: const Text('Retry'),
             ),
           ],

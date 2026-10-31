@@ -257,7 +257,9 @@ class _EventsScreenState extends State<EventsScreen> {
             const Text("Couldn't load events."),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton(
-              onPressed: () => setState(() => _data = _load(user)),
+              onPressed: () => setState(() {
+                  _data = _load(user);
+                }),
               child: const Text('Retry'),
             ),
           ],

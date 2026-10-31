@@ -381,7 +381,9 @@ class _ClassScreenState extends State<ClassScreen> {
             const Text("Couldn't load your classes."),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton(
-              onPressed: () => setState(() => _data = _load()),
+              onPressed: () => setState(() {
+                  _data = _load();
+                }),
               child: const Text('Retry'),
             ),
           ],

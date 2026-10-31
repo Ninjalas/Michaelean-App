@@ -8,14 +8,15 @@ import 'package:michaelean_app/theme/app_theme.dart';
 import 'package:michaelean_app/widgets/navy_hero.dart';
 import 'package:michaelean_app/widgets/pressable.dart';
 
-Future<void> openHub(WidgetTester tester, String role, String tab, {bool fail = false}) async {
+Future<void> openHub(WidgetTester tester, String role, String tab,
+    {bool fail = false, Duration delay = Duration.zero}) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(MichaeleanApp(
     userService: MockUserService(),
     homeService: MockHomeService(delay: Duration.zero),
-    campusService: MockCampusService(delay: Duration.zero, fail: fail),
+    campusService: MockCampusService(delay: delay, fail: fail),
   ));
   await tester.pumpAndSettle();
   await tester.tap(find.text(role));
@@ -105,9 +106,16 @@ void main() {
   });
 
   testWidgets('hub load failure shows Retry, never fake content', (tester) async {
-    await openHub(tester, 'Student', 'Student Life', fail: true);
+    // The real app's load time (500 ms): an instant failure would land before
+    // the page listens for it (each test step skips ahead 100 ms).
+    await openHub(tester, 'Student', 'Student Life',
+        fail: true, delay: const Duration(milliseconds: 500));
     expect(find.text("Couldn't load this page."), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
-    expect(find.text('1st Semester Clearance'), findsNothing);
+    expect(find.text('1st Semester Clearance'), findsNothing);    // Retry tries again (and doesn't trip setState's debug check).
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Retry'), findsOneWidget); // still failing, so still offered
   });
 }

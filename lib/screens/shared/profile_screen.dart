@@ -289,7 +289,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Text("Couldn't load your profile details."),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton(
-              onPressed: () => setState(() => _data = _load(SessionScope.of(context).user!)),
+              onPressed: () => setState(() {
+                  _data = _load(SessionScope.of(context).user!);
+                }),
               child: const Text('Retry'),
             ),
           ],
