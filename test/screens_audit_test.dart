@@ -136,7 +136,7 @@ Future<void> signIn(WidgetTester tester, String role, {bool fail = false}) async
     await tester.runAsync(() async {
       await campus.saveSignature(mockTeacher, 'upload:audit');
       await campus.saveConsultation(mockTeacher,
-          studentId: mockStudent.id,
+          studentId: mockStudent.id, department: 'DCS', venue: 'Faculty Room',
           rows: [(reason: 'Sample reason', intervention: 'Sample intervention')],
           expectedOutcome: 'Sample outcome');
     });

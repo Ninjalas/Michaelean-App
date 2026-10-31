@@ -8,14 +8,17 @@ import '../models/consultation.dart';
 import '../services/photo_store.dart';
 import 'dates.dart';
 
-// One consultation as a filled-in Excel form (decided 2026-10-30): a simple
-// sheet in SMCL navy that follows the professors' paper layout, until the
-// school's official template arrives.
+// One consultation as a filled-in Excel copy of the school's official
+// Academic Consultation Form, F-QMS-14 Rev5 (11/25/24) (decided 2026-10-31):
+// the same fields, order, labels, and form code. Close to the printed form,
+// not a pixel copy. A small line below it says it's from the preview.
 
 const _sheet = 'Consultation';
-final _navy = xl.ExcelColor.fromHexString('#242A5E');
-final _white = xl.ExcelColor.fromHexString('#FFFFFF');
 final _line = xl.Border(borderStyle: xl.BorderStyle.Thin);
+
+/// Columns: label, value (left half); label, value (right half). The table
+/// uses A:B and C:D. Widths in Excel characters (about 7 px each).
+const _widths = [15.0, 30.0, 11.0, 30.0];
 
 /// "Consultation_Nicolas_Santos_2026-10-30.xlsx"
 String consultationFileName(Consultation c) {
@@ -40,8 +43,8 @@ xl.Excel _build(Consultation c, Uint8List? Function(String path) photo) {
   final excel = xl.Excel.createExcel();
   excel.rename(excel.getDefaultSheet()!, _sheet);
   final s = excel[_sheet];
-  for (final col in [0, 1, 2, 3]) {
-    s.setColumnWidth(col, 22);
+  for (final (col, w) in _widths.indexed) {
+    s.setColumnWidth(col, w);
   }
   var row = 0;
   xl.CellIndex at(int col, int r) => xl.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: r);
@@ -59,88 +62,118 @@ xl.Excel _build(Consultation c, Uint8List? Function(String path) photo) {
     }
   }
 
-  final title = xl.CellStyle(
-      bold: true, fontSize: 14, fontColorHex: _navy, horizontalAlign: xl.HorizontalAlign.Center);
-  put("SAINT MICHAEL'S COLLEGE OF LAGUNA", style: title);
+  xl.CellStyle centered({bool bold = true, int? size}) => xl.CellStyle(
+      bold: bold, fontSize: size, fontFamily: 'Arial', horizontalAlign: xl.HorizontalAlign.Center);
+  final label = xl.CellStyle(bold: true, fontFamily: 'Arial');
+  final filled = xl.CellStyle(fontFamily: 'Arial', bottomBorder: _line); // on the line
+
+  // Header.
+  put("SAINT MICHAEL'S COLLEGE OF LAGUNA", style: centered(size: 14));
   row++;
-  put('CONSULTATION FORM',
-      style: xl.CellStyle(bold: true, fontColorHex: _navy, horizontalAlign: xl.HorizontalAlign.Center));
-  row++;
-  put('Made in the Michaelean preview with sample data. Not an official school record.',
-      style: xl.CellStyle(italic: true, fontSize: 9, horizontalAlign: xl.HorizontalAlign.Center));
+  put('OLD NATIONAL ROAD, PLATERO, CITY OF BIÑAN, LAGUNA', style: centered(size: 9));
+  row += 2;
+  put('ACADEMIC CONSULTATION FORM', style: centered(size: 11));
   row += 2;
 
-  final label = xl.CellStyle(bold: true);
-  for (final (k, v) in [
-    ('Date and time', '${formatDate(c.heldAt)} · ${formatTime(c.heldAt)}'),
-    ('Student', '${c.studentName} · ${c.studentSection}'),
-    ('Student ID', c.studentMaskedId),
-    ('Instructor', c.teacherName),
+  // The department ticks, all on one line; the chosen one is ticked.
+  put(
+      [for (final d in consultationDepartments) d == c.department ? '_✓_$d' : '___$d']
+          .join('    '),
+      style: centered());
+  s.setRowHeight(row, 20);
+  row += 2;
+
+  // Details: Name, Course / Grade, Faculty on the left; Time, Date, Venue on the right.
+  for (final (left, leftValue, right, rightValue) in [
+    ('Name :', c.studentName, 'Time:', formatTime(c.heldAt)),
+    ('Course / Grade :', c.studentSection, 'Date:', formatDate(c.heldAt)),
+    ('Faculty', c.teacherName, 'Venue:', c.venue),
   ]) {
-    put(k, to: 0, style: label);
-    put(v, from: 1);
+    put(left, to: 0, style: label);
+    put(leftValue, from: 1, to: 1, style: filled);
+    put(right, from: 2, to: 2, style: label);
+    put(rightValue, from: 3, to: 3, style: filled);
+    s.setRowHeight(row, 18);
     row++;
   }
   row++;
 
-  // The two-column table: a navy header, then one line per reason, with
-  // empty lines up to the paper form's five.
+  // The table: a header, then the form's six lines.
+  final box = xl.CellStyle(
+      fontFamily: 'Arial', leftBorder: _line, rightBorder: _line, topBorder: _line, bottomBorder: _line);
   final head = xl.CellStyle(
-      bold: true, fontColorHex: _white, backgroundColorHex: _navy,
-      horizontalAlign: xl.HorizontalAlign.Center, verticalAlign: xl.VerticalAlign.Center);
+      bold: true, fontFamily: 'Arial', horizontalAlign: xl.HorizontalAlign.Center,
+      leftBorder: _line, rightBorder: _line, topBorder: _line, bottomBorder: _line);
   put('Reason/s for Consultation', to: 1, style: head);
   put('Intervention Made', from: 2, style: head);
-  s.setRowHeight(row, 24);
   row++;
   final cell = xl.CellStyle(
-      textWrapping: xl.TextWrapping.WrapText, verticalAlign: xl.VerticalAlign.Top,
+      fontFamily: 'Arial', textWrapping: xl.TextWrapping.WrapText, verticalAlign: xl.VerticalAlign.Top,
       leftBorder: _line, rightBorder: _line, topBorder: _line, bottomBorder: _line);
   for (var i = 0; i < maxConsultationRows; i++) {
     final r = i < c.rows.length ? c.rows[i] : null;
-    put(r?.reason ?? '', to: 1, style: cell);
-    put(r?.intervention ?? '', from: 2, style: cell);
-    s.setRowHeight(row, 48);
+    put(r?.reason ?? '', to: 1, style: r == null ? box : cell);
+    put(r?.intervention ?? '', from: 2, style: r == null ? box : cell);
+    s.setRowHeight(row, r == null ? 18 : 32);
     row++;
   }
   row++;
 
-  put('Expected outcome:', style: label);
+  // Expected Outcome, on two lines.
+  put('Expected Outcome:', style: label);
   row++;
-  put(c.expectedOutcome, style: cell);
-  s.setRowHeight(row, 60);
+  put(c.expectedOutcome,
+      style: xl.CellStyle(
+          fontFamily: 'Arial', textWrapping: xl.TextWrapping.WrapText,
+          verticalAlign: xl.VerticalAlign.Top, bottomBorder: _line));
+  s.setRowHeight(row, 30);
+  row++;
+  put('', style: filled);
+  s.setRowHeight(row, 20);
   row += 2;
 
-  // Signatures: the uploaded pictures above each signer's name.
-  put('Student Signature', to: 1, style: label);
-  put('Instructor/Professor Signature', from: 2, style: label);
-  row++;
-  s.setRowHeight(row, 50);
-  void signature(int col, String? path, String missing) {
+  // Signatures: each picture sits above its line, the label below it.
+  s.setRowHeight(row, 48);
+  void signature(int col, int to, String? path, String missing) {
     final bytes = path == null ? null : photo(path);
     if (bytes == null) {
-      put(missing, from: col, to: col + 1, style: xl.CellStyle(italic: true));
+      put(missing,
+          from: col, to: to,
+          style: xl.CellStyle(italic: true, fontFamily: 'Arial', horizontalAlign: xl.HorizontalAlign.Center,
+              verticalAlign: xl.VerticalAlign.Bottom));
       return;
     }
     try {
-      // Small enough to stay inside its column (about 160 px wide).
-      final (w, h) = _fit(bytes, maxWidth: 150, maxHeight: 60);
-      s.insertImage(bytes, anchor: at(col, row), width: w, height: h);
+      // Small enough to stay inside its column (about 210 px wide).
+      final (w, h) = _fit(bytes, maxWidth: 190, maxHeight: 60);
+      s.insertImage(bytes, anchor: at(to, row), width: w, height: h);
     } on ArgumentError {
       put('E-signature on file (picture type not supported in Excel)',
-          from: col, to: col + 1, style: xl.CellStyle(italic: true));
+          from: col, to: to, style: xl.CellStyle(italic: true, fontFamily: 'Arial'));
     }
   }
 
-  signature(0, c.studentSignature,
-      c.studentSigned ? 'No e-signature on file' : 'Not yet signed');
-  signature(2, c.teacherSignature, 'No e-signature on file');
+  signature(0, 1, c.studentSignature, c.studentSigned ? '' : 'Not yet signed');
+  signature(2, 3, c.teacherSignature, '');
   row++;
-  final name = xl.CellStyle(topBorder: _line);
-  put(c.studentName, to: 1, style: name);
-  put(c.teacherName, from: 2, style: name);
+  final signLabel = xl.CellStyle(
+      bold: true, fontFamily: 'Arial', horizontalAlign: xl.HorizontalAlign.Center, topBorder: _line);
+  put("Student's Signature", to: 1, style: signLabel);
+  put("Instructor's/Professor's Signature", from: 2, style: signLabel);
+  row += 3;
+
+  // The form code, then the preview note below the form.
+  final small = xl.CellStyle(fontFamily: 'Arial', fontSize: 9);
+  put('F-QMS-14', to: 1, style: small);
+  row++;
+  put('Rev5(11/25/24)', to: 1, style: small);
+  row += 2;
+  final note = xl.CellStyle(italic: true, fontFamily: 'Arial', fontSize: 8);
+  put('Made in the Michaelean preview with sample data. Not an official school record.',
+      style: note);
   if (c.editedAfterSigning) {
-    row += 2;
-    put('Edited after the student signed.', style: xl.CellStyle(italic: true, fontSize: 9));
+    row++;
+    put('Edited after the student signed.', style: note);
   }
   return excel;
 }

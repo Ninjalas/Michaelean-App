@@ -10,8 +10,9 @@ import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
 import '../../widgets/surface_card.dart';
 
-/// Fill in or edit a consultation form (decided 2026-10-30): paired
-/// reason/intervention rows (up to 5), then the expected outcome. A new form
+/// Fill in or edit a consultation form (decided 2026-10-30; official
+/// F-QMS-14 fields 2026-10-31): department and venue, paired
+/// reason/intervention rows (up to 6), then the expected outcome. A new form
 /// is for [studentId]; [scanned] means the student showed their QR, so their
 /// e-signature is added on save. With [id], edits that form (anytime).
 class ConsultationFormScreen extends StatefulWidget {
@@ -41,6 +42,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
   OrgMember? _student;
   final _rows = <_Row>[];
   final _outcome = TextEditingController();
+  final _venue = TextEditingController();
+  String? _department; // the teacher picks it, as on the official form
   bool _saving = false;
   String? _error;
 
@@ -63,6 +66,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       if (_old == null || _old!.teacherId != user.id) return false;
       _rows.addAll(_old!.rows.map(_newRow));
       _outcome.text = _old!.expectedOutcome;
+      _venue.text = _old!.venue;
+      _department = _old!.department;
       return true;
     }
     _student = (await s.findStudents(user, '')).where((m) => m.id == widget.studentId).firstOrNull;
@@ -77,10 +82,13 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       r.intervention.dispose();
     }
     _outcome.dispose();
+    _venue.dispose();
     super.dispose();
   }
 
   String? get _problem {
+    if (_department == null) return 'Pick a department.';
+    if (_venue.text.trim().isEmpty) return 'Add the venue.';
     final filled = _rows.where((r) => r.reason.text.trim().isNotEmpty);
     if (filled.isEmpty) return 'Add at least one reason.';
     if (_rows.any((r) => r.reason.text.trim().isEmpty && r.intervention.text.trim().isNotEmpty)) {
@@ -103,6 +111,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
         session.user!,
         id: _old?.id,
         studentId: _old?.studentId ?? _student!.id,
+        department: _department!,
+        venue: _venue.text,
         rows: [for (final r in _rows) (reason: r.reason.text, intervention: r.intervention.text)],
         expectedOutcome: _outcome.text,
         scanned: widget.scanned,
@@ -210,6 +220,27 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
               Text('${formatDate(when)} · ${formatTime(when)}'),
             ],
           ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text('Department', style: label),
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<String>(
+          initialValue: _department,
+          isExpanded: true, // the hint and arrow fit on narrow phones
+          hint: const Text('Pick a department'),
+          items: [
+            for (final d in consultationDepartments) DropdownMenuItem(value: d, child: Text(d)),
+          ],
+          onChanged: (d) => setState(() => _department = d),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text('Venue', style: label),
+        const SizedBox(height: AppSpacing.sm),
+        TextField(
+          controller: _venue,
+          onChanged: (_) => setState(() {}),
+          maxLength: 80,
+          decoration: const InputDecoration(hintText: 'e.g. Faculty Room', counterText: ''),
         ),
         const SizedBox(height: AppSpacing.lg),
         for (final (i, r) in _rows.indexed) ...[

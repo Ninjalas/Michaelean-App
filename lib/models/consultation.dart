@@ -2,9 +2,12 @@
 /// the form's two-column table.
 typedef ConsultationRow = ({String reason, String intervention});
 
-/// Rows one consultation can have, like the paper form's lines (decided
-/// 2026-10-30).
-const maxConsultationRows = 5;
+/// Rows one consultation can have: the official form's six lines (F-QMS-14,
+/// decided 2026-10-31).
+const maxConsultationRows = 6;
+
+/// The departments ticked at the top of the official form, in its order.
+const consultationDepartments = ['DBA', 'DCS', 'SEAS', 'DHMAC', 'SN', 'SHS', 'JHS', 'GS'];
 
 /// A teacher's consultation with one student (decided 2026-10-30). Only that
 /// teacher and that student see it. Signatures are photos the two uploaded
@@ -18,6 +21,8 @@ class Consultation {
   final String studentSection;
   final String studentMaskedId; // never the full ID
   final DateTime heldAt;
+  final String department; // one of [consultationDepartments], picked by the teacher
+  final String venue; // where it was held, typed by the teacher
   final List<ConsultationRow> rows;
   final String expectedOutcome;
 
@@ -45,6 +50,8 @@ class Consultation {
     required this.studentSection,
     required this.studentMaskedId,
     required this.heldAt,
+    required this.department,
+    required this.venue,
     required this.rows,
     required this.expectedOutcome,
     this.teacherSignature,

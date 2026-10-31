@@ -93,6 +93,7 @@ class _ConsultationDetailScreenState extends State<ConsultationDetailScreen> {
                               Text(c.studentMaskedId, style: muted),
                               const SizedBox(height: AppSpacing.sm),
                               Text('${formatDate(c.heldAt)} · ${formatTime(c.heldAt)}'),
+                              Text('${c.department} · ${c.venue}'),
                               Text('With ${c.teacherName}', style: muted),
                             ],
                           ),

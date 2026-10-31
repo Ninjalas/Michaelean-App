@@ -290,6 +290,8 @@ abstract class CampusService {
     UserProfile teacher, {
     String? id,
     required String studentId,
+    required String department,
+    required String venue,
     required List<ConsultationRow> rows,
     required String expectedOutcome,
     bool scanned = false,
@@ -1897,6 +1899,8 @@ class MockCampusService implements CampusService {
     UserProfile teacher, {
     String? id,
     required String studentId,
+    required String department,
+    required String venue,
     required List<ConsultationRow> rows,
     required String expectedOutcome,
     bool scanned = false,
@@ -1919,6 +1923,8 @@ class MockCampusService implements CampusService {
     if (kept.length > maxConsultationRows) {
       throw ArgumentError('Add up to $maxConsultationRows reasons.');
     }
+    if (!consultationDepartments.contains(department)) throw ArgumentError('Pick a department.');
+    if (venue.trim().isEmpty) throw ArgumentError('Add the venue.');
     // A new form needs the teacher's e-signature (decided 2026-10-31); it
     // keeps that one for good, through edits and later changes in Settings.
     final teacherSignature = old?.teacherSignature ?? _signatures[teacher.id];
@@ -1937,6 +1943,8 @@ class MockCampusService implements CampusService {
       studentSection: student.section,
       studentMaskedId: student.maskedId,
       heldAt: old?.heldAt ?? now,
+      department: department,
+      venue: venue.trim(),
       rows: kept,
       expectedOutcome: expectedOutcome.trim(),
       teacherSignature: teacherSignature,
@@ -1973,6 +1981,8 @@ class MockCampusService implements CampusService {
       studentSection: old.studentSection,
       studentMaskedId: old.studentMaskedId,
       heldAt: old.heldAt,
+      department: old.department,
+      venue: old.venue,
       rows: old.rows,
       expectedOutcome: old.expectedOutcome,
       teacherSignature: old.teacherSignature,

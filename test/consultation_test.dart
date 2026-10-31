@@ -33,7 +33,7 @@ void main() {
   });
 
   Future<Consultation> start({bool scanned = false}) => s.saveConsultation(mockTeacher,
-      studentId: mockStudent.id,
+      studentId: mockStudent.id, department: 'DCS', venue: 'Faculty Room',
       rows: [(reason: 'Late submissions', intervention: 'Set weekly check-ins')],
       expectedOutcome: 'Submits on time',
       scanned: scanned);
@@ -55,6 +55,21 @@ void main() {
       expect(signed.studentSignature, 'upload:student');
     });
 
+    test('the official form needs a department and a venue; up to 6 reasons', () async {
+      Future<Consultation> save({String department = 'DCS', String venue = 'Room 1', int rows = 1}) =>
+          s.saveConsultation(mockTeacher,
+              studentId: mockStudent.id,
+              department: department,
+              venue: venue,
+              rows: [for (var i = 0; i < rows; i++) (reason: 'r$i', intervention: '')],
+              expectedOutcome: '');
+      expect(() => save(department: 'XYZ'), throwsArgumentError);
+      expect(() => save(venue: '  '), throwsArgumentError);
+      expect((await save(rows: 6)).rows, hasLength(6));
+      expect(() => save(rows: 7), throwsArgumentError);
+      expect((await save(department: 'SEAS')).department, 'SEAS');
+    });
+
     test('a teacher without an e-signature cannot start one', () async {
       await s.saveSignature(mockTeacher, null);
       expect(() => start(), throwsStateError);
@@ -65,13 +80,13 @@ void main() {
       final c = await start(scanned: true);
       await s.saveSignature(mockTeacher, 'upload:new');
       var edited = await s.saveConsultation(mockTeacher,
-          id: c.id, studentId: c.studentId, rows: c.rows, expectedOutcome: 'Changed');
+          id: c.id, studentId: c.studentId, department: 'DCS', venue: 'Faculty Room', rows: c.rows, expectedOutcome: 'Changed');
       expect(edited.teacherSignature, 'upload:teacher');
       // Removing it in Settings stops new forms, not edits to this one.
       await s.saveSignature(mockTeacher, null);
       await s.saveSignature(mockStudent, null);
       edited = await s.saveConsultation(mockTeacher,
-          id: c.id, studentId: c.studentId, rows: c.rows, expectedOutcome: 'Again');
+          id: c.id, studentId: c.studentId, department: 'DCS', venue: 'Faculty Room', rows: c.rows, expectedOutcome: 'Again');
       expect((edited.teacherSignature, edited.studentSignature), ('upload:teacher', 'upload:student'));
     });
 
@@ -88,7 +103,7 @@ void main() {
       await s.saveSignature(mockStudent, 'upload:student');
       final c = await start(scanned: true);
       final edited = await s.saveConsultation(mockTeacher,
-          id: c.id, studentId: c.studentId, rows: c.rows, expectedOutcome: 'Changed');
+          id: c.id, studentId: c.studentId, department: 'DCS', venue: 'Faculty Room', rows: c.rows, expectedOutcome: 'Changed');
       expect(edited.studentSigned, isTrue);
       expect(edited.editedAfterSigning, isTrue);
     });
@@ -103,20 +118,20 @@ void main() {
       expect((await s.loadConsultations(mockStudent)).map((c) => c.id), contains(c.id));
       expect(
           () => s.saveConsultation(mockTeacher,
-              studentId: mockStudent.id,
+              studentId: mockStudent.id, department: 'DCS', venue: 'Faculty Room',
               rows: [(reason: '', intervention: 'Only an intervention')],
               expectedOutcome: ''),
           throwsArgumentError);
       expect(
           () => s.saveConsultation(mockStudent,
-              studentId: mockStudent.id,
+              studentId: mockStudent.id, department: 'DCS', venue: 'Faculty Room',
               rows: [(reason: 'x', intervention: 'y')],
               expectedOutcome: ''),
           throwsStateError); // students can't hold consultations
     });
   });
 
-  test('the Excel form has the header, the table, and the signature pictures', () async {
+  test('the Excel copy of F-QMS-14: fields, ticked department, form code, pictures', () async {
     await s.saveSignature(mockStudent, 'upload:student');
     final c = await start(scanned: true);
     final bytes = consultationWorkbook(c, photo: (_) => _png);
@@ -127,16 +142,32 @@ void main() {
           if (cell?.value case final v?) v.toString(),
     ];
     expect(text, containsAll([
-      'CONSULTATION FORM',
-      'Nicolas Santos · BSCS 3A',
-      mockStudent.maskedId,
+      "SAINT MICHAEL'S COLLEGE OF LAGUNA",
+      'OLD NATIONAL ROAD, PLATERO, CITY OF BIÑAN, LAGUNA',
+      'ACADEMIC CONSULTATION FORM',
+      'Name :', 'Nicolas Santos',
+      'Course / Grade :', 'BSCS 3A',
+      'Faculty', 'Mark Villanueva',
+      'Time:', 'Date:', 'Venue:', 'Faculty Room',
       'Reason/s for Consultation',
       'Intervention Made',
       'Late submissions',
       'Set weekly check-ins',
+      'Expected Outcome:',
       'Submits on time',
-      'Mark Villanueva',
+      "Student's Signature",
+      "Instructor's/Professor's Signature",
+      'F-QMS-14',
+      'Rev5(11/25/24)',
     ]));
+    // DCS is ticked; the others are blank.
+    final ticks = text.singleWhere((t) => t.contains('DHMAC'));
+    expect(ticks, contains('_✓_DCS'));
+    expect(ticks, contains('___DBA'));
+    expect(text.any((t) => t.contains(mockStudent.maskedId)), isFalse); // not on the official form
+    // The preview note sits below the form code.
+    expect(text.indexWhere((t) => t.contains('Not an official school record')),
+        greaterThan(text.indexOf('Rev5(11/25/24)')));
     expect(sheet.images, hasLength(2)); // both signatures
 
     // Pinned by two corners so iPhone's Files preview places them too
@@ -154,8 +185,11 @@ void main() {
           .map((m) => (m[1], m[2]))
           .toList();
       // Under "Student Signature" (A) and "Instructor/Professor Signature" (C).
-      final labelRow = sheet.rows.indexWhere((r) => r.first?.value.toString() == 'Student Signature');
-      expect(from, [('0', '${labelRow + 1}'), ('2', '${labelRow + 1}')]);
+      // Just above "Student's Signature" (B) and "Instructor's/Professor's
+      // Signature" (D), on the line.
+      final labelRow =
+          sheet.rows.indexWhere((r) => r.first?.value.toString() == "Student's Signature");
+      expect(from, [('1', '${labelRow - 1}'), ('3', '${labelRow - 1}')]);
     }
     expect(consultationFileName(c), startsWith('Consultation_Nicolas_Santos_'));
   });
@@ -189,6 +223,13 @@ void main() {
     }
 
     Future<void> fillAndSave(WidgetTester tester) async {
+      await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('DCS').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextField, 'e.g. Faculty Room'), 'Faculty Room');
       await tester.enterText(find.widgetWithText(TextField, 'Reason for consultation'), 'Absences');
       await tester.enterText(find.widgetWithText(TextField, 'Intervention made'), 'Make-up plan');
       await tester.pump();
@@ -206,7 +247,11 @@ void main() {
       expect(find.textContaining('Mock scanner'), findsOneWidget);
       await tester.tap(find.text("Nicolas Santos's QR"));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.textContaining('QR scanned'), 200,
+          scrollable: find.byType(Scrollable).first);
       expect(find.textContaining('QR scanned'), findsOneWidget);
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 2000)); // back to the top
+      await tester.pumpAndSettle();
       await fillAndSave(tester);
       expect(find.text('Saved and signed in this preview only.'), findsOneWidget);
       expect(find.text('Absences'), findsOneWidget); // the saved form
@@ -300,7 +345,7 @@ void main() {
       await open(tester, 'Student', '/life/consultations', setUp: (campus) async {
         await campus.saveSignature(mockTeacher, 'upload:teacher');
         await campus.saveConsultation(mockTeacher,
-            studentId: mockStudent.id,
+            studentId: mockStudent.id, department: 'DCS', venue: 'Faculty Room',
             rows: [(reason: 'Missed two CS 302 labs', intervention: 'Make-up schedule')],
             expectedOutcome: '');
       });

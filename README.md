@@ -331,6 +331,10 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Consultation export follows the official form** (decided 2026-10-31). The Excel file now copies SMCL's **Academic Consultation Form, F-QMS-14 Rev5 (11/25/24)**: school name and address, ACADEMIC CONSULTATION FORM, the department ticks (DBA, DCS, SEAS, DHMAC, SN, SHS, JHS, GS), Name / Course / Grade / Faculty and Time / Date / Venue on lines, the six-line Reason/s for Consultation | Intervention Made table, Expected Outcome on two lines, both signatures above Student's Signature and Instructor's/Professor's Signature, and the form code. A small line below the form says it's from the preview. Close to the printed form, not a pixel copy.
+  - The consultation form now asks for a **Department** (the teacher picks one; required) and a **Venue** (required), and allows **up to 6** reasons, like the official table. The consultation page shows them.
+  - The export no longer has a Student ID line (the official form has none); the app's pages still show the masked ID.
+  - Tests: the Excel test checks the official labels, the ticked department, the form code and preview note order, no Student ID, and the signature positions; a new test checks department, venue, and the 6-row limit.
 - **Club officers manage their club** (decided 2026-10-31). A student with an officer position in a club (President, PRO, Captain…) gets a **Manage club** button on the club's page and can do what the adviser does: club posts, club events (published directly), join requests and members, officer positions (including removing officers), and About and meetings.
   - **Officer + explicit list:** being an officer comes from the club's member list (what the adviser keeps; the "… Officer" tag only shows it), and `mockOfficerPowers` in `lib/mock/mock_campus.dart` lists what officers may do. Removing a power there takes it from every officer. This keeps the project rule that tags aren't permissions.
   - **Nicolas is now CSS's Public Relations Officer** in the sample data, so the student preview can try it.
@@ -816,7 +820,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-263 tests currently pass, at any time of day. They cover:
+264 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

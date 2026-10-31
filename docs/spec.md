@@ -406,10 +406,10 @@ Rules:
 Decided 2026-10-30 (suggested by the professors). Teachers with the consultation permission fill in a consultation form with any student; only that teacher and that student see it.
 
 - **Start:** the student shows their QR (the prototype's scanner is a mock and verifies nothing), or the teacher finds the student by name.
-- **Form:** header (date and time, student name and section, masked student ID); open-ended **Reason / Intervention** pairs (up to 5, like the paper form's lines); **Expected outcome**.
+- **Form:** header (date and time, student name and section, masked student ID); **Department** (DBA, DCS, SEAS, DHMAC, SN, SHS, JHS, GS; picked by the teacher, required) and **Venue** (required); open-ended **Reason / Intervention** pairs (up to 6, like the official form's lines); **Expected outcome**.
 - **E-signatures:** each user uploads a photo of their signature in Settings › My e-signature. **A teacher must have one to start a consultation** (decided 2026-10-31); New Consultation otherwise asks them to add one first; after uploading it there, **Start consultation** opens the scanner. The student's is added when they scan their QR, then or later (only that student's QR signs it, and only once they have an e-signature on file). A form **keeps the signatures it was made with**, through edits and later changes in Settings. A teacher may remove theirs; that only stops new consultations.
 - **Editing:** anytime; a form changed after the student signed is marked "Edited after the student signed".
-- **Export:** one consultation as a filled-in Excel form with both signature pictures. A simple SMCL-navy layout until the school's official template is provided.
+- **Export:** one consultation as a filled-in Excel copy of the official **Academic Consultation Form, F-QMS-14 Rev5 (11/25/24)** (decided 2026-10-31): same fields, order, labels, department ticks, and form code, with both signature pictures; no Student ID line. A small line below the form marks it as a preview, not an official record.
 - **Students:** read their consultations in Student Life › Consultations (no editing or export).
 
 ### 9.3 Clearance Verification
