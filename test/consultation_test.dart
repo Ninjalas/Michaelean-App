@@ -442,6 +442,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Choose from gallery'));
       await tester.pumpAndSettle();
+      // The gate underneath already knows, before any Back: closing this page
+      // by the phone's or browser's Back still finds the scanner.
+      expect(find.textContaining('Mock scanner', skipOffstage: false), findsOneWidget);
 
       await tester.tap(find.text('Start consultation'));
       await tester.pumpAndSettle();

@@ -331,6 +331,7 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **New Consultation notices a new e-signature however you go back** (fixed 2026-10-31). The page only checked again when the signature page closed through the app's own Back, so on the iPhone home-screen app it could stay on "Add your e-signature". Saving a signature now tells the whole app that data changed, and New Consultation reloads on that signal. A test checks that the page underneath already shows the scanner before any Back. Not yet confirmed on an iPhone.
 - **Three fixes** (2026-10-31).
   - **Officers can register for club events they manage** (decided 2026-10-31). On a club event he made, Nicolas now sees **Register** next to Edit, Invite, and More, and can cancel his registration from More. Teachers who manage an event still see only the organizer buttons.
   - **Retry buttons work in debug builds.** Eight Retry buttons (Home, the hubs, Events, Profile, a class, Clearance, Grades, Clubs) tripped Flutter's "setState returned a Future" check when tapped. A test now taps Retry.

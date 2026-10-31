@@ -31,11 +31,18 @@ class _ConsultationScanScreenState extends State<ConsultationScanScreen> {
   bool _searching = false;
   bool _busy = false;
   String? _error;
+  String? _loadedFor;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _data ??= _load();
+    // Reload after a change elsewhere, like a newly saved e-signature: closing
+    // the signature page by the phone's or browser's Back doesn't tell this page.
+    final key = SessionScope.of(context).dataKey;
+    if (key != null && key != _loadedFor) {
+      _loadedFor = key;
+      _data = _load();
+    }
   }
 
   Future<(List<OrgMember>, Consultation?, String?)> _load() {
@@ -49,14 +56,7 @@ class _ConsultationScanScreenState extends State<ConsultationScanScreen> {
     ).wait;
   }
 
-  Future<void> _addSignature() async {
-    await context.push('/life/consultations/signature');
-    if (!mounted) return;
-    final reload = _load(); // it may be there now
-    setState(() {
-      _data = reload;
-    });
-  }
+  void _addSignature() => context.push('/life/consultations/signature');
 
   void _start(OrgMember m, {required bool scanned}) => context.pushReplacement(Uri(
         path: '/life/consultations/new/form',

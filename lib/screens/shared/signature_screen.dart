@@ -35,12 +35,15 @@ class _SignatureScreenState extends State<SignatureScreen> {
 
   Future<void> _set(String? photo) async {
     setState(() => _busy = true);
-    final user = SessionScope.of(context).user!;
+    final session = SessionScope.of(context);
     try {
-      await widget.campusService.saveSignature(user, photo);
+      await widget.campusService.saveSignature(session.user!, photo);
       setState(() {
         _signature = Future.value(photo);
       });
+      // Pages under this one (New Consultation's gate) reload, however this
+      // page is closed later.
+      session.refresh();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context)
