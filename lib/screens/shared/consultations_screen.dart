@@ -168,16 +168,26 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
   Widget _row(Consultation c, bool isTeacher) {
     final text = Theme.of(context).textTheme;
     final picked = _picked;
-    // Only signed ones can be exported, so only they can be ticked.
+    // Only signed ones can be exported, so only they can be ticked; tapping
+    // an unsigned one says why.
     void toggle() => setState(() => picked!.contains(c.id) ? picked.remove(c.id) : picked.add(c.id));
+    void whyNot() => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+          content: Text("${c.studentName} hasn't signed yet. Open it and Scan QR to Sign.")));
+    final ticked = picked != null && picked.contains(c.id);
     return Pressable(
       onTap: picked == null
           ? () => context.push('/life/consultations/${c.id}')
           : c.studentSigned
               ? toggle
-              : null,
+              : whyNot,
+      // A ticked row is tinted navy, the app's selected color.
+      color: ticked ? AppColors.navyTint : null,
+      borderRadius: BorderRadius.circular(AppRadius.small),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        padding: EdgeInsets.symmetric(
+            vertical: AppSpacing.md, horizontal: picked == null ? 0 : AppSpacing.xs),
         child: Row(
           children: [
             if (picked != null) ...[

@@ -353,6 +353,11 @@ void main() {
       }
       await tester.pumpAndSettle();
       expect(find.text('2 selected · 1 page'), findsOneWidget);
+      // Tapping the unsigned one says why it can't be ticked.
+      await tester.tap(find.text('Not signed'));
+      await tester.pump();
+      expect(find.text("Nicolas Santos hasn't signed yet. Open it and Scan QR to Sign."), findsOneWidget);
+      expect(find.text('2 selected · 1 page'), findsOneWidget);
       expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Export PDF')).onPressed,
           isNotNull);
       await tester.tap(find.text('Cancel'));
