@@ -331,6 +331,11 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Three fixes** (2026-10-31).
+  - **Officers can register for club events they manage** (decided 2026-10-31). On a club event he made, Nicolas now sees **Register** next to Edit, Invite, and More, and can cancel his registration from More. Teachers who manage an event still see only the organizer buttons.
+  - **Retry buttons work in debug builds.** Eight Retry buttons (Home, the hubs, Events, Profile, a class, Clearance, Grades, Clubs) tripped Flutter's "setState returned a Future" check when tapped. A test now taps Retry.
+  - **Going straight to another id opens that one.** Typing an address like `/life/organizations/org6` while a club page was open kept showing the first club, and events did the same. Every page opened by id is now keyed by its address (in `router.dart`). A test checks clubs and events.
+  - Tests: 270 (one officer test, one navigation test; the hub Retry test now taps Retry).
 - **Tidier Select mode on Consultations** (decided 2026-10-31, from a design review). Select is now a round icon button beside **+** (tooltip "Select to export"), and **X** stops selecting. While selecting, only one explanation line shows, with **Select all signed** (then **Clear selection**) under it.
 - **Clearer Select mode on Consultations** (decided 2026-10-31, from a design review). A ticked consultation is now tinted light navy (the app's selected color) instead of looking like a stuck tap. Tapping an unsigned one says why it can't be ticked: "Nicolas Santos hasn't signed yet. Open it and Scan QR to Sign."
 - **Consultation text fits the printed form** (decided 2026-10-31, from a design review). The PDF and Excel cut text after two lines per box, so a long reason could vanish from the printout without warning. The form now limits each **reason and intervention to 80 characters**, **Expected outcome to 170**, and **Venue to 30**, with a counter under each box; the service refuses longer text too. The limits are what fits even in ALL CAPS with wide letters (checked in the PDF and in desktop Excel).
@@ -832,7 +837,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-268 tests currently pass, at any time of day. They cover:
+270 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

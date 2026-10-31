@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:michaelean_app/main.dart';
 import 'package:michaelean_app/screens/shared/opening_screen.dart';
 import 'package:michaelean_app/services/campus_service.dart';
@@ -81,5 +82,27 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+  });
+
+  testWidgets('going straight to another id opens that one, not the old page', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(testApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign in with Microsoft (preview)'));
+    await tester.pumpAndSettle();
+    final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
+    // Like typing a new address: same page type, different id.
+    for (final (path, name) in [
+      ('/life/organizations/org1', 'Computer Science Society'),
+      ('/life/organizations/org6', 'SMCL Robotics Club'),
+      ('/life/events/ev1', 'CSS General Assembly'),
+      ('/life/events/ev2', 'Department Assembly'),
+    ]) {
+      router.go(path);
+      await tester.pumpAndSettle();
+      expect(find.text(name), findsWidgets, reason: path);
+    }
   });
 }

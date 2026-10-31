@@ -82,6 +82,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
         GoRoute(
           path: ':classId',
           builder: (context, state) => ClassDetailScreen(
+            key: ValueKey(state.matchedLocation),
             campusService: campusService,
             classId: state.pathParameters['classId']!,
           ),
@@ -106,6 +107,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
         GoRoute(
           path: ':itemId',
           builder: (context, state) => ClearanceItemScreen(
+            key: ValueKey(state.matchedLocation),
             campusService: campusService,
             itemId: state.pathParameters['itemId']!,
           ),
@@ -122,6 +124,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
         GoRoute(
           path: ':orgId',
           builder: (context, state) => OrganizationScreen(
+            key: ValueKey(state.matchedLocation),
             campusService: campusService,
             homeService: homeService,
             orgId: state.pathParameters['orgId']!,
@@ -135,6 +138,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                   path: 'edit',
                   parentNavigatorKey: rootKey,
                   builder: (context, state) => PostFormScreen(
+                    key: ValueKey(state.matchedLocation),
                     homeService: homeService,
                     campusService: campusService,
                     postId: state.pathParameters['postId']!,
@@ -142,6 +146,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                 ),
               ],
               builder: (context, state) => PostDetailScreen(
+                key: ValueKey(state.matchedLocation),
                 postId: state.pathParameters['postId']!,
                 homeService: homeService,
               ),
@@ -158,6 +163,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
         GoRoute(
           path: ':personId',
           builder: (context, state) => PersonScreen(
+            key: ValueKey(state.matchedLocation),
             campusService: campusService,
             personId: state.pathParameters['personId']!,
           ),
@@ -178,6 +184,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
         GoRoute(
           path: ':eventId',
           builder: (context, state) => EventDetailScreen(
+            key: ValueKey(state.matchedLocation),
             campusService: campusService,
             eventId: state.pathParameters['eventId']!,
           ),
@@ -186,6 +193,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               path: 'edit',
               parentNavigatorKey: rootKey,
               builder: (context, state) => EventFormScreen(
+                key: ValueKey(state.matchedLocation),
                 campusService: campusService,
                 eventId: state.pathParameters['eventId']!,
               ),
@@ -194,6 +202,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               path: 'invite',
               parentNavigatorKey: rootKey,
               builder: (context, state) => EventInviteScreen(
+                key: ValueKey(state.matchedLocation),
                 campusService: campusService,
                 eventId: state.pathParameters['eventId']!,
               ),
@@ -202,6 +211,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               path: 'checkin',
               parentNavigatorKey: rootKey, // full-screen scanner
               builder: (context, state) => EventCheckInScreen(
+                key: ValueKey(state.matchedLocation),
                 campusService: campusService,
                 eventId: state.pathParameters['eventId']!,
               ),
@@ -209,6 +219,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
             GoRoute(
               path: 'registrations',
               builder: (context, state) => EventRegistrationsScreen(
+                key: ValueKey(state.matchedLocation),
                 campusService: campusService,
                 eventId: state.pathParameters['eventId']!,
               ),
@@ -217,6 +228,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
             GoRoute(
               path: 'going',
               builder: (context, state) => GoingScreen(
+                key: ValueKey(state.matchedLocation),
                 campusService: campusService,
                 eventId: state.pathParameters['eventId']!,
               ),
@@ -227,6 +239,9 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
     ),
   };
 
+  // Pages opened by id carry key: ValueKey(state.matchedLocation), so going
+  // straight to another id (a typed address) builds a fresh page instead of
+  // showing the old one (found 2026-10-31).
   return GoRouter(
     navigatorKey: rootKey,
     initialLocation: '/opening',
@@ -257,6 +272,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
       GoRoute(
         path: '/attendance/:sessionId',
         builder: (context, state) => AttendanceScanScreen(
+          key: ValueKey(state.matchedLocation),
           campusService: campusService,
           sessionId: state.pathParameters['sessionId']!,
         ),
@@ -264,6 +280,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
           GoRoute(
             path: 'review',
             builder: (context, state) => AttendanceReviewScreen(
+              key: ValueKey(state.matchedLocation),
               campusService: campusService,
               sessionId: state.pathParameters['sessionId']!,
               fromScanner: state.uri.queryParameters['from'] == 'scanner',
@@ -273,6 +290,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
               GoRoute(
                 path: 'people/:personId',
                 builder: (context, state) => PersonScreen(
+                  key: ValueKey(state.matchedLocation),
                   campusService: campusService,
                   personId: state.pathParameters['personId']!,
                 ),
@@ -294,6 +312,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                 GoRoute(
                   path: 'post/:id',
                   builder: (context, state) => PostDetailScreen(
+                    key: ValueKey(state.matchedLocation),
                     postId: state.pathParameters['id']!,
                     homeService: homeService,
                   ),
@@ -302,6 +321,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       path: 'edit',
                       parentNavigatorKey: rootKey,
                       builder: (context, state) => PostFormScreen(
+                        key: ValueKey(state.matchedLocation),
                         homeService: homeService,
                         campusService: campusService,
                         postId: state.pathParameters['id']!,
@@ -322,6 +342,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                   path: 'compose/:kind',
                   parentNavigatorKey: rootKey,
                   builder: (context, state) => PostFormScreen(
+                    key: ValueKey(state.matchedLocation),
                     homeService: homeService,
                     campusService: campusService,
                     kind: PostKind.values.asNameMap()[state.pathParameters['kind']],
@@ -394,18 +415,21 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       path: ':id',
                       parentNavigatorKey: rootKey, // its buttons sit where the nav bar floats
                       builder: (context, state) => ConsultationDetailScreen(
+                        key: ValueKey(state.matchedLocation),
                           campusService: campusService, id: state.pathParameters['id']!),
                       routes: [
                         GoRoute(
                           path: 'edit',
                           parentNavigatorKey: rootKey,
                           builder: (context, state) => ConsultationFormScreen(
+                            key: ValueKey(state.matchedLocation),
                               campusService: campusService, id: state.pathParameters['id']!),
                         ),
                         GoRoute(
                           path: 'scan',
                           parentNavigatorKey: rootKey,
                           builder: (context, state) => ConsultationScanScreen(
+                            key: ValueKey(state.matchedLocation),
                               campusService: campusService, signId: state.pathParameters['id']!),
                         ),
                       ],
@@ -441,6 +465,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       path: ':studentId',
                       parentNavigatorKey: rootKey, // form with its button at the bottom
                       builder: (context, state) => ClearanceCaseScreen(
+                        key: ValueKey(state.matchedLocation),
                         campusService: campusService,
                         studentId: state.pathParameters['studentId']!,
                       ),
@@ -451,6 +476,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                   // Manage club, for the club's adviser (decided 2026-10-23).
                   path: 'clubs/:orgId',
                   builder: (context, state) => ClubManageScreen(
+                    key: ValueKey(state.matchedLocation),
                     campusService: campusService,
                     homeService: homeService,
                     orgId: state.pathParameters['orgId']!,
@@ -459,6 +485,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                     GoRoute(
                       path: 'add',
                       builder: (context, state) => ClubAddMemberScreen(
+                        key: ValueKey(state.matchedLocation),
                         campusService: campusService,
                         orgId: state.pathParameters['orgId']!,
                       ),
@@ -467,6 +494,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       path: 'info',
                       parentNavigatorKey: rootKey,
                       builder: (context, state) => ClubInfoScreen(
+                        key: ValueKey(state.matchedLocation),
                         campusService: campusService,
                         orgId: state.pathParameters['orgId']!,
                       ),
@@ -475,6 +503,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       path: 'post',
                       parentNavigatorKey: rootKey,
                       builder: (context, state) => PostFormScreen(
+                        key: ValueKey(state.matchedLocation),
                         homeService: homeService,
                         campusService: campusService,
                         orgId: state.pathParameters['orgId']!,
@@ -484,6 +513,7 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                       path: 'event',
                       parentNavigatorKey: rootKey,
                       builder: (context, state) => EventFormScreen(
+                        key: ValueKey(state.matchedLocation),
                         campusService: campusService,
                         hostOrgId: state.pathParameters['orgId']!,
                       ),
