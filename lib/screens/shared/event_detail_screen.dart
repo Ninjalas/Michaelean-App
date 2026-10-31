@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/campus.dart';
 import '../../models/people.dart';
+import '../../models/user_profile.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
@@ -19,7 +20,8 @@ import 'going_screen.dart';
 
 /// One event, Luma style (spec §7.3): cover, title, time, a row of actions,
 /// then Venue, Host, Going (Went, once it ends), Registration, and About. Students register
-/// here; the event's managers get Edit, Invite, and More instead (spec §9.2).
+/// here; the event's managers get Edit, Invite, and More instead (spec §9.2). A student
+/// who manages it (a club officer) gets both: they can still register (decided 2026-10-31).
 /// Everything changes this preview only.
 class EventDetailScreen extends StatefulWidget {
   final CampusService campusService;
@@ -139,7 +141,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             () => context.push(inTab(context, '/life/events/${e.id}/registrations')), false),
         if (e.status != EventStatus.cancelled && upcoming)
           (Icons.event_busy_outlined, 'Cancel event', _cancelEvent, true),
-      ] else if (d.registered && upcoming && e.status == EventStatus.published)
+      ],
+      if ((!d.canManage || user.role == UserRole.student) &&
+          d.registered &&
+          upcoming &&
+          e.status == EventStatus.published)
         (
           Icons.close_rounded,
           'Cancel registration',
@@ -234,8 +240,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       _ => e.end.isAfter(now) ? null : const StatusPill('Ended'),
     };
 
+    // Registering is for students, including officers who manage the event.
+    final student = SessionScope.of(context).user?.role == UserRole.student;
+    final organizerOnly = d.canManage && !student;
+    final register = d.record != null
+        ? _Action(Icons.verified_outlined, d.record!.status.label, null)
+        : d.registered
+        ? const _Action(Icons.check_circle_outline_rounded, 'Registered', null)
+        : !e.end.isAfter(now)
+        ? const _Action(Icons.event_busy_outlined, 'Ended', null)
+        : _Action(Icons.how_to_reg_outlined, _busy ? 'Registering…' : 'Register',
+            d.closedReason != null || _busy ? null : _register);
     final actions = d.canManage
         ? [
+            if (student) register,
             _Action(Icons.edit_outlined, 'Edit',
                 e.status == EventStatus.cancelled || !upcoming
                     ? null
@@ -245,14 +263,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             _Action(Icons.more_horiz_rounded, 'More', () => _more(d)),
           ]
         : [
-            d.record != null
-                ? _Action(Icons.verified_outlined, d.record!.status.label, null)
-                : d.registered
-                ? const _Action(Icons.check_circle_outline_rounded, 'Registered', null)
-                : !e.end.isAfter(now)
-                ? const _Action(Icons.event_busy_outlined, 'Ended', null)
-                : _Action(Icons.how_to_reg_outlined, _busy ? 'Registering…' : 'Register',
-                    d.closedReason != null || _busy ? null : _register),
+            register,
             _Action(Icons.ios_share_rounded, 'Share', () => _share(e)),
             _Action(Icons.more_horiz_rounded, 'More', () => _more(d)),
           ];
@@ -286,7 +297,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         if (d.record != null)
           _statusLine(Icons.verified_rounded,
               'Your record: ${d.record!.status.label} · ${d.record!.role.label}')
-        else if (d.registered && !e.end.isAfter(now) && !d.canManage)
+        else if (d.registered && !e.end.isAfter(now) && !organizerOnly)
           Text('You registered, but no attendance was recorded.', style: muted)
         else if (d.registered && e.status == EventStatus.published)
           Row(
@@ -301,7 +312,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
             ],
           )
-        else if (d.closedReason != null && !d.canManage)
+        else if (d.closedReason != null && !organizerOnly)
           Text(d.closedReason!, style: muted),
         if (d.canManage && e.status == EventStatus.published && !upcoming) ...[
           const SizedBox(height: AppSpacing.xs),

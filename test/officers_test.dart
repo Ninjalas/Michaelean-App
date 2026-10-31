@@ -131,6 +131,43 @@ void main() {
       expect(find.text("You're its Public Relations Officer"), findsOneWidget); // not "adviser"
     });
 
+    testWidgets('on a club event he manages, he gets Edit and can still Register', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final campus = MockCampusService(delay: Duration.zero);
+      final now = DateTime.now();
+      final e = await tester.runAsync(() => campus.saveEvent(mockStudent,
+          hostOrgId: css,
+          publish: true,
+          title: 'CSS Study Jam',
+          start: now.add(const Duration(days: 6)),
+          end: now.add(const Duration(days: 6, hours: 2)),
+          venue: 'Saint Theodore Hall · Lab 2'));
+      await tester.pumpWidget(MichaeleanApp(
+        userService: MockUserService(campus: campus),
+        homeService: MockHomeService(delay: Duration.zero, campus: campus),
+        campusService: campus,
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign in with Microsoft (preview)')); // as Nicolas
+      await tester.pumpAndSettle();
+      await push(tester, '/life/events/${e!.id}');
+      expect(find.text('Edit'), findsOneWidget);
+      expect(find.text('Invite'), findsOneWidget);
+      await tester.tap(find.text('Register'));
+      await tester.pumpAndSettle();
+      expect(find.text('Registered'), findsOneWidget);
+      expect(find.text('Edit'), findsOneWidget); // still an organizer
+      // And he can cancel his registration from More.
+      await tester.pump(const Duration(seconds: 5)); // the snackbar goes away
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('More'));
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel registration'), findsOneWidget);
+      expect(find.text('View registrations'), findsOneWidget);
+    });
+
     testWidgets('giving up his position asks first, then leaves Manage club', (tester) async {
       await openClub(tester, css);
       await tester.tap(find.text('Manage club'));
