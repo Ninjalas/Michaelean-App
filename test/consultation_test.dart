@@ -341,16 +341,15 @@ void main() {
         }
       });
       expect(find.byType(Checkbox), findsNothing);
-      await tester.tap(find.text('Select'));
+      await tester.tap(find.byTooltip('Select to export'));
       await tester.pumpAndSettle();
+      expect(find.textContaining('Only you and the student'), findsNothing); // one line while selecting
       final boxes = tester.widgetList<Checkbox>(find.byType(Checkbox)).toList();
       expect(boxes.where((b) => b.onChanged == null), hasLength(1)); // the unsigned one
       expect(find.text('None selected'), findsOneWidget);
       expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Export PDF')).onPressed,
           isNull);
-      for (final (i, b) in boxes.indexed) {
-        if (b.onChanged != null) await tester.tap(find.byType(Checkbox).at(i));
-      }
+      await tester.tap(find.text('Select all signed'));
       await tester.pumpAndSettle();
       expect(find.text('2 selected · 1 page'), findsOneWidget);
       // Tapping the unsigned one says why it can't be ticked.
@@ -360,7 +359,16 @@ void main() {
       expect(find.text('2 selected · 1 page'), findsOneWidget);
       expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Export PDF')).onPressed,
           isNotNull);
-      await tester.tap(find.text('Cancel'));
+      await tester.pump(const Duration(seconds: 5)); // the snackbar goes away
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear selection'));
+      await tester.pumpAndSettle();
+      expect(find.text('None selected'), findsOneWidget);
+      // One by one works too.
+      await tester.tap(find.byType(Checkbox).first);
+      await tester.pumpAndSettle();
+      expect(find.text('1 selected · 1 page'), findsOneWidget);
+      await tester.tap(find.byTooltip('Stop selecting'));
       await tester.pumpAndSettle();
       expect(find.byType(Checkbox), findsNothing);
     });

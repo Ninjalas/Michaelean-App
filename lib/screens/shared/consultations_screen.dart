@@ -62,13 +62,18 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
               trailing: !mayHold
                   ? null
                   : _picked != null
-                      ? TextButton(
+                      ? RoundIconButton(
+                          icon: Icons.close_rounded,
+                          tooltip: 'Stop selecting',
                           onPressed: () => setState(() => _picked = null),
-                          child: const Text('Cancel'))
+                        )
                       : Row(mainAxisSize: MainAxisSize.min, children: [
-                          TextButton(
-                              onPressed: () => setState(() => _picked = {}),
-                              child: const Text('Select')),
+                          RoundIconButton(
+                            icon: Icons.checklist_rounded,
+                            tooltip: 'Select to export',
+                            onPressed: () => setState(() => _picked = {}),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
                           RoundIconButton(
                             icon: Icons.add_rounded,
                             tooltip: 'New consultation',
@@ -98,6 +103,8 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
                         if (picked.contains(c.id)) c,
                   ];
                   final pages = (chosen.length + 1) ~/ 2;
+                  final signed = {for (final c in list) if (c.studentSigned) c.id};
+                  final allPicked = signed.isNotEmpty && chosen.length == signed.length;
                   final listView = ListView(
                     padding: EdgeInsets.fromLTRB(
                         AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, picked == null ? 120 : AppSpacing.lg),
@@ -108,8 +115,16 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
                           'oldest first.',
                           style: text.bodyMedium?.copyWith(color: AppColors.muted),
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                      ],
+                        if (signed.isNotEmpty)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: () => setState(() => _picked = allPicked ? {} : {...signed}),
+                              child: Text(allPicked ? 'Clear selection' : 'Select all signed'),
+                            ),
+                          ),
+                        const SizedBox(height: AppSpacing.sm),
+                      ] else ...[
                       Text(
                         isTeacher
                             ? 'Only you and the student see a consultation. Sample records.'
@@ -118,6 +133,7 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
                         style: text.bodyMedium?.copyWith(color: AppColors.muted),
                       ),
                       const SizedBox(height: AppSpacing.md),
+                      ],
                       if (list.isEmpty)
                         Text(
                             isTeacher

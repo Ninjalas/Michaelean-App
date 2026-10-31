@@ -331,6 +331,7 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Tidier Select mode on Consultations** (decided 2026-10-31, from a design review). Select is now a round icon button beside **+** (tooltip "Select to export"), and **X** stops selecting. While selecting, only one explanation line shows, with **Select all signed** (then **Clear selection**) under it.
 - **Clearer Select mode on Consultations** (decided 2026-10-31, from a design review). A ticked consultation is now tinted light navy (the app's selected color) instead of looking like a stuck tap. Tapping an unsigned one says why it can't be ticked: "Nicolas Santos hasn't signed yet. Open it and Scan QR to Sign."
 - **Consultation text fits the printed form** (decided 2026-10-31, from a design review). The PDF and Excel cut text after two lines per box, so a long reason could vanish from the printout without warning. The form now limits each **reason and intervention to 80 characters**, **Expected outcome to 170**, and **Venue to 30**, with a counter under each box; the service refuses longer text too. The limits are what fits even in ALL CAPS with wide letters (checked in the PDF and in desktop Excel).
 - **Consultations export to PDF and Excel, two per A4 page** (decided 2026-10-31). Like the paper, each A4 page (portrait) holds **two forms stacked**, with a **dashed cut line** between them. Both files have the same layout.
