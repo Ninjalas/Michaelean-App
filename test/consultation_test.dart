@@ -1,7 +1,7 @@
 // Consultations (decided 2026-10-30): teachers fill in a reason/intervention
 // form with a student, signatures are uploaded photos (the student's is added
-// when they show their QR), only the two of them see it, and it exports as a
-// filled-in Excel form.
+// when they show their QR), only the two of them see it, and signed ones
+// export as copies of the official form, two per A4 page, in PDF and Excel.
 
 import 'dart:convert';
 import 'dart:io';
@@ -22,6 +22,7 @@ import 'package:michaelean_app/services/photo_store.dart';
 import 'package:michaelean_app/services/user_service.dart';
 import 'package:michaelean_app/widgets/post_image.dart';
 import 'package:michaelean_app/utils/consultation_excel.dart';
+import 'package:michaelean_app/utils/consultation_pdf.dart';
 
 final _png = Uint8List.fromList(File('assets/images/SMCL_Emblem.png').readAsBytesSync());
 
@@ -134,7 +135,7 @@ void main() {
   test('the Excel copy of F-QMS-14: fields, ticked department, form code, pictures', () async {
     await s.saveSignature(mockStudent, 'upload:student');
     final c = await start(scanned: true);
-    final bytes = consultationWorkbook(c, photo: (_) => _png);
+    final bytes = consultationWorkbook([c], photo: (_) => _png);
     final sheet = xl.Excel.decodeBytes(bytes)['Consultation'];
     final text = [
       for (final row in sheet.rows)
@@ -160,12 +161,16 @@ void main() {
       'F-QMS-14',
       'Rev5(11/25/24)',
     ]));
-    // DCS is ticked; the others are blank.
-    final ticks = text.singleWhere((t) => t.contains('DHMAC'));
-    expect(ticks, contains('_✓_DCS'));
-    expect(ticks, contains('___DBA'));
+    // DCS is ticked; the others are blank. One form fills the top half; the
+    // bottom one is blank, nothing ticked.
+    final ticks = text.where((t) => t.contains('DHMAC')).toList();
+    expect(ticks, hasLength(2));
+    expect(ticks.first, contains('_✓_DCS'));
+    expect(ticks.first, contains('___DBA'));
+    expect(ticks.last, isNot(contains('✓')));
+    expect(text.where((t) => t == 'Nicolas Santos'), hasLength(1));
     expect(text.any((t) => t.contains(mockStudent.maskedId)), isFalse); // not on the official form
-    // The preview note sits below the form code.
+    // The preview note sits at the foot of the page.
     expect(text.indexWhere((t) => t.contains('Not an official school record')),
         greaterThan(text.indexOf('Rev5(11/25/24)')));
     expect(sheet.images, hasLength(2)); // both signatures
@@ -184,14 +189,62 @@ void main() {
           .allMatches(drawing)
           .map((m) => (m[1], m[2]))
           .toList();
-      // Under "Student Signature" (A) and "Instructor/Professor Signature" (C).
       // Just above "Student's Signature" (B) and "Instructor's/Professor's
       // Signature" (D), on the line.
       final labelRow =
           sheet.rows.indexWhere((r) => r.first?.value.toString() == "Student's Signature");
       expect(from, [('1', '${labelRow - 1}'), ('3', '${labelRow - 1}')]);
     }
-    expect(consultationFileName(c), startsWith('Consultation_Nicolas_Santos_'));
+    expect(consultationFileName([c], 'xlsx'), startsWith('Consultation_Nicolas_Santos_'));
+  });
+
+  group('two forms per A4 page', () {
+    /// Three signed consultations, saved a day apart in this order.
+    Future<List<Consultation>> three() async {
+      var day = DateTime(2026, 10, 1);
+      s = MockCampusService(delay: Duration.zero, clock: () => day = day.add(const Duration(days: 1)));
+      await s.saveSignature(mockTeacher, 'upload:teacher');
+      await s.saveSignature(mockStudent, 'upload:student');
+      return [
+        for (final reason in ['First', 'Second', 'Third'])
+          await s.saveConsultation(mockTeacher,
+              studentId: mockStudent.id, department: 'DCS', venue: 'Room 1',
+              rows: [(reason: reason, intervention: 'Plan')], expectedOutcome: '', scanned: true),
+      ];
+    }
+
+    test('Excel: oldest first, two per A4 page, a blank form at the end', () async {
+      final list = await three();
+      final sheet =
+          xl.Excel.decodeBytes(consultationWorkbook(list.reversed.toList(), photo: (_) => _png))['Consultation'];
+      final text = [
+        for (final row in sheet.rows)
+          for (final cell in row)
+            if (cell?.value case final v?) v.toString(),
+      ];
+      expect(text.where((t) => ['First', 'Second', 'Third'].contains(t)), ['First', 'Second', 'Third']);
+      expect(text.where((t) => t == 'ACADEMIC CONSULTATION FORM'), hasLength(4)); // 3 + a blank
+      expect(text.where((t) => t.contains('Not an official school record')), hasLength(2)); // per page
+      expect(sheet.rowPageBreaks, hasLength(1)); // two pages
+      expect(sheet.pageSetup?.paperSize, xl.PaperSize.a4);
+      expect(sheet.pageSetup?.fitToHeight, 2);
+      expect(consultationFileName(list, 'pdf'), matches(RegExp(r'^Consultations_.+_to_.+\.pdf$')));
+    });
+
+    test('only signed consultations export', () async {
+      final unsigned = await start();
+      expect(() => consultationWorkbook([unsigned]), throwsArgumentError);
+      expect(() => consultationForms([]), throwsArgumentError);
+    });
+
+    test('PDF: one A4 page per two forms', () async {
+      TestWidgetsFlutterBinding.ensureInitialized(); // for the bundled font
+      final list = await three();
+      final pdf = await consultationPdf(list, photo: (_) => _png);
+      expect(latin1.decode(pdf.sublist(0, 5)), '%PDF-');
+      final pages = RegExp(r'/Type\s*/Page[^s]').allMatches(latin1.decode(pdf)).length;
+      expect(pages, 2);
+    });
   });
 
   group('screens', () {
@@ -256,7 +309,41 @@ void main() {
       expect(find.text('Saved and signed in this preview only.'), findsOneWidget);
       expect(find.text('Absences'), findsOneWidget); // the saved form
       expect(find.text('Scan QR to Sign'), findsNothing);
-      expect(find.text('Export to Excel'), findsOneWidget);
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Export PDF')).onPressed,
+          isNotNull);
+      expect(find.text('Export Excel'), findsOneWidget);
+    });
+
+    testWidgets('Select signed consultations to export; unsigned ones can\'t be ticked',
+        (tester) async {
+      await open(tester, 'Teacher', '/life/consultations', setUp: (campus) async {
+        await campus.saveSignature(mockTeacher, 'upload:teacher');
+        await campus.saveSignature(mockStudent, 'upload:student');
+        for (final scanned in [true, true, false]) {
+          await campus.saveConsultation(mockTeacher,
+              studentId: mockStudent.id, department: 'DCS', venue: 'Room 1',
+              rows: [(reason: 'Absences', intervention: 'Plan')], expectedOutcome: '',
+              scanned: scanned);
+        }
+      });
+      expect(find.byType(Checkbox), findsNothing);
+      await tester.tap(find.text('Select'));
+      await tester.pumpAndSettle();
+      final boxes = tester.widgetList<Checkbox>(find.byType(Checkbox)).toList();
+      expect(boxes.where((b) => b.onChanged == null), hasLength(1)); // the unsigned one
+      expect(find.text('None selected'), findsOneWidget);
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Export PDF')).onPressed,
+          isNull);
+      for (final (i, b) in boxes.indexed) {
+        if (b.onChanged != null) await tester.tap(find.byType(Checkbox).at(i));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('2 selected · 1 page'), findsOneWidget);
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Export PDF')).onPressed,
+          isNotNull);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Checkbox), findsNothing);
     });
 
     testWidgets('found by name: unsigned, then signed with the right QR', (tester) async {
@@ -271,6 +358,10 @@ void main() {
       expect(find.textContaining('Not signed yet'), findsOneWidget);
       await tester.pump(const Duration(seconds: 5)); // the snackbar over the buttons goes away
       await tester.pumpAndSettle();
+      // Exports wait for the student's signature.
+      expect(find.text('The student signs first (Scan QR to Sign).'), findsOneWidget);
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Export PDF')).onPressed,
+          isNull);
 
       await tester.tap(find.text('Scan QR to Sign'));
       await tester.pumpAndSettle();
@@ -354,7 +445,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Missed two CS 302 labs'), findsOneWidget);
       expect(find.text('Edit'), findsNothing);
-      expect(find.text('Export to Excel'), findsNothing);
+      expect(find.text('Export PDF'), findsNothing);
     });
 
     testWidgets('upload an e-signature in Settings', (tester) async {

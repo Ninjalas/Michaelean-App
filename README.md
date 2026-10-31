@@ -331,6 +331,15 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Consultations export to PDF and Excel, two per A4 page** (decided 2026-10-31). Like the paper, each A4 page (portrait) holds **two forms stacked**, with a **dashed cut line** between them. Both files have the same layout.
+  - **Several at once:** on Michaelean Life › Consultations, tap **Select**, tick consultations, then **Export PDF** or **Export Excel**. Every two fill a page, oldest first; an odd count leaves a **blank form** at the bottom of the last page (to fill in by hand). The bar shows "2 selected · 1 page".
+  - **One at a time:** a consultation's page has **Export PDF** and **Export Excel**; the form goes on the top half and the bottom half is blank.
+  - **Signed only:** unsigned consultations can't be ticked, and their export buttons stay off with "The student signs first (Scan QR to Sign)".
+  - The preview note ("Not an official school record") is printed **once per page**, at the foot.
+  - **New packages:** **`pdf`** (Apache 2.0) builds the PDF; **`printing`** (Apache 2.0) saves it: a download on a computer, the share/save sheet on a phone. The PDF uses the bundled Inter font, which has the ✓ and Ñ the PDF's built-in fonts lack.
+  - Excel: set to A4, one page wide, a page break after each pair; Excel shrinks a pair slightly if it doesn't quite fit. Checked in desktop Excel; iPhone not checked yet.
+  - Files are named `Consultation_Nicolas_Santos_2026-10-30.pdf` for one, `Consultations_2026-10-28_to_2026-10-30.pdf` for several.
+  - Tests: Excel and PDF page counts, oldest-first order, the blank form, signed only, the Select screen (unsigned can't be ticked, the count, Cancel), and the off buttons on an unsigned consultation.
 - **Consultation export follows the official form** (decided 2026-10-31). The Excel file now copies SMCL's **Academic Consultation Form, F-QMS-14 Rev5 (11/25/24)**: school name and address, ACADEMIC CONSULTATION FORM, the department ticks (DBA, DCS, SEAS, DHMAC, SN, SHS, JHS, GS), Name / Course / Grade / Faculty and Time / Date / Venue on lines, the six-line Reason/s for Consultation | Intervention Made table, Expected Outcome on two lines, both signatures above Student's Signature and Instructor's/Professor's Signature, and the form code. A small line below the form says it's from the preview. Close to the printed form, not a pixel copy.
   - The consultation form now asks for a **Department** (the teacher picks one; required) and a **Venue** (required), and allows **up to 6** reasons, like the official table. The consultation page shows them.
   - The export no longer has a Student ID line (the official form has none); the app's pages still show the masked ID.
@@ -820,7 +829,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-264 tests currently pass, at any time of day. They cover:
+268 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

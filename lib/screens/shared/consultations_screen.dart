@@ -8,6 +8,7 @@ import '../../services/session.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/consultation_export_buttons.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/round_icon_button.dart';
 import '../../widgets/status_pill.dart';
@@ -15,6 +16,8 @@ import '../../widgets/surface_card.dart';
 
 /// Consultations (decided 2026-10-30): a teacher's own consultation forms,
 /// or, for a student, the ones held with them (read-only). Newest first.
+/// A teacher can Select signed ones and export them together, two per A4
+/// page (decided 2026-10-31).
 class ConsultationsScreen extends StatefulWidget {
   final CampusService campusService;
 
@@ -27,6 +30,7 @@ class ConsultationsScreen extends StatefulWidget {
 class _ConsultationsScreenState extends State<ConsultationsScreen> {
   Future<List<Consultation>>? _list;
   String? _loadedFor;
+  Set<String>? _picked; // ids ticked in Select mode; null when not selecting
 
   @override
   void didChangeDependencies() {
@@ -55,13 +59,22 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
           children: [
             BackHeader(
               'Consultations',
-              trailing: mayHold
-                  ? RoundIconButton(
-                      icon: Icons.add_rounded,
-                      tooltip: 'New consultation',
-                      onPressed: () => context.push('/life/consultations/new'),
-                    )
-                  : null,
+              trailing: !mayHold
+                  ? null
+                  : _picked != null
+                      ? TextButton(
+                          onPressed: () => setState(() => _picked = null),
+                          child: const Text('Cancel'))
+                      : Row(mainAxisSize: MainAxisSize.min, children: [
+                          TextButton(
+                              onPressed: () => setState(() => _picked = {}),
+                              child: const Text('Select')),
+                          RoundIconButton(
+                            icon: Icons.add_rounded,
+                            tooltip: 'New consultation',
+                            onPressed: () => context.push('/life/consultations/new'),
+                          ),
+                        ]),
             ),
             Expanded(
               child: FutureBuilder<List<Consultation>>(
@@ -78,10 +91,25 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
                     return const Align(
                         alignment: Alignment.topCenter, child: LinearProgressIndicator());
                   }
-                  return ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
+                  final picked = _picked;
+                  final chosen = [
+                    if (picked != null)
+                      for (final c in list)
+                        if (picked.contains(c.id)) c,
+                  ];
+                  final pages = (chosen.length + 1) ~/ 2;
+                  final listView = ListView(
+                    padding: EdgeInsets.fromLTRB(
+                        AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, picked == null ? 120 : AppSpacing.lg),
                     children: [
+                      if (picked != null) ...[
+                        Text(
+                          'Tick signed consultations to export them, two forms per A4 page, '
+                          'oldest first.',
+                          style: text.bodyMedium?.copyWith(color: AppColors.muted),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       Text(
                         isTeacher
                             ? 'Only you and the student see a consultation. Sample records.'
@@ -102,6 +130,32 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
                         ]),
                     ],
                   );
+                  if (picked == null) return listView;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: listView),
+                      Padding(
+                        // Clear of the floating nav bar.
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 120),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              chosen.isEmpty
+                                  ? 'None selected'
+                                  : '${chosen.length} selected · $pages ${pages == 1 ? 'page' : 'pages'}',
+                              textAlign: TextAlign.center,
+                              style: text.bodyMedium?.copyWith(color: AppColors.muted),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            ConsultationExportButtons(chosen.isEmpty ? null : chosen),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
                 },
               ),
             ),
@@ -113,12 +167,27 @@ class _ConsultationsScreenState extends State<ConsultationsScreen> {
 
   Widget _row(Consultation c, bool isTeacher) {
     final text = Theme.of(context).textTheme;
+    final picked = _picked;
+    // Only signed ones can be exported, so only they can be ticked.
+    void toggle() => setState(() => picked!.contains(c.id) ? picked.remove(c.id) : picked.add(c.id));
     return Pressable(
-      onTap: () => context.push('/life/consultations/${c.id}'),
+      onTap: picked == null
+          ? () => context.push('/life/consultations/${c.id}')
+          : c.studentSigned
+              ? toggle
+              : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Row(
           children: [
+            if (picked != null) ...[
+              Checkbox(
+                value: picked.contains(c.id),
+                onChanged: c.studentSigned ? (_) => toggle() : null,
+                semanticLabel: '${c.studentName}, ${formatDate(c.heldAt)}',
+              ),
+              const SizedBox(width: AppSpacing.xs),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

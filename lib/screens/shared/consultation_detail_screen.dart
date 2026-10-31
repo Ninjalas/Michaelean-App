@@ -5,15 +5,16 @@ import '../../models/consultation.dart';
 import '../../services/campus_service.dart';
 import '../../services/session.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/consultation_excel.dart';
 import '../../utils/dates.dart';
 import '../../widgets/back_header.dart';
+import '../../widgets/consultation_export_buttons.dart';
 import '../../widgets/post_image.dart';
 import '../../widgets/surface_card.dart';
 
 /// One consultation form (decided 2026-10-30), read-only. Its teacher can
-/// edit it, have the student sign by showing their QR, and export it to
-/// Excel; its student only reads it.
+/// edit it, have the student sign by showing their QR, and, once signed,
+/// export it to PDF or Excel (on the top half of an A4 page); its student
+/// only reads it.
 class ConsultationDetailScreen extends StatefulWidget {
   final CampusService campusService;
   final String id;
@@ -35,16 +36,6 @@ class _ConsultationDetailScreenState extends State<ConsultationDetailScreen> {
     if (session.dataKey != _loadedFor) {
       _loadedFor = session.dataKey;
       _c = widget.campusService.loadConsultation(session.user!, widget.id);
-    }
-  }
-
-  void _export(Consultation c) {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      downloadConsultation(c);
-      messenger.showSnackBar(SnackBar(content: Text('Downloading ${consultationFileName(c)}')));
-    } catch (_) {
-      messenger.showSnackBar(const SnackBar(content: Text("Couldn't make the Excel file.")));
     }
   }
 
@@ -160,26 +151,17 @@ class _ConsultationDetailScreenState extends State<ConsultationDetailScreen> {
                             ),
                             const SizedBox(height: AppSpacing.sm),
                           ],
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () => context.push('/life/consultations/${c.id}/edit'),
-                                  child: const Text('Edit'),
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: c.studentSigned
-                                    ? FilledButton(
-                                        onPressed: () => _export(c),
-                                        child: const Text('Export to Excel'))
-                                    : OutlinedButton(
-                                        onPressed: () => _export(c),
-                                        child: const Text('Export to Excel')),
-                              ),
-                            ],
+                          OutlinedButton(
+                            onPressed: () => context.push('/life/consultations/${c.id}/edit'),
+                            child: const Text('Edit'),
                           ),
+                          const SizedBox(height: AppSpacing.sm),
+                          ConsultationExportButtons(c.studentSigned ? [c] : null),
+                          if (!c.studentSigned) ...[
+                            const SizedBox(height: AppSpacing.xs),
+                            Text('The student signs first (Scan QR to Sign).',
+                                textAlign: TextAlign.center, style: muted),
+                          ],
                         ],
                       ),
                     ),
