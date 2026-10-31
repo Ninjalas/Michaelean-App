@@ -186,7 +186,8 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
               child: Text(_busy ? 'Sending…' : 'Request to Join'),
             ),
         ],
-        if (p.advises) ...[
+        // Its adviser and its officers (decided 2026-10-31).
+        if (p.canManage) ...[
           const SizedBox(height: AppSpacing.lg),
           FilledButton.icon(
             onPressed: () => context.push('/life/clubs/${o.id}'),

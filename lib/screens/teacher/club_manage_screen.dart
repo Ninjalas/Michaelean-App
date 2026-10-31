@@ -58,10 +58,13 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
     }
   }
 
-  /// Runs an adviser action, then reloads and says honestly what happened.
-  Future<void> _act(Future<void> Function() action, String done) async {
+  /// Runs an adviser's or officer's action, then reloads and says honestly
+  /// what happened. [leavePage]: the user can't manage the club afterwards,
+  /// so this page closes first (before the reload rebuilds the routes).
+  Future<void> _act(Future<void> Function() action, String done, {bool leavePage = false}) async {
     final session = SessionScope.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
     setState(() => _busy = true);
     try {
       await action();
@@ -75,8 +78,39 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+    if (leavePage) router.pop(); // the router's back, so the refresh below sees it
     session.refresh();
     messenger.showSnackBar(SnackBar(content: Text(done)));
+  }
+
+  /// An officer about to give up their own position (or leave) loses this
+  /// page; ask first. True to go ahead.
+  Future<bool> _confirmLosingAccess(String title, String message) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title),
+          content: Text("$message You'll lose access to managing this club."),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: AppColors.red),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  bool _isMe(OrgMember m) => m.id == SessionScope.of(context).user!.id;
+
+  /// Why this user may manage the club: its adviser, or one of its officers.
+  String _role(ClubAdmin a) {
+    final me = SessionScope.of(context).user!.id;
+    if (a.org.adviserIds.contains(me)) return "You're its adviser";
+    final position = a.members.where((m) => m.id == me).firstOrNull?.position;
+    return position == null ? 'You manage this club' : "You're its $position";
   }
 
   /// Asks for an optional reason; null when cancelled.
@@ -118,6 +152,18 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
   static const _notice = "in this preview only. They see a notice in this preview's bell.";
 
   Future<void> _remove(OrgMember m) async {
+    if (_isMe(m)) {
+      // An officer leaving the club.
+      if (!await _confirmLosingAccess('Leave the club?', "You'll no longer be a member.") ||
+          !mounted) {
+        return;
+      }
+      final user = SessionScope.of(context).user!;
+      await _act(() => widget.campusService.removeMember(user, widget.orgId, m.id),
+          'You left the club, in this preview only.',
+          leavePage: true);
+      return;
+    }
     final reason = await _confirmWithReason(
       title: 'Remove ${m.name}?',
       message: 'They will no longer be a member or see members-only posts and events.',
@@ -170,11 +216,19 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
       ),
     );
     if (picked == null || !mounted) return;
+    final givingUp = picked.isEmpty && _isMe(m) && m.position != null;
+    if (givingUp &&
+        (!await _confirmLosingAccess(
+                'Give up your position?', "You'll stay a member without a position.") ||
+            !mounted)) {
+      return;
+    }
     final user = SessionScope.of(context).user!;
     await _act(
       () => widget.campusService
           .setOfficerPosition(user, widget.orgId, m.id, picked.isEmpty ? null : picked),
       'Position saved in this preview only.',
+      leavePage: givingUp, // this page is no longer theirs
     );
   }
 
@@ -244,7 +298,7 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('${a.org.memberCount} members', style: text.titleMedium),
-                  Text("You're its adviser", style: muted),
+                  Text(_role(a), style: muted),
                 ],
               ),
             ),
@@ -376,11 +430,12 @@ class _ClubManageScreenState extends State<ClubManageScreen> {
                 tooltip: 'Options for ${m.name}',
                 enabled: !_busy,
                 onSelected: (v) => v == 'position' ? _setPosition(m) : _remove(m),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'position', child: Text('Set position')),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'position', child: Text('Set position')),
                   PopupMenuItem(
                     value: 'remove',
-                    child: Text('Remove from club', style: TextStyle(color: AppColors.red)),
+                    child: Text(_isMe(m) ? 'Leave club' : 'Remove from club',
+                        style: const TextStyle(color: AppColors.red)),
                   ),
                 ],
               ),

@@ -53,10 +53,11 @@ void main() {
   });
 
   group('service', () {
-    test('Mark advises CSS and the Robotics Club; students advise nothing', () async {
+    test('Mark advises CSS and the Robotics Club; Nicolas manages only CSS', () async {
       final clubs = await campus.loadAdvisedClubs(mockTeacher);
       expect({for (final c in clubs) c.org.id: c.requests}, {css: 2, robotics: 3});
-      expect(await campus.loadAdvisedClubs(mockStudent), isEmpty);
+      // He's CSS's Public Relations Officer (decided 2026-10-31), not a Robotics officer.
+      expect((await campus.loadAdvisedClubs(mockStudent)).map((c) => c.org.id), [css]);
       expect(await campus.loadClubAdmin(mockStudent, robotics), isNull);
       // Clubs without an adviser in this preview can't be managed by him.
       expect(await campus.loadClubAdmin(mockTeacher, 'org3'), isNull);

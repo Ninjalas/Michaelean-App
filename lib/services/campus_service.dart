@@ -141,15 +141,17 @@ abstract class CampusService {
   /// member: the club's adviser answers it (decided 2026-10-23).
   Future<void> requestToJoin(UserProfile user, String orgId);
 
-  // Club advisers (decided 2026-10-23): a teacher assigned as a club's
-  // adviser manages its members, officers, info, posts, and events. Each
-  // method below refuses anyone who doesn't advise that club. Changes stay
-  // in this preview; notices to students appear only in this preview's bell.
+  // Club advisers (decided 2026-10-23) and officers (2026-10-31): a teacher
+  // assigned as a club's adviser, or a student with an officer position in
+  // it, manages its members, officers, info, posts, and events; officers
+  // what mockOfficerPowers allows. Each method below refuses anyone else.
+  // Changes stay in this preview; notices appear only in this preview's bell.
 
-  /// Clubs the user advises, with how many students are waiting.
-  Future<List<AdvisedClub>> loadAdvisedClubs(UserProfile user);
+  /// Clubs the user may manage (with [power], only where they have it), with
+  /// how many students are waiting.
+  Future<List<AdvisedClub>> loadAdvisedClubs(UserProfile user, {ClubPower? power});
 
-  /// The Manage club page; null when the user doesn't advise this club.
+  /// The Manage club page; null when the user can't manage this club.
   Future<ClubAdmin?> loadClubAdmin(UserProfile user, String orgId);
 
   /// Accepts or declines a request to join; [reason] goes to the student.
@@ -549,7 +551,10 @@ class MockCampusService implements CampusService {
       mockOrganizations.any((o) => o.name == e.audience && o.adviserIds.contains(user.id));
 
   bool _manages(UserProfile user, CampusEvent e) =>
-      user.can(Permission.manageEvents) && e.managerIds.contains(user.id);
+      (user.can(Permission.manageEvents) && e.managerIds.contains(user.id)) ||
+      // A club event made in this app is managed by the club's adviser and
+      // officers (decided 2026-10-31).
+      (e.clubId != null && _advisedOrNull(user, e.clubId!, ClubPower.events) != null);
 
   int _going(CampusEvent e) =>
       (mockOtherRegistrations[e.id] ?? 0) + (_registered[e.id]?.length ?? 0);
@@ -682,9 +687,12 @@ class MockCampusService implements CampusService {
     String? hostOrgId,
   }) async {
     await _wait();
-    if (!user.can(Permission.manageEvents)) throw StateError("You can't manage events.");
-    final club = hostOrgId == null ? null : _advised(user, hostOrgId);
+    final club = hostOrgId == null ? null : _advised(user, hostOrgId, ClubPower.events);
     final old = eventId == null ? null : _events[eventId];
+    // A new event needs the events permission, or a club the user manages.
+    if (old == null && club == null && !user.can(Permission.manageEvents)) {
+      throw StateError("You can't manage events.");
+    }
     if (eventId != null && (old == null || !_manages(user, old))) {
       throw StateError("You can't edit this event.");
     }
@@ -729,6 +737,7 @@ class MockCampusService implements CampusService {
       audience: audience,
       managerIds: old?.managerIds ?? {user.id},
       postedAt: old?.postedAt ?? (published ? clock() : null),
+      clubId: old?.clubId ?? club?.id,
     );
   }
 
@@ -797,7 +806,8 @@ class MockCampusService implements CampusService {
     }
     // One row per section, with the subjects taught there.
     final subjects = <String, List<String>>{};
-    for (final c in _classesOf(user)) {
+    // Only a teacher's own sections; an officer invites clubs and students.
+    for (final c in user.role == UserRole.teacher ? _classesOf(user) : const <ClassInfo>[]) {
       subjects.putIfAbsent(c.section, () => []).add(c.subject);
     }
     return InviteOptions(
@@ -842,7 +852,9 @@ class MockCampusService implements CampusService {
       List<String> studentIds = const []}) async {
     await _wait();
     final e = _invitable(user, eventId);
-    final mine = _classesOf(user).map((c) => c.section).toSet();
+    final mine = user.role == UserRole.teacher
+        ? _classesOf(user).map((c) => c.section).toSet()
+        : const <String>{};
     if (!sections.every(mine.contains)) throw StateError('You can only invite your sections.');
     final picked = {
       for (final s in sections)
@@ -1415,14 +1427,21 @@ class MockCampusService implements CampusService {
       });
   }
 
-  /// The club, if [user] is one of its advisers.
-  Organization? _advisedOrNull(UserProfile user, String orgId) {
+  /// The club, if [user] may use [power] in it (any power when null): its
+  /// advisers always; its officers when mockOfficerPowers allows it. Being an
+  /// officer comes from the member list, not from the tag that shows it.
+  Organization? _advisedOrNull(UserProfile user, String orgId, [ClubPower? power]) {
     final o = _orgs.where((o) => o.id == orgId).firstOrNull;
-    return o != null && o.adviserIds.contains(user.id) && _members.containsKey(o.id) ? o : null;
+    final members = o == null ? null : _members[o.id];
+    if (o == null || members == null) return null;
+    if (o.adviserIds.contains(user.id)) return o;
+    final officer = members[user.id] != null;
+    final allowed = power == null ? mockOfficerPowers.isNotEmpty : mockOfficerPowers.contains(power);
+    return officer && allowed ? o : null;
   }
 
-  Organization _advised(UserProfile user, String orgId) =>
-      _advisedOrNull(user, orgId) ?? (throw StateError("You don't advise this club."));
+  Organization _advised(UserProfile user, String orgId, [ClubPower? power]) =>
+      _advisedOrNull(user, orgId, power) ?? (throw StateError("You can't manage this club."));
 
   void _notify(String studentId, String orgId, String title) {
     _notices.putIfAbsent(studentId, () => []).insert(
@@ -1441,11 +1460,11 @@ class MockCampusService implements CampusService {
       reason == null || reason.trim().isEmpty ? text : '$text Reason: ${reason.trim()}';
 
   @override
-  Future<List<AdvisedClub>> loadAdvisedClubs(UserProfile user) async {
+  Future<List<AdvisedClub>> loadAdvisedClubs(UserProfile user, {ClubPower? power}) async {
     await _wait();
     return [
       for (final o in _orgs)
-        if (_advisedOrNull(user, o.id) != null)
+        if (_advisedOrNull(user, o.id, power) != null)
           AdvisedClub(org: o, requests: _joinRequests[o.id]?.length ?? 0),
     ];
   }
@@ -1471,7 +1490,7 @@ class MockCampusService implements CampusService {
   Future<void> answerJoinRequest(UserProfile adviser, String orgId, String studentId,
       {required bool accept, String? reason}) async {
     await _wait();
-    final o = _advised(adviser, orgId);
+    final o = _advised(adviser, orgId, ClubPower.members);
     if (!(_joinRequests[orgId]?.remove(studentId) ?? false)) {
       throw StateError('This request was already answered.');
     }
@@ -1487,7 +1506,7 @@ class MockCampusService implements CampusService {
   @override
   Future<void> addMember(UserProfile adviser, String orgId, String studentId) async {
     await _wait();
-    final o = _advised(adviser, orgId);
+    final o = _advised(adviser, orgId, ClubPower.members);
     if (_student(studentId) == null) throw StateError('No such student.');
     if (_members[orgId]!.containsKey(studentId)) throw StateError('Already a member.');
     _joinRequests[orgId]?.remove(studentId);
@@ -1499,7 +1518,7 @@ class MockCampusService implements CampusService {
   Future<void> removeMember(UserProfile adviser, String orgId, String studentId,
       {String? reason}) async {
     await _wait();
-    final o = _advised(adviser, orgId);
+    final o = _advised(adviser, orgId, ClubPower.members);
     if (!_members[orgId]!.containsKey(studentId)) throw StateError('Not a member.');
     _members[orgId]!.remove(studentId);
     _notify(studentId, orgId, _withReason('You were removed from ${o.name}.', reason));
@@ -1509,7 +1528,7 @@ class MockCampusService implements CampusService {
   Future<void> setOfficerPosition(
       UserProfile adviser, String orgId, String studentId, String? position) async {
     await _wait();
-    _advised(adviser, orgId);
+    _advised(adviser, orgId, ClubPower.members);
     if (!_members[orgId]!.containsKey(studentId)) throw StateError('Not a member.');
     _members[orgId]![studentId] =
         position == null || position.trim().isEmpty ? null : position.trim();
@@ -1519,7 +1538,7 @@ class MockCampusService implements CampusService {
   Future<void> updateClubInfo(UserProfile adviser, String orgId,
       {required String about, required List<OrgMeeting> meetings}) async {
     await _wait();
-    _advised(adviser, orgId);
+    _advised(adviser, orgId, ClubPower.info);
     if (meetings.any((m) => m.title.trim().isEmpty || m.when.trim().isEmpty)) {
       throw ArgumentError('Each meeting needs a name and a time.');
     }
@@ -1534,7 +1553,7 @@ class MockCampusService implements CampusService {
   Future<List<OrgMember>> searchStudents(
       UserProfile adviser, String orgId, String query) async {
     await _wait();
-    _advised(adviser, orgId);
+    _advised(adviser, orgId, ClubPower.members);
     final q = query.trim().toLowerCase();
     final taken = {..._members[orgId]!.keys, ...?_joinRequests[orgId]};
     return [
@@ -1626,7 +1645,7 @@ class MockCampusService implements CampusService {
       org: o,
       isMember: _isMember(user, o),
       requested: _joinRequests[o.id]?.contains(user.id) ?? false,
-      advises: _advisedOrNull(user, o.id) != null,
+      canManage: _advisedOrNull(user, o.id) != null,
       // Memberships are visible to all (spec §12); blocked students are left out.
       members: _members[o.id] == null
           ? null

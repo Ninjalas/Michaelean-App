@@ -44,6 +44,12 @@ const studentRoutes = [
   '/life/grades/average?sem=2',
   '/life/consultations',
   '/life/consultations/cons-new-1', // read-only for the student
+  // Nicolas is CSS's PRO, so he manages it (decided 2026-10-31).
+  '/life/clubs/org1',
+  '/life/clubs/org1/add',
+  '/life/clubs/org1/info',
+  '/life/clubs/org1/post',
+  '/life/clubs/org1/event',
   '/profile/signature',
   // Opened from Home, they stay in Home (decided 2026-10-24).
   '/home/class',

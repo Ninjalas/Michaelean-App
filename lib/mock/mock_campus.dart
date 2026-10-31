@@ -289,6 +289,17 @@ const mockOrganizations = [
   ),
 ];
 
+/// MOCK permission list (decided 2026-10-31): what a club's officers may do
+/// for their own club. Being an officer means having a position in the
+/// club's member list (set by the adviser or an officer); the "… Officer"
+/// tag only shows it. Remove a power here to take it from every officer.
+const mockOfficerPowers = {
+  ClubPower.posts,
+  ClubPower.events,
+  ClubPower.members,
+  ClubPower.info,
+};
+
 /// MOCK club member lists: student id → officer position (null for a plain
 /// member). Names come from the sample class rosters. Mark advises CSS and
 /// the Robotics Club (mock assumption, decided 2026-10-23). The other
@@ -297,7 +308,8 @@ const mockOrganizations = [
 /// Students Association has no sample students, so it keeps its tag rule.
 const mockClubMembers = <String, Map<String, String?>>{
   'org1': {
-    'mock-student-1': null, // Nicolas
+    // Nicolas is an officer so the student preview can manage the club (2026-10-31).
+    'mock-student-1': 'Public Relations Officer', // Nicolas
     'stu-BSCS3A1': 'President', // Andrea Bautista
     'stu-BSCS3A2': 'Vice President', // Carlo Mendoza
     'stu-BSCS3A5': 'Secretary', // Erika Lim

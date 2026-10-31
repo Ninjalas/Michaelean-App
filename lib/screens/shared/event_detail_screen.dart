@@ -295,7 +295,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  d.invited ? 'Registered by a teacher’s invitation' : "You're registered",
+                  d.invited ? 'Registered by invitation' : "You're registered",
                   style: text.bodyLarge?.copyWith(color: AppColors.green),
                 ),
               ),

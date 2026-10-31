@@ -331,6 +331,14 @@ Each phase is one piece of work, reviewed by the group before the next one start
 
 Newest first.
 
+- **Club officers manage their club** (decided 2026-10-31). A student with an officer position in a club (President, PRO, Captain…) gets a **Manage club** button on the club's page and can do what the adviser does: club posts, club events (published directly), join requests and members, officer positions (including removing officers), and About and meetings.
+  - **Officer + explicit list:** being an officer comes from the club's member list (what the adviser keeps; the "… Officer" tag only shows it), and `mockOfficerPowers` in `lib/mock/mock_campus.dart` lists what officers may do. Removing a power there takes it from every officer. This keeps the project rule that tags aren't permissions.
+  - **Nicolas is now CSS's Public Relations Officer** in the sample data, so the student preview can try it.
+  - Giving up your own position, or leaving the club, asks "You'll lose access to managing this club" first and closes Manage club.
+  - Club events made from Manage club remember their club (`CampusEvent.clubId`), so the adviser and every officer can edit them. Older sample club events (like CSS General Assembly) keep working as before: students still register for them.
+  - Officers invite clubs and single students, not class sections. "Registered by a teacher's invitation" now reads "Registered by invitation".
+  - Fixed along the way: closing Manage club after losing access now refreshes in the right order (the router listens to the refresh signal, so the page closes first).
+  - Tests: `test/officers_test.dart` (the explicit list, members/positions/About, another club and a plain member refused, posting, events and who can edit them, giving up your position, the Manage club button and the confirm step); the screen audit covers Nicolas's Manage club pages.
 - **Photos moved from announcements to campus updates** (decided 2026-10-31). **Campus updates** now get the Add photos option (like School News); **announcements are text only**, in the form and in the service. Club posts keep their photos. The sample "Updated campus map" announcement no longer shows the map.
 - **Start consultation after the first e-signature** (decided 2026-10-31). Uploading a signature from the New Consultation gate shows a **Start consultation** button that opens a fresh scanner page; Back from there returns to the Consultations list.
 - **Consultations** (suggested by the professors, decided 2026-10-30). Teachers fill in a consultation form with a student, and both sign it with an e-signature.
@@ -808,7 +816,7 @@ These come from the spec and keep the prototype honest. They apply to every scre
 flutter test
 ```
 
-255 tests currently pass, at any time of day. They cover:
+263 tests currently pass, at any time of day. They cover:
 
 - **Navigation:** student and teacher previews land on the right Home and tabs; Log Out returns to sign-in without replaying the intro; the intro has no Skip button and moves on by itself; a reload at a saved address still plays the intro first.
 - **Home:** the stats row shows and a stat opens its detail; Up next for students (with the teacher's name, no attendance button) and teachers (Start attendance, today's classes); notifications sheet opens and closes (X and system Back), groups Today / Earlier, and a notification opens its post; long-press opens the QR sheet and Back closes it; the tip shows only once and sits above the nav bar; a load failure shows Retry (never fake content).

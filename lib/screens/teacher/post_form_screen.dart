@@ -79,7 +79,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
     final clubId = widget.orgId ?? post?.orgId;
     if (clubId != null) {
       // A club post: only its adviser, to its members or to everyone.
-      _club = (await widget.campusService.loadAdvisedClubs(user))
+      _club = (await widget.campusService.loadAdvisedClubs(user, power: ClubPower.posts))
           .where((c) => c.org.id == clubId)
           .firstOrNull
           ?.org;

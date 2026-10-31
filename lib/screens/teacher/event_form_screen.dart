@@ -63,7 +63,9 @@ class _EventFormScreenState extends State<EventFormScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (widget.hostOrgId != null && !_clubChecked && _club == null) {
-      widget.campusService.loadAdvisedClubs(SessionScope.of(context).user!).then((clubs) {
+      widget.campusService
+          .loadAdvisedClubs(SessionScope.of(context).user!, power: ClubPower.events)
+          .then((clubs) {
         if (!mounted) return;
         setState(() {
           _club = clubs.where((c) => c.org.id == widget.hostOrgId).firstOrNull?.org;
@@ -270,7 +272,11 @@ class _EventFormScreenState extends State<EventFormScreen> {
                     child: Text("Couldn't load this event.",
                         style: text.bodyLarge?.copyWith(color: AppColors.muted)),
                   )
-                else if (denied || !user.can(Permission.manageEvents) || cancelled)
+                // Editing is decided by the service (denied); a new event needs the
+                // events permission, or a club the user manages (officers too).
+                else if (denied ||
+                    (isNew && _club == null && !user.can(Permission.manageEvents)) ||
+                    cancelled)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.screen),
                     child: Text(

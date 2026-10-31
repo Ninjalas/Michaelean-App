@@ -42,6 +42,10 @@ class CampusEvent {
   /// 2026-10-30). Null for drafts and for events from before this preview.
   final DateTime? postedAt;
 
+  /// The club it was made for in this app (from Manage club); its adviser
+  /// and officers manage it (decided 2026-10-31). Null for other events.
+  final String? clubId;
+
   const CampusEvent({
     required this.id,
     required this.title,
@@ -59,6 +63,7 @@ class CampusEvent {
     this.audience,
     this.managerIds = const {},
     this.postedAt,
+    this.clubId,
   });
 
   CampusEvent copyWith({EventStatus? status}) => CampusEvent(
@@ -78,6 +83,7 @@ class CampusEvent {
         audience: audience,
         managerIds: managerIds,
         postedAt: postedAt,
+        clubId: clubId,
       );
 }
 
@@ -307,6 +313,15 @@ class OrgMember {
   });
 }
 
+/// What managing a club covers (decided 2026-10-31). Advisers may do all of
+/// it; officers what [mockOfficerPowers] lists.
+enum ClubPower {
+  posts, // club posts: post, edit and delete their own, urgent
+  events, // club events: create, edit, publish, invite, registrations
+  members, // join requests, adding and removing members, officer positions
+  info, // About and meetings
+}
+
 /// A club the user advises, for the Michaelean Life list.
 class AdvisedClub {
   final Organization org;
@@ -354,7 +369,7 @@ class OrganizationPage {
   final Organization org;
   final bool isMember; // a confirmed membership tag, never self-assigned
   final bool requested; // asked to join in this preview; still not a member
-  final bool advises; // the user is one of its advisers
+  final bool canManage; // the user advises it, or is one of its officers
 
   /// Its members, for clubs with a member list (spec §7.4); null otherwise.
   final List<PersonSummary>? members;
@@ -366,7 +381,7 @@ class OrganizationPage {
     required this.org,
     required this.isMember,
     required this.requested,
-    this.advises = false,
+    this.canManage = false,
     this.members,
     required this.events,
     required this.news,

@@ -313,8 +313,11 @@ class MockHomeService implements HomeService {
     // A club post needs the club's adviser; anything else the posting permission.
     final club = orgId == null
         ? null
-        : (await campus.loadAdvisedClubs(user)).where((c) => c.org.id == orgId).firstOrNull?.org;
-    if (orgId != null && club == null) throw StateError("You don't advise this club.");
+        : (await campus.loadAdvisedClubs(user, power: ClubPower.posts))
+            .where((c) => c.org.id == orgId)
+            .firstOrNull
+            ?.org;
+    if (orgId != null && club == null) throw StateError("You can't post for this club.");
     if (club == null && !user.can(Permission.postToCampusFeed)) {
       throw StateError("You don't have permission to post.");
     }
