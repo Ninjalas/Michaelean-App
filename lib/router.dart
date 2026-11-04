@@ -4,12 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'screens/shared/app_shell.dart';
 import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/edit_profile_screen.dart';
+import 'screens/shared/event_detail_screen.dart';
+import 'screens/shared/guest_list_screen.dart';
 import 'screens/shared/home_screen.dart';
 import 'screens/shared/life_hub_screen.dart';
 import 'screens/shared/notifications_sheet.dart';
 import 'screens/shared/opening_screen.dart';
 import 'screens/shared/profile_screen.dart';
 import 'screens/shared/qr_sheet.dart';
+import 'screens/shared/registration_sheet.dart';
 import 'screens/shared/settings_sheet.dart';
 import 'screens/student/class_screen.dart';
 import 'screens/teacher/attendance_review_screen.dart';
@@ -141,6 +144,35 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                           ),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+                // Event page, guest list, and registration (spec §7.3).
+                GoRoute(
+                  path: 'events/:eventId',
+                  builder: (context, state) => EventDetailScreen(
+                    campusService: campusService,
+                    eventId: state.pathParameters['eventId']!,
+                  ),
+                  routes: [
+                    GoRoute(
+                      path: 'guests',
+                      builder: (context, state) => GuestListScreen(
+                        campusService: campusService,
+                        eventId: state.pathParameters['eventId']!,
+                      ),
+                    ),
+                    GoRoute(
+                      path: 'register',
+                      parentNavigatorKey: rootKey, // pop-up covers the nav bar too
+                      pageBuilder: (context, state) => AppSheetPage(
+                        key: state.pageKey,
+                        title: 'Event registration',
+                        child: RegistrationSheet(
+                          campusService: campusService,
+                          eventId: state.pathParameters['eventId']!,
+                        ),
+                      ),
                     ),
                   ],
                 ),

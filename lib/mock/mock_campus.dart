@@ -50,6 +50,7 @@ List<CampusEvent> mockEvents(DateTime now) {
       venue: 'Saint Theodore Hall · Lab 2',
       coverAsset: _cssCover,
       audience: _css,
+      capacity: 6, // mock_guests.dart seeds exactly 6, so this one is full
     ),
     CampusEvent(
       id: 'ev5',
