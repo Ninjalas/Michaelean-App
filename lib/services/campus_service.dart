@@ -1,8 +1,10 @@
 import '../mock/mock_campus.dart';
 import '../mock/mock_classes.dart';
+import '../mock/mock_guests.dart';
 import '../models/attendance.dart';
 import '../models/campus.dart';
 import '../models/feed.dart';
+import '../models/guest.dart';
 import '../models/user_profile.dart';
 
 /// Where class, event, organization, and clearance data comes from (spec §7,
@@ -49,6 +51,29 @@ abstract class CampusService {
 
   /// Events the user is allowed to manage, including drafts.
   Future<List<CampusEvent>> loadManagedEvents(UserProfile user);
+
+  /// One event the user may see (published and eligible, or one they manage);
+  /// null if it doesn't exist or isn't theirs to see.
+  Future<CampusEvent?> loadEvent(UserProfile user, String eventId);
+
+  /// Guest count, a few avatars, and the viewer's registration state (spec
+  /// §7.3); null if the event isn't visible to the user.
+  Future<GuestSummary?> loadGuestSummary(UserProfile user, String eventId);
+
+  /// The full guest list, A–Z. Only registered guests and the event's
+  /// managers may see it; everyone else gets null (mock assumption for open
+  /// decision 4: attendee visibility rules are not decided yet).
+  Future<List<EventGuest>?> loadGuests(UserProfile user, String eventId);
+
+  /// Registers the user. Throws [RegistrationException] with a readable
+  /// message for unknown, ineligible, closed, or full events, repeat
+  /// registrations, and choices that aren't in the dropdowns.
+  Future<void> registerForEvent(UserProfile user, String eventId,
+      {required String course, required String yearLevel});
+
+  /// Removes the user's registration. Throws [RegistrationException] when
+  /// they aren't registered or the event has already started.
+  Future<void> cancelRegistration(UserProfile user, String eventId);
 
   /// Organizations the user is a confirmed member of.
   Future<List<Organization>> loadMyOrganizations(UserProfile user);
@@ -304,6 +329,133 @@ class MockCampusService implements CampusService {
         .where((e) => e.managerIds.contains(user.id) && e.start.isAfter(now))
         .toList()
       ..sort((a, b) => a.start.compareTo(b.start));
+  }
+
+  // ---------- Registration and guest lists (in memory, this preview only) ----------
+
+  final _guests = <String, List<EventGuest>>{}; // event id → registered guests
+
+  List<EventGuest> _guestsOf(String eventId) =>
+      _guests.putIfAbsent(eventId, () => List.of(mockSeedGuests[eventId] ?? const []));
+
+  CampusEvent? _rawEvent(String eventId) =>
+      mockEvents(clock()).where((e) => e.id == eventId).firstOrNull;
+
+  bool _audienceOk(UserProfile user, CampusEvent e) =>
+      e.audience == null || user.tags.any((t) => t.label == e.audience);
+
+  bool _isManager(UserProfile user, CampusEvent e) =>
+      user.can(Permission.manageEvents) && e.managerIds.contains(user.id);
+
+  bool _canSee(UserProfile user, CampusEvent e) =>
+      _isManager(user, e) || (e.status == EventStatus.published && _audienceOk(user, e));
+
+  bool _isRegistered(UserProfile user, String eventId) =>
+      _guestsOf(eventId).any((g) => g.id == user.id);
+
+  bool _isOpen(CampusEvent e) => e.status == EventStatus.published && e.start.isAfter(clock());
+
+  bool _isFull(CampusEvent e) =>
+      e.capacity != null && _guestsOf(e.id).length >= e.capacity!;
+
+  RegistrationState _stateFor(UserProfile user, CampusEvent e) {
+    if (_isRegistered(user, e.id)) return RegistrationState.registered;
+    if (!_isOpen(e)) return RegistrationState.closed;
+    if (_isFull(e)) return RegistrationState.full;
+    return RegistrationState.open;
+  }
+
+  @override
+  Future<CampusEvent?> loadEvent(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _rawEvent(eventId);
+    return e != null && _canSee(user, e) ? e : null;
+  }
+
+  @override
+  Future<GuestSummary?> loadGuestSummary(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _rawEvent(eventId);
+    if (e == null || !_canSee(user, e)) return null;
+    final list = _guestsOf(eventId);
+    return GuestSummary(
+      count: list.length,
+      preview: list.take(4).toList(),
+      capacity: e.capacity,
+      state: _stateFor(user, e),
+      canViewList: _isRegistered(user, eventId) || _isManager(user, e),
+    );
+  }
+
+  @override
+  Future<List<EventGuest>?> loadGuests(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _rawEvent(eventId);
+    if (e == null || !_canSee(user, e)) return null;
+    if (!_isRegistered(user, eventId) && !_isManager(user, e)) return null;
+    return _guestsOf(eventId).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
+
+  @override
+  Future<void> registerForEvent(UserProfile user, String eventId,
+      {required String course, required String yearLevel}) async {
+    await _wait();
+    if (!registrationCourses.contains(course)) {
+      throw const RegistrationException(
+          RegistrationProblem.invalidCourse, 'Choose your course from the list.');
+    }
+    if (!registrationYearLevels.contains(yearLevel)) {
+      throw const RegistrationException(
+          RegistrationProblem.invalidYear, 'Choose your year level from the list.');
+    }
+    final e = _rawEvent(eventId);
+    if (e == null) {
+      throw const RegistrationException(
+          RegistrationProblem.notFound, "This event isn't available.");
+    }
+    if (!_audienceOk(user, e)) {
+      throw const RegistrationException(
+          RegistrationProblem.notEligible, "This event isn't open to your group.");
+    }
+    if (_isRegistered(user, eventId)) {
+      throw const RegistrationException(
+          RegistrationProblem.alreadyRegistered, "You're already registered for this event.");
+    }
+    if (!_isOpen(e)) {
+      throw const RegistrationException(
+          RegistrationProblem.closed, "Registration isn't open for this event.");
+    }
+    if (_isFull(e)) {
+      throw const RegistrationException(RegistrationProblem.full, 'This event is full.');
+    }
+    // Registration only: it is not attendance and counts toward nothing.
+    _guestsOf(eventId).add(EventGuest(
+      id: user.id,
+      name: user.fullName,
+      course: course,
+      yearLevel: yearLevel,
+      photoAsset: user.photoAsset,
+    ));
+  }
+
+  @override
+  Future<void> cancelRegistration(UserProfile user, String eventId) async {
+    await _wait();
+    final e = _rawEvent(eventId);
+    if (e == null) {
+      throw const RegistrationException(
+          RegistrationProblem.notFound, "This event isn't available.");
+    }
+    if (!_isRegistered(user, eventId)) {
+      throw const RegistrationException(
+          RegistrationProblem.notRegistered, "You aren't registered for this event.");
+    }
+    if (!e.start.isAfter(clock())) {
+      throw const RegistrationException(
+          RegistrationProblem.closed, 'This event has already started.');
+    }
+    _guestsOf(eventId).removeWhere((g) => g.id == user.id);
   }
 
   @override

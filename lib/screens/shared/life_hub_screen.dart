@@ -127,9 +127,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       _pad(SectionHeader('Class', onSeeAll: () => context.push('/life/class'))),
       ..._studentClasses(d.classes, now),
 
-      _pad(
-        SectionHeader('Events', onSeeAll: () => context.push('/life/events')),
-      ),
+      _pad(SectionHeader('Events', onSeeAll: () => _open('Events'))),
       if (d.events.isEmpty)
         _pad(_muted('No upcoming events for you right now.'))
       else
@@ -143,19 +141,11 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
             itemCount: d.events.length,
             separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-            itemBuilder: (_, i) => _EventCard(
-              event: d.events[i],
-              now: now,
-              onTap: () => context.push(
-                '/life/event-details',
-                extra: d.events[i],
-              ),
-              onHostTap: d.events[i].hostProfileId == null
-                  ? null
-                  : () => context.push(
-                      '/life/community/${d.events[i].hostProfileId}',
-                    ),
-            ),
+            itemBuilder: (_, i) =>
+                _EventCard(
+                    event: d.events[i],
+                    now: now,
+                    onTap: () => context.push('/life/events/${d.events[i].id}')),
           ),
         ),
 
@@ -233,12 +223,7 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
       if (!user.can(Permission.manageEvents))
         ..._denied('Events You Manage', "You aren't an authorized event manager.")
       else ...[
-        _pad(
-          SectionHeader(
-            'Events You Manage',
-            onSeeAll: () => context.push('/life/events'),
-          ),
-        ),
+        _pad(SectionHeader('Events You Manage', onSeeAll: () => _open('Events you manage'))),
         if (d.events.isEmpty)
           _pad(_muted('No events to manage yet.'))
         else
@@ -247,16 +232,13 @@ class _LifeHubScreenState extends State<LifeHubScreen> {
               ContentRow(
                 source: e.host,
                 sourceImage: e.hostLogo,
-                onSourceTap: e.hostProfileId == null
-                    ? null
-                    : () => context.push('/life/community/${e.hostProfileId}'),
                 title: e.title,
                 meta: '${formatDayLabel(e.start, now)} · ${formatTime(e.start)} · ${e.venue}',
                 metaIcon: Icons.schedule_rounded,
                 imageAsset: e.coverAsset,
                 placeholderIcon: Icons.event_outlined,
                 pill: e.status == EventStatus.draft ? const StatusPill('Draft') : null,
-                onTap: () => context.push('/life/event-details', extra: e),
+                onTap: () => context.push('/life/events/${e.id}'),
               ),
           ]),
       ],
@@ -339,19 +321,13 @@ bool _sameDay(DateTime a, DateTime b) =>
 /// A card in the horizontal events strip: cover photo, date, title, venue.
 class _EventCard extends StatelessWidget {
   static const width = 240.0;
-  static const textBlock = 136.0;
+  static const textBlock = 104.0; // date + two-line title + venue, at normal text size
 
   final CampusEvent event;
   final DateTime now;
   final VoidCallback onTap;
-  final VoidCallback? onHostTap;
 
-  const _EventCard({
-    required this.event,
-    required this.now,
-    required this.onTap,
-    required this.onHostTap,
-  });
+  const _EventCard({required this.event, required this.now, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -389,34 +365,6 @@ class _EventCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(event.venue, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-            if (event.hostProfileId != null) ...[
-              const SizedBox(height: AppSpacing.xs),
-              InkWell(
-                onTap: onHostTap,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      UserAvatar(
-                          name: event.host,
-                          imageAsset: event.hostLogo,
-                          size: 20),
-                      const SizedBox(width: AppSpacing.xs),
-                      Flexible(
-                        child: Text(
-                          event.host,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text.bodyMedium?.copyWith(color: AppColors.navy),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

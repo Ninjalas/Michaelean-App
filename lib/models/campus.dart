@@ -20,6 +20,9 @@ class CampusEvent {
   /// not the same as hosting it.
   final Set<String> managerIds;
 
+  /// Most guests the event can take; null means no limit (spec §7.3).
+  final int? capacity;
+
   const CampusEvent({
     required this.id,
     required this.title,
@@ -31,6 +34,7 @@ class CampusEvent {
     this.status = EventStatus.published,
     this.audience,
     this.managerIds = const {},
+    this.capacity,
   });
 }
 
