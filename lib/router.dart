@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'screens/shared/about_screen.dart';
 import 'screens/shared/account_security_screen.dart';
 import 'screens/shared/app_shell.dart';
+import 'screens/shared/change_password_screen.dart';
 import 'screens/shared/coming_soon_screen.dart';
 import 'screens/shared/consultation_detail_screen.dart';
 import 'screens/shared/consultations_screen.dart';
@@ -552,7 +553,16 @@ GoRouter createRouter(Session session, UserService userService, HomeService home
                 GoRoute(
                     path: 'personal', builder: (context, state) => const PersonalInfoScreen()),
                 GoRoute(
-                    path: 'security', builder: (context, state) => const AccountSecurityScreen()),
+                  path: 'security',
+                  builder: (context, state) => const AccountSecurityScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'password',
+                      parentNavigatorKey: rootKey, // full page over the nav bar (button at the bottom)
+                      builder: (context, state) => ChangePasswordScreen(userService: userService),
+                    ),
+                  ],
+                ),
                 GoRoute(
                     path: 'signature',
                     builder: (context, state) => SignatureScreen(campusService: campusService)),

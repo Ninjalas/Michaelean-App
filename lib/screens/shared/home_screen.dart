@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('${greetingFor(now)}, ${user.firstName}',
+          Text('${greetingFor(now)}, ${user.greetingName}',
               style: text.headlineMedium?.copyWith(color: AppColors.white)),
           const SizedBox(height: 2),
           TwoToneDate(now,
@@ -275,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('${greetingFor(now)}, ${user.firstName}',
+                  Text('${greetingFor(now)}, ${user.greetingName}',
                       overflow: TextOverflow.ellipsis,
                       style: text.titleMedium?.copyWith(color: AppColors.white)),
                   TwoToneDate(now,

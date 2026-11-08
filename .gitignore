@@ -52,3 +52,9 @@ assets/images/luma_screens/
 
 # Claude Code instructions: kept locally, not shared in the repo
 CLAUDE.md
+
+# Real student data, passwords, and backend secret keys: kept locally, never commit
+/private/
+
+# Personal Claude Code settings for this project
+.claude/settings.local.json

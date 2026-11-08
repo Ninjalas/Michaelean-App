@@ -22,8 +22,20 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// True when [user] is a real test account, false for the sample preview.
+  bool _signedIn = false;
+  bool get isSignedIn => _signedIn;
+
   void startPreview(UserProfile user) {
     _user = user;
+    _signedIn = false;
+    notifyListeners();
+  }
+
+  /// A test account signed in (docs/backend-plan.md, Stage 1).
+  void signIn(UserProfile user) {
+    _user = user;
+    _signedIn = true;
     notifyListeners();
   }
 
@@ -34,8 +46,10 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Back to the sign-in screen, from either a preview or an account.
   void endPreview() {
     _user = null;
+    _signedIn = false;
     notifyListeners();
   }
 }

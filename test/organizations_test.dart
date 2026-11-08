@@ -17,7 +17,7 @@ Future<void> signInStudent(WidgetTester tester) async {
     campusService: campus,
   ));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Sign in with Microsoft (preview)')); // Student is preselected
+  await tester.tap(find.text('Open preview')); // Student is preselected
   await tester.pumpAndSettle();
   await tester.tap(find.text('Student Life'));
   await tester.pumpAndSettle();

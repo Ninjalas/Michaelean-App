@@ -55,7 +55,7 @@ void main() {
       campusService: campus,
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign in with Microsoft (preview)'));
+    await tester.tap(find.text('Open preview'));
     await tester.pumpAndSettle();
 
     // The tab area's fade (the first one inside the app frame).

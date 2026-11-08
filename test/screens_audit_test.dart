@@ -147,9 +147,12 @@ Future<void> signIn(WidgetTester tester, String role, {bool fail = false}) async
     campusService: campus,
   ));
   await tester.pumpAndSettle();
+  // The preview choice sits below the sign-in form: scroll to it on small phones.
+  await tester.ensureVisible(find.text('Open preview'));
+  await tester.pumpAndSettle();
   await tester.tap(find.text(role));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Sign in with Microsoft (preview)'));
+  await tester.tap(find.text('Open preview'));
   await tester.pumpAndSettle();
 }
 

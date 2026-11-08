@@ -56,6 +56,13 @@ class UserProfile {
 
   String get fullName => '$firstName $lastName';
 
+  /// For Home's greeting: the first word of the first name ("Nicolas
+  /// Emanuel" → "Nicolas"), skipping an abbreviation ("Ma. Diane" → "Diane").
+  String get greetingName {
+    final words = firstName.split(' ').where((w) => w.isNotEmpty).toList();
+    return words.firstWhere((w) => !w.endsWith('.'), orElse: () => firstName);
+  }
+
   /// The same profile with new About text. About and the photo are the only
   /// things a user may edit (spec §10).
   UserProfile withAbout(String? about) => UserProfile(

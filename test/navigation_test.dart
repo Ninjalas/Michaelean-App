@@ -18,10 +18,10 @@ void main() {
     await tester.pumpWidget(testApp());
     await tester.pumpAndSettle();
     // The opening intro plays to the end and moves on to sign-in by itself.
-    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.text('Open preview'), findsOneWidget);
     expect(find.textContaining('Preview only'), findsOneWidget); // never looks like real sign-in
 
-    await tester.tap(find.text('Sign in with Microsoft (preview)'));
+    await tester.tap(find.text('Open preview'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining(', Nicolas'), findsOneWidget); // landed on Home
@@ -39,7 +39,7 @@ void main() {
 
     await tester.tap(find.text('Teacher'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign in with Microsoft (preview)'));
+    await tester.tap(find.text('Open preview'));
     await tester.pumpAndSettle();
     expect(find.textContaining(', Mark'), findsOneWidget); // teacher Home
     expect(find.text('Michaelean Life'), findsOneWidget);
@@ -56,7 +56,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Log Out'), 100, scrollable: find.byType(Scrollable).last);
     await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
-    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.text('Open preview'), findsOneWidget);
     expect(find.byType(OpeningScreen), findsNothing); // logging out doesn't replay the intro
   });
 
@@ -65,10 +65,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300)); // intro still playing
     expect(find.byType(OpeningScreen), findsOneWidget);
     expect(find.text('Skip'), findsNothing);
-    expect(find.text('Sign in with Microsoft (preview)'), findsNothing);
+    expect(find.text('Open preview'), findsNothing);
 
     await tester.pumpAndSettle(); // about 2.4 s later
-    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.text('Open preview'), findsOneWidget);
   });
 
   testWidgets('reopening at a saved address still plays the intro first', (tester) async {
@@ -81,7 +81,7 @@ void main() {
     expect(find.byType(OpeningScreen), findsOneWidget); // intro is showing
 
     await tester.pumpAndSettle();
-    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.text('Open preview'), findsOneWidget);
   });
 
   testWidgets('going straight to another id opens that one, not the old page', (tester) async {
@@ -90,7 +90,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(testApp());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign in with Microsoft (preview)'));
+    await tester.tap(find.text('Open preview'));
     await tester.pumpAndSettle();
     final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
     // Like typing a new address: same page type, different id.

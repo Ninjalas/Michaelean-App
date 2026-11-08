@@ -39,71 +39,108 @@ class _SettingsSheetState extends State<SettingsSheet> {
     session.startPreview(user);
   }
 
-  void _logOut() {
+  Future<void> _logOut() async {
     final session = SessionScope.of(context); // read before the sheet closes
     GoRouter.of(context).pop();
-    session.endPreview(); // no real account in the prototype: ends the preview
+    if (session.isSignedIn) {
+      try {
+        await widget.userService.signOut(); // forgets the sign-in on this device
+      } on Object {
+        // Offline: the device has still forgotten the sign-in.
+      }
+    }
+    session.endPreview();
   }
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final role = SessionScope.of(context).user?.role ?? UserRole.student;
+    final session = SessionScope.of(context);
+    final role = session.user?.role ?? UserRole.student;
     return ListView(
       shrinkWrap: true,
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screen, AppSpacing.xs, AppSpacing.screen, AppSpacing.lg),
+        AppSpacing.screen,
+        AppSpacing.xs,
+        AppSpacing.screen,
+        AppSpacing.lg,
+      ),
       children: [
         InsetGroup([
-          InsetRow('Personal Information', Icons.person_outline_rounded,
-              onTap: () => _open('/profile/personal')),
-          InsetRow('Account & Security', Icons.lock_outline_rounded,
-              onTap: () => _open('/profile/security')),
+          InsetRow(
+            'Personal Information',
+            Icons.person_outline_rounded,
+            onTap: () => _open('/profile/personal'),
+          ),
+          InsetRow(
+            'Account & Security',
+            Icons.lock_outline_rounded,
+            onTap: () => _open('/profile/security'),
+          ),
           // Signs consultation forms (decided 2026-10-30).
           InsetRow('My e-signature', Icons.draw_outlined, onTap: () => _open('/profile/signature')),
           // Who sees your events and connections (spec §10.1); students only.
           if (role == UserRole.student)
             InsetRow('Privacy', Icons.shield_outlined, onTap: () => _open('/profile/privacy')),
-          InsetRow('Notifications', Icons.notifications_none_rounded,
-              onTap: () => _open('/profile/notifications')),
-        ]),
-        const SizedBox(height: AppSpacing.md),
-        InsetGroup([
-          InsetRow('Help & Support', Icons.help_outline_rounded,
-              onTap: () => _open('/profile/help')),
-          InsetRow('About Michaelean', Icons.info_outline_rounded,
-              onTap: () => _open('/profile/about')),
-        ]),
-        const SizedBox(height: AppSpacing.lg),
-        Text('Preview tools', style: text.labelMedium?.copyWith(color: AppColors.muted)),
-        const SizedBox(height: AppSpacing.sm),
-        InsetGroup([
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Preview as', style: text.bodyLarge),
-                const SizedBox(height: AppSpacing.sm),
-                SegmentedPills<UserRole>(
-                  segments: const [(UserRole.student, 'Student'), (UserRole.teacher, 'Teacher')],
-                  selected: role,
-                  onChanged: _switchRole,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text('Switches the sample account for previewing. Not a sign-in and not '
-                    'a security feature.',
-                    style: text.bodyMedium?.copyWith(color: AppColors.muted)),
-              ],
-            ),
+          InsetRow(
+            'Notifications',
+            Icons.notifications_none_rounded,
+            onTap: () => _open('/profile/notifications'),
           ),
         ]),
         const SizedBox(height: AppSpacing.md),
         InsetGroup([
-          InsetRow('Log Out', Icons.logout_rounded,
-              color: AppColors.red,
-              subtitle: 'Ends the preview and returns to sign-in',
-              onTap: _logOut),
+          InsetRow(
+            'Help & Support',
+            Icons.help_outline_rounded,
+            onTap: () => _open('/profile/help'),
+          ),
+          InsetRow(
+            'About Michaelean',
+            Icons.info_outline_rounded,
+            onTap: () => _open('/profile/about'),
+          ),
+        ]),
+        // A real account doesn't switch to sample accounts.
+        if (!session.isSignedIn) ...[
+          const SizedBox(height: AppSpacing.lg),
+          Text('Preview tools', style: text.labelMedium?.copyWith(color: AppColors.muted)),
+          const SizedBox(height: AppSpacing.sm),
+          InsetGroup([
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Preview as', style: text.bodyLarge),
+                  const SizedBox(height: AppSpacing.sm),
+                  SegmentedPills<UserRole>(
+                    segments: const [(UserRole.student, 'Student'), (UserRole.teacher, 'Teacher')],
+                    selected: role,
+                    onChanged: _switchRole,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Switches the sample account for previewing. Not a sign-in and not '
+                    'a security feature.',
+                    style: text.bodyMedium?.copyWith(color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+          ]),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        InsetGroup([
+          InsetRow(
+            'Log Out',
+            Icons.logout_rounded,
+            color: AppColors.red,
+            subtitle: session.isSignedIn
+                ? 'Signs you out on this device'
+                : 'Ends the preview and returns to sign-in',
+            onTap: _logOut,
+          ),
         ]),
       ],
     );

@@ -2,25 +2,31 @@ import 'package:flutter/foundation.dart' show LicenseEntryWithLineBreaks, Licens
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 
 import 'router.dart';
+import 'services/backend_config.dart';
 import 'services/campus_service.dart';
 import 'services/home_service.dart';
 import 'services/session.dart';
+import 'services/supabase_user_service.dart';
 import 'services/user_service.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   // The bundled fonts' license must ship with the app (About › Open-source licenses).
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(
         ['Inter', 'Inter Display'], await rootBundle.loadString('assets/fonts/Inter-OFL.txt'));
   });
+  // Test accounts (docs/backend-plan.md). Keeps the sign-in between visits.
+  await Supabase.initialize(url: supabaseUrl, publishableKey: supabasePublishableKey);
   // One campus service for the whole app, so Home and the Class screens
   // share the same (preview-only) attendance state.
   final campus = MockCampusService();
   runApp(MichaeleanApp(
-    userService: MockUserService(campus: campus),
+    userService: SupabaseUserService(campus: campus),
     homeService: MockHomeService(campus: campus),
     campusService: campus,
   ));

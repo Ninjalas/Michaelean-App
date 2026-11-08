@@ -21,7 +21,7 @@ Future<void> open(WidgetTester tester, String path) async {
     campusService: campus,
   ));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Sign in with Microsoft (preview)'));
+  await tester.tap(find.text('Open preview'));
   await tester.pumpAndSettle();
   GoRouter.of(tester.element(find.byType(Scaffold).first)).push(path);
   await tester.pumpAndSettle();

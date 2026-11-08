@@ -4,7 +4,7 @@ A campus-life app for students and teachers of **Saint Michael's College of Lagu
 
 Built with **Flutter/Dart**. The goal is a free-hosted, installable **PWA** (Progressive Web App) that students and teachers add to the home screen on Android and iPhone.
 
-> **Status (2026-10-21): frontend prototype.** Everything runs on clearly labeled **sample data**. There is no backend, no database, and no real Microsoft 365 sign-in yet. The app is being **rebuilt screen by screen** to a revised design (see [Rebuild plan and progress](#rebuild-plan-and-progress)). **Phases 1–6 of 11 are done.**
+> **Status (2026-11-09): frontend done, backend started.** The app still runs on clearly labeled **sample data**. A **Supabase** backend is being built for a month-long test with the department's 55 students (see [Backend](#backend)). **Stage 0 is done** (database and all 55 test accounts). **Stage 1 is built:** students sign in with their test account, stay signed in, log out, and change their password; everything after sign-in is still sample data. No real Microsoft 365 sign-in.
 
 ---
 
@@ -22,6 +22,29 @@ Built with **Flutter/Dart**. The goal is a free-hosted, installable **PWA** (Pro
 10. [Open decisions](#open-decisions)
 11. [Known issues and things to know](#known-issues-and-things-to-know)
 12. [How to continue the work](#how-to-continue-the-work)
+13. [Backend](#backend)
+
+---
+
+## Backend
+
+Full plan, decisions and stages: [docs/backend-plan.md](docs/backend-plan.md).
+
+- **Supabase (free plan)**: logins, a Postgres database, and security rules. Public sign-up is off, so only our accounts exist.
+- **Accounts:** one per student, `FirstName.LastName@smcl.edu.ph` (full first name, e.g. `StephenMichael.Hadi@smcl.edu.ph`), with a password we hand out. Real names, invented grades.
+- **Database changes** are SQL files in `supabase/migrations/`.
+- **In the app:** `lib/services/backend_config.dart` (project address + public key), `lib/services/supabase_user_service.dart` (sign-in, profile). Tests use `MockUserService`, so they never touch Supabase.
+- **Account script:** `dart run tool/create_accounts.dart` checks the list (dry run); `--create` makes the accounts. It reads `private/students.csv` and `private/.env`.
+- **`private/` is never committed.** It holds the real student list, the passwords, and the Supabase secret key. Ask the team lead for it.
+
+| Stage | What | Status |
+|---|---|---|
+| 0 | Supabase project, profiles table, security rules, 55 accounts | ✅ Done 2026-11-09 |
+| 1 | Real sign-in screen, Sign out, Change password | Built 2026-11-09, needs a real sign-in check |
+| 2 | Profile, schedule, sample grades, attendance from the database | Next |
+| 3 | Shared: Connect → clubs → events → posts | |
+| 4 | Teachers | |
+| 5 | Host the PWA, tester guide | |
 
 ---
 

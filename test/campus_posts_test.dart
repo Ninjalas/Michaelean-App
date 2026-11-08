@@ -20,7 +20,7 @@ Future<void> signIn(WidgetTester tester, String role, {MockHomeService? home}) a
   await tester.pumpAndSettle();
   await tester.tap(find.text(role));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Sign in with Microsoft (preview)'));
+  await tester.tap(find.text('Open preview'));
   await tester.pumpAndSettle();
 }
 

@@ -281,7 +281,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(role));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sign in with Microsoft (preview)'));
+      await tester.tap(find.text('Open preview'));
       await tester.pumpAndSettle();
       final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
       router.push(path);

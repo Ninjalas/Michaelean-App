@@ -112,7 +112,7 @@ void main() {
         campusService: campus,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sign in with Microsoft (preview)')); // as Nicolas
+      await tester.tap(find.text('Open preview')); // as Nicolas
       await tester.pumpAndSettle();
       // From Student Life, as a student reaches their club.
       await tester.tap(find.text('Student Life'));
@@ -150,7 +150,7 @@ void main() {
         campusService: campus,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sign in with Microsoft (preview)')); // as Nicolas
+      await tester.tap(find.text('Open preview')); // as Nicolas
       await tester.pumpAndSettle();
       await push(tester, '/life/events/${e!.id}');
       expect(find.text('Edit'), findsOneWidget);

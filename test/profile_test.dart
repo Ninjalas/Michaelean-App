@@ -18,7 +18,7 @@ Future<void> openProfile(WidgetTester tester, {String role = 'Student'}) async {
   await tester.pumpAndSettle();
   await tester.tap(find.text(role));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Sign in with Microsoft (preview)'));
+  await tester.tap(find.text('Open preview'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Profile'));
   await tester.pumpAndSettle();
@@ -111,7 +111,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Log Out'), 100, scrollable: find.byType(Scrollable).last);
     await tester.tap(find.text('Log Out'));
     await tester.pumpAndSettle();
-    expect(find.text('Sign in with Microsoft (preview)'), findsOneWidget);
+    expect(find.text('Open preview'), findsOneWidget);
   });
 
   testWidgets('switching role in Settings refreshes every tab, not just Profile',

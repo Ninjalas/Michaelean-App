@@ -24,7 +24,7 @@ Future<void> openGrades(WidgetTester tester, String role) async {
   await tester.pumpAndSettle();
   await tester.tap(find.text(role));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Sign in with Microsoft (preview)'));
+  await tester.tap(find.text('Open preview'));
   await tester.pumpAndSettle();
   GoRouter.of(tester.element(find.byType(Scaffold).first)).push('/life/grades');
   await tester.pumpAndSettle();

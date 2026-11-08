@@ -21,7 +21,7 @@ Future<void> openHome(WidgetTester tester,
   await tester.pumpAndSettle();
   await tester.tap(find.text(role));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Sign in with Microsoft (preview)'));
+  await tester.tap(find.text('Open preview'));
   await tester.pumpAndSettle();
 }
 
