@@ -1,0 +1,20 @@
+{
+  "name": "michaelean-promo",
+  "private": true,
+  "description": "Michaelean promo video (Remotion). Not part of the app.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render Promo out/promo_raw.mp4 && ffmpeg -y -loglevel error -i out/promo_raw.mp4 -c:v copy -af alimiter=limit=0.89:level=false -c:a aac -b:a 320k out/michaelean_promo.mp4",
+    "capture": "node capture.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.540",
+    "@remotion/fonts": "4.0.540",
+    "@remotion/media": "4.0.540",
+    "@remotion/transitions": "4.0.540",
+    "puppeteer-core": "23.11.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.540"
+  }
+}
